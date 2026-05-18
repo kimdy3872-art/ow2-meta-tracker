@@ -1,0 +1,219 @@
+import json
+import os
+import urllib.request
+
+import pandas as pd
+import streamlit as st
+
+
+ROLE_LABELS = {
+    "All": "전체 포지션",
+    "Tank": "돌격",
+    "Damage": "공격",
+    "Support": "지원",
+    "Unknown": "미분류",
+}
+TIER_LABELS = {
+    "All": "전체 티어",
+    "Bronze": "브론즈",
+    "Silver": "실버",
+    "Gold": "골드",
+    "Platinum": "플래티넘",
+    "Diamond": "다이아몬드",
+    "Master": "마스터",
+    "Grandmaster": "그랜드마스터",
+}
+TIER_ORDER = ["All", "Bronze", "Silver", "Gold", "Platinum", "Diamond", "Master", "Grandmaster"]
+ROLE_ORDER = ["All", "Tank", "Damage", "Support"]
+NUMERIC_STATS_COLUMNS = [
+    "win_rate",
+    "pick_rate",
+    "ban_rate",
+    "win_rate_z",
+    "pick_rate_log",
+    "pick_rate_z",
+    "total_score",
+]
+
+HERO_NAME_TO_API_NAME = {
+    "D.VA": "D.Va",
+    "겐지": "Genji",
+    "도미나": "Domina",
+    "둠피스트": "Doomfist",
+    "라마트라": "Ramattra",
+    "라이프위버": "Lifeweaver",
+    "라인하르트": "Reinhardt",
+    "레킹볼": "Wrecking Ball",
+    "로드호그": "Roadhog",
+    "루시우": "Lúcio",
+    "리퍼": "Reaper",
+    "마우가": "Mauga",
+    "메르시": "Mercy",
+    "메이": "Mei",
+    "모이라": "Moira",
+    "미즈키": "Mizuki",
+    "바스티온": "Bastion",
+    "바티스트": "Baptiste",
+    "벤데타": "Vendetta",
+    "벤처": "Venture",
+    "브리기테": "Brigitte",
+    "소전": "Sojourn",
+    "솔저: 76": "Soldier: 76",
+    "솜브라": "Sombra",
+    "시그마": "Sigma",
+    "시메트라": "Symmetra",
+    "시에라": "Sierra",
+    "아나": "Ana",
+    "안란": "Anran",
+    "애쉬": "Ashe",
+    "에코": "Echo",
+    "엠레": "Emre",
+    "오리사": "Orisa",
+    "우양": "Wuyang",
+    "위도우메이커": "Widowmaker",
+    "윈스턴": "Winston",
+    "일리아리": "Illari",
+    "자리야": "Zarya",
+    "정커퀸": "Junker Queen",
+    "정크랫": "Junkrat",
+    "제트팩 캣": "Jetpack Cat",
+    "젠야타": "Zenyatta",
+    "주노": "Juno",
+    "캐서디": "Cassidy",
+    "키리코": "Kiriko",
+    "토르비욘": "Torbjörn",
+    "트레이서": "Tracer",
+    "파라": "Pharah",
+    "프레야": "Freja",
+    "한조": "Hanzo",
+    "해저드": "Hazard",
+}
+MAP_ID_ALIAS = {
+    "paraiso": "paraíso",
+    "esperanca": "esperança",
+}
+
+
+def translate_role_name(role_name):
+    return ROLE_LABELS.get(str(role_name), str(role_name))
+
+
+def translate_tier_name(tier_name):
+    return TIER_LABELS.get(str(tier_name), str(tier_name))
+
+
+def is_degenerate_snapshot(snapshot_df):
+    if snapshot_df.empty:
+        return True
+
+    map_rows = snapshot_df[snapshot_df["map"].astype(str) != "all-maps"].copy()
+    if map_rows.empty:
+        return False
+
+    map_rows["win_rate"] = pd.to_numeric(map_rows.get("win_rate"), errors="coerce")
+    map_rows["pick_rate"] = pd.to_numeric(map_rows.get("pick_rate"), errors="coerce")
+
+    group_cols = ["hero", "data_tier"]
+    win_nunique = map_rows.groupby(group_cols)["win_rate"].nunique(dropna=True)
+    pick_nunique = map_rows.groupby(group_cols)["pick_rate"].nunique(dropna=True)
+    if win_nunique.empty or pick_nunique.empty:
+        return False
+
+    no_win_variance_ratio = (win_nunique <= 1).mean()
+    no_pick_variance_ratio = (pick_nunique <= 1).mean()
+    return no_win_variance_ratio >= 0.98 and no_pick_variance_ratio >= 0.98
+
+
+@st.cache_data
+def load_latest_stats():
+    stats_path = "latest_tier.csv" if os.path.exists("latest_tier.csv") else "overwatch_competitive_stats.csv"
+    df = pd.read_csv(stats_path)
+
+    if "update_date" in df.columns and not df.empty:
+        df["update_date"] = df["update_date"].astype(str)
+        selected_date = None
+        for candidate_date in sorted(df["update_date"].dropna().unique(), reverse=True):
+            candidate_df = df[df["update_date"] == candidate_date].copy()
+            if not is_degenerate_snapshot(candidate_df):
+                selected_date = candidate_date
+                break
+
+        if selected_date is None:
+            selected_date = df["update_date"].max()
+
+        df = df[df["update_date"] == selected_date].copy()
+
+    if "map" not in df.columns:
+        df["map"] = "all-maps"
+    if "map_name" not in df.columns:
+        df["map_name"] = df["map"]
+    if "role" not in df.columns:
+        df["role"] = "Unknown"
+
+    for col in NUMERIC_STATS_COLUMNS:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+
+    return df
+
+
+def get_ordered_tiers(df, include_all=True):
+    raw_tiers = set(df["data_tier"].dropna().astype(str).unique().tolist()) if "data_tier" in df.columns else set()
+    ordered = [tier for tier in TIER_ORDER if tier in raw_tiers or (include_all and tier == "All")]
+    extras = sorted(tier for tier in raw_tiers if tier not in TIER_ORDER)
+    return ordered + extras
+
+
+def get_ordered_roles(df, include_all=True):
+    raw_roles = set(df["role"].dropna().astype(str).unique().tolist()) if "role" in df.columns else set()
+    ordered = [role for role in ROLE_ORDER if role in raw_roles or (include_all and role == "All")]
+    extras = sorted(role for role in raw_roles if role not in ROLE_ORDER)
+    return ordered + extras
+
+
+def get_initial_index(options, preferred):
+    if preferred in options:
+        return options.index(preferred)
+    return 0
+
+
+@st.cache_data
+def load_hero_portrait_map():
+    url = "https://overfast-api.tekrop.fr/heroes"
+    try:
+        with urllib.request.urlopen(url, timeout=20) as resp:
+            heroes = json.load(resp)
+    except Exception:
+        return {}
+    return {
+        hero.get("name"): hero.get("portrait")
+        for hero in heroes
+        if hero.get("name") and hero.get("portrait")
+    }
+
+
+def get_hero_image_url(hero_name):
+    api_name = HERO_NAME_TO_API_NAME.get(hero_name, hero_name)
+    return load_hero_portrait_map().get(api_name)
+
+
+@st.cache_data
+def load_map_image_map():
+    url = "https://overfast-api.tekrop.fr/maps"
+    try:
+        with urllib.request.urlopen(url, timeout=20) as resp:
+            maps_data = json.load(resp)
+    except Exception:
+        return {}
+    return {
+        map_item.get("key", "").lower(): map_item.get("screenshot")
+        for map_item in maps_data
+        if map_item.get("key") and map_item.get("screenshot")
+    }
+
+
+def get_map_image_url(map_id):
+    alias = MAP_ID_ALIAS.get(map_id, map_id)
+    image_map = load_map_image_map()
+    url = image_map.get(alias) or image_map.get(map_id)
+    return url if url else f"https://dummyimage.com/600x100/1f2937/475569.png&text={map_id}"

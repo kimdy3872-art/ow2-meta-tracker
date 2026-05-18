@@ -1,18 +1,23 @@
+from __future__ import annotations
+
+import argparse
+import os
+import re
+import time
+from datetime import date
+from typing import Dict, List
+from urllib.parse import urlencode, urlparse, parse_qs, unquote, urljoin
+
+import numpy as np
+import pandas as pd
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import SessionNotCreatedException, WebDriverException
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import pandas as pd
-import numpy as np
-import time
 from time import perf_counter
-from datetime import date
-import os
-from urllib.parse import urlencode, urlparse, parse_qs
 
 # 1. 영웅별 포지션 매핑 딕셔너리
 role_dict = {
@@ -80,8 +85,31 @@ map_dict = {
 
 STATS_COLUMNS = [
     'hero', 'role', 'data_tier', 'map', 'map_name', 'update_date',
-    'win_rate', 'pick_rate', 'win_rate_z', 'pick_rate_log', 'pick_rate_z', 'total_score', 'rank',
+    'win_rate', 'pick_rate', 'ban_rate', 'win_rate_z', 'pick_rate_log', 'pick_rate_z', 'total_score', 'rank',
 ]
+
+LATEST_STATS_CSV_PATH = "overwatch_competitive_stats.csv"
+DASHBOARD_LATEST_CSV_PATH = "latest_tier.csv"
+LATEST_PARQUET_PATH = os.path.join("data", "latest", "latest_tier.parquet")
+WEEKLY_HISTORY_ROOT = os.path.join("data", "history", "weekly")
+WEEKLY_SNAPSHOT_WEEKDAY = int(os.getenv("WEEKLY_SNAPSHOT_WEEKDAY", "0"))
+
+WIN_RATE_WEIGHT = 0.5
+PICK_RATE_WEIGHT = 0.3
+BAN_RATE_WEIGHT = 0.2
+
+BASE_URL = "https://owperks.com"
+DEFAULT_LOCALE = "ko"
+DEFAULT_PERK_OUTPUT = "overwatch_hero_perks.csv"
+
+CATEGORY_TO_ROLE = {
+    "tanks": "Tank",
+    "damages": "Damage",
+    "supports": "Support",
+}
+
+HERO_LINK_RE = re.compile(r"^https://owperks\.com/ko/(tanks|damages|supports)/([^/?#]+)$")
+
 
 DEFAULT_MAX_WORKERS = 2
 MAX_WORKERS = int(os.getenv("MAX_WORKERS", str(DEFAULT_MAX_WORKERS)))
@@ -106,9 +134,10 @@ def format_elapsed(seconds):
         return f"{minutes}분 {seconds}초"
     return f"{seconds}초"
 
-def build_chrome_options():
+def build_chrome_options(headless=True):
     opts = Options()
-    opts.add_argument("--headless=new")
+    if headless:
+        opts.add_argument("--headless=new")
     opts.add_argument("--no-sandbox")
     opts.add_argument("--disable-dev-shm-usage")
     opts.add_argument("--disable-gpu")
@@ -118,12 +147,12 @@ def build_chrome_options():
     return opts
 
 
-def create_driver(max_retries=DRIVER_CREATE_RETRIES):
+def create_driver(headless=True, max_retries=DRIVER_CREATE_RETRIES):
     """Create Chrome session with retries for CI renderer startup failures."""
     last_error = None
     for attempt in range(1, max_retries + 1):
         try:
-            opts = build_chrome_options()
+            opts = build_chrome_options(headless=headless)
             return webdriver.Chrome(options=opts)
         except (SessionNotCreatedException, WebDriverException) as exc:
             last_error = exc
@@ -212,6 +241,25 @@ def is_degenerate_snapshot(df):
     return no_win_variance_ratio >= 0.98 and no_pick_variance_ratio >= 0.98
 
 
+def build_snapshot_compare_frame(df):
+    str_cols = ['hero', 'data_tier', 'map']
+    num_cols = [col for col in ['win_rate', 'pick_rate', 'ban_rate'] if col in df.columns]
+
+    for col in str_cols:
+        if col not in df.columns:
+            df[col] = ''
+
+    str_df = df[str_cols].astype(str).reset_index(drop=True)
+    num_df = df[num_cols].apply(pd.to_numeric, errors='coerce').round(4)
+    compare_cols = str_cols + num_cols
+
+    return (
+        pd.concat([str_df, num_df], axis=1)
+        .sort_values(compare_cols)
+        .reset_index(drop=True)
+    )
+
+
 def scrape_data(driver, tier_name, map_id):
     """기존 드라이버로 특정 티어 + 전장 데이터 수집"""
     url = build_rates_url(map_id, tier_name)
@@ -229,17 +277,24 @@ def scrape_data(driver, tier_name, map_id):
         let names    = document.querySelectorAll('.hero-name');
         let winrates  = document.querySelectorAll('.winrate-cell');
         let pickrates = document.querySelectorAll('.pickrate-cell');
+        let banrates  = document.querySelectorAll('.banrate-cell');
+        if (banrates.length === 0) {
+            banrates = document.querySelectorAll('[class*=\"ban\"]');
+        }
         for (let i = 0; i < names.length; i++) {
             data.push({
                 'hero':      names[i].innerText.trim(),
                 'win_rate':  winrates[i]  ? winrates[i].innerText  : '0%',
-                'pick_rate': pickrates[i] ? pickrates[i].innerText : '0%'
+                'pick_rate': pickrates[i] ? pickrates[i].innerText : '0%',
+                'ban_rate':  banrates[i]  ? banrates[i].innerText  : '0%'
             });
         }
         return data;
         """
         hero_list = driver.execute_script(script)
         df = pd.DataFrame(hero_list)
+        if 'ban_rate' not in df.columns:
+            df['ban_rate'] = '0%'
         ok, reason = validate_scraped_df(df)
         if not ok:
             print(f"⚠️  수집 검증 실패({tier_name}/{map_id}): {reason}")
@@ -293,9 +348,232 @@ def scrape_task(task):
             if driver is not None:
                 driver.quit()
 
-def main():
+
+def normalize_url(href):
+    if not href:
+        return ""
+    return urljoin(BASE_URL, href)
+
+
+def extract_hero_links(driver, locale):
+    landing_url = f"{BASE_URL}/{locale}"
+    driver.get(landing_url)
+    WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.TAG_NAME, "a")))
+    time.sleep(1.5)
+
+    hrefs = driver.execute_script(
+        """
+        const anchors = Array.from(document.querySelectorAll('a[href]'));
+        return anchors.map(a => a.getAttribute('href')).filter(Boolean);
+        """
+    )
+
+    links = set()
+    for href in hrefs:
+        absolute = normalize_url(href)
+        match = HERO_LINK_RE.match(absolute)
+        if match:
+            links.add(absolute)
+
+    ordered = sorted(links)
+    print(f"Found {len(ordered)} hero pages from {landing_url}")
+    return ordered
+
+
+def extract_perk_slug(perk_image_url):
+    if not perk_image_url:
+        return ""
+
+    parsed = urlparse(perk_image_url)
+    query_path = parse_qs(parsed.query).get("url", [""])[0]
+    if query_path:
+        decoded = unquote(query_path)
+        filename = os.path.basename(decoded)
+    else:
+        filename = os.path.basename(parsed.path)
+
+    return os.path.splitext(filename)[0]
+
+
+def extract_raw_perk_image_url(perk_image_url):
+    if not perk_image_url:
+        return ""
+
+    parsed = urlparse(perk_image_url)
+    query_path = parse_qs(parsed.query).get("url", [""])[0]
+    if not query_path:
+        return perk_image_url
+
+    decoded = unquote(query_path)
+    return urljoin(BASE_URL, decoded)
+
+
+def scrape_hero_page(driver, hero_url):
+    driver.get(hero_url)
+    WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.CSS_SELECTOR, ".hero-card")))
+    time.sleep(0.6)
+
+    payload = driver.execute_script(
+        """
+        const card = document.querySelector('.hero-card');
+        if (!card) {
+            return { hero_name: '', rows: [] };
+        }
+
+        const heroName = (card.querySelector('h2')?.textContent || '').trim();
+        const heroImage = card.querySelector('img[alt]')?.currentSrc || card.querySelector('img[alt]')?.src || '';
+
+        const sections = Array.from(card.querySelectorAll('ul')).slice(0, 2);
+        const sectionTypes = ['minor', 'major'];
+        const rows = [];
+
+        for (let i = 0; i < sections.length; i++) {
+            const perkType = sectionTypes[i] || 'unknown';
+            const items = Array.from(sections[i].querySelectorAll('li'));
+
+            for (const li of items) {
+                const text = (li.innerText || '').trim();
+                const percentMatch = text.match(/(\\d+(?:\\.\\d+)?)\\s*%/);
+                const pickRate = percentMatch ? Number(percentMatch[1]) : null;
+
+                const img = li.querySelector('img');
+                const perkImage = img?.currentSrc || img?.src || '';
+                let perkName = (img?.alt || '').trim();
+
+                if (!perkName) {
+                    const candidate = li.querySelector('h2, h3, strong, [class*="font-bold"]');
+                    perkName = (candidate?.textContent || '').trim();
+                }
+
+                if (!perkName) {
+                    const lines = text
+                        .split('\\n')
+                        .map(v => v.trim())
+                        .filter(Boolean)
+                        .filter(v => !/^\\d+(?:\\.\\d+)?%$/.test(v));
+                    perkName = lines.length ? lines[0] : '';
+                }
+
+                rows.push({
+                    perk_type: perkType,
+                    perk_name: perkName,
+                    pick_rate: pickRate,
+                    perk_image_url: perkImage,
+                });
+            }
+        }
+
+        return {
+            hero_name: heroName,
+            hero_image_url: heroImage,
+            rows,
+        };
+        """
+    )
+
+    category_match = re.match(r"^https://owperks\.com/ko/(tanks|damages|supports)/([^/?#]+)$", hero_url)
+    if not category_match:
+        return []
+
+    category = category_match.group(1)
+    hero_slug = category_match.group(2)
+    role = CATEGORY_TO_ROLE.get(category, "Unknown")
+
+    rows = []
+    for row in payload.get("rows", []):
+        perk_image_url = row.get("perk_image_url") or ""
+        rows.append(
+            {
+                "hero": payload.get("hero_name") or hero_slug,
+                "hero_slug": hero_slug,
+                "role": role,
+                "category": category,
+                "perk_type": row.get("perk_type", ""),
+                "perk_name": (row.get("perk_name") or "").strip(),
+                "pick_rate": row.get("pick_rate"),
+                "perk_slug": extract_perk_slug(perk_image_url),
+                "perk_image_url": perk_image_url,
+                "perk_image_raw_url": extract_raw_perk_image_url(perk_image_url),
+                "hero_image_url": payload.get("hero_image_url", ""),
+                "source_url": hero_url,
+                "update_date": str(date.today()),
+            }
+        )
+
+    return rows
+
+
+def run_perk_update(locale=DEFAULT_LOCALE, output=DEFAULT_PERK_OUTPUT, max_heroes=None, headed=False):
+    started_at = time.time()
+
+    driver = create_driver(headless=not headed)
+    try:
+        hero_links = extract_hero_links(driver, locale)
+        if max_heroes is not None:
+            hero_links = hero_links[: max(0, max_heroes)]
+
+        if not hero_links:
+            print("No hero links found. Nothing to scrape.")
+            return
+
+        all_rows: List[Dict] = []
+        total = len(hero_links)
+        for idx, hero_url in enumerate(hero_links, start=1):
+            print(f"[{idx}/{total}] scraping {hero_url}")
+            try:
+                rows = scrape_hero_page(driver, hero_url)
+                if rows:
+                    all_rows.extend(rows)
+                else:
+                    print(f"  warning: no perk rows parsed: {hero_url}")
+            except Exception as exc:
+                print(f"  error: {hero_url} -> {exc}")
+
+        if not all_rows:
+            print("No perk rows scraped.")
+            return
+
+        df = pd.DataFrame(all_rows)
+        df["pick_rate"] = pd.to_numeric(df["pick_rate"], errors="coerce")
+        df = df.drop_duplicates(
+            subset=["hero_slug", "perk_type", "perk_slug", "update_date"],
+            keep="last",
+        ).reset_index(drop=True)
+
+        df = df.sort_values(
+            by=["role", "hero", "perk_type", "pick_rate"],
+            ascending=[True, True, True, False],
+        ).reset_index(drop=True)
+
+        columns = [
+            "hero",
+            "hero_slug",
+            "role",
+            "category",
+            "perk_type",
+            "perk_name",
+            "pick_rate",
+            "perk_slug",
+            "perk_image_url",
+            "perk_image_raw_url",
+            "hero_image_url",
+            "source_url",
+            "update_date",
+        ]
+        df = df.reindex(columns=columns)
+        df.to_csv(output, index=False, encoding="utf-8-sig")
+
+        elapsed = int(time.time() - started_at)
+        print(
+            f"Done. Saved {len(df)} rows to {output} "
+            f"(heroes={df['hero_slug'].nunique()}, elapsed={elapsed}s)"
+        )
+    finally:
+        driver.quit()
+
+
+def run_stats_update():
     started_at = perf_counter()
-    stats_csv_path = 'overwatch_competitive_stats.csv'
     map_ids = list(map_dict.keys())
     print(f"🗺️  전장 {len(map_ids)}개: {map_ids}")
 
@@ -333,6 +611,10 @@ def main():
     # 숫자 변환
     full_df['win_rate']  = full_df['win_rate'].str.replace('%', '', regex=False).replace('--', '0').astype(float)
     full_df['pick_rate'] = full_df['pick_rate'].str.replace('%', '', regex=False).replace('--', '0').astype(float)
+    if 'ban_rate' in full_df.columns:
+        full_df['ban_rate'] = full_df['ban_rate'].str.replace('%', '', regex=False).replace('--', '0').astype(float)
+    else:
+        full_df['ban_rate'] = 0.0
 
     # 랭크 계산
     def safe_zscore(series):
@@ -345,7 +627,13 @@ def main():
     full_df['win_rate_z']    = full_df.groupby(group_key)['win_rate'].transform(safe_zscore)
     full_df['pick_rate_log'] = np.log1p(full_df['pick_rate'])
     full_df['pick_rate_z']   = full_df.groupby(group_key)['pick_rate_log'].transform(safe_zscore)
-    full_df['total_score']   = full_df['win_rate_z'] * 0.6 + full_df['pick_rate_z'] * 0.4
+    full_df['ban_rate_log']  = np.log1p(full_df['ban_rate'])
+    full_df['ban_rate_z']    = full_df.groupby(group_key)['ban_rate_log'].transform(safe_zscore)
+    full_df['total_score']   = (
+        full_df['win_rate_z'] * WIN_RATE_WEIGHT
+        + full_df['pick_rate_z'] * PICK_RATE_WEIGHT
+        + full_df['ban_rate_z'] * BAN_RATE_WEIGHT
+    )
 
     def assign_rank(scores):
         if len(scores) >= 4:
@@ -360,48 +648,105 @@ def main():
         print("❌ 비정상 스냅샷 감지(전장별 분산 부족). 저장을 중단합니다.")
         return
 
-    today = str(date.today())
+    today_obj = date.today()
+    today = str(today_obj)
 
-    if os.path.exists(stats_csv_path):
-        existing_df = pd.read_csv(stats_csv_path)
+    previous_latest_df = None
+    if os.path.exists(DASHBOARD_LATEST_CSV_PATH):
+        previous_latest_df = pd.read_csv(DASHBOARD_LATEST_CSV_PATH)
+    elif os.path.exists(LATEST_STATS_CSV_PATH):
+        previous_latest_df = pd.read_csv(LATEST_STATS_CSV_PATH)
 
-        if 'update_date' in existing_df.columns and not existing_df.empty:
-            latest_date = existing_df['update_date'].astype(str).max()
-            latest_df = existing_df[existing_df['update_date'].astype(str) == latest_date].copy()
+    if previous_latest_df is not None and not previous_latest_df.empty:
+        old_compare = build_snapshot_compare_frame(previous_latest_df.copy())
+        new_compare = build_snapshot_compare_frame(full_df.copy())
+        if new_compare.equals(old_compare):
+            elapsed = format_elapsed(perf_counter() - started_at)
+            print(f"⏭️  데이터 변동 없음. 업데이트를 건너뜁니다. (소요 시간: {elapsed})")
+            return
 
-            str_cols = ['hero', 'data_tier', 'map']
-            num_cols = ['win_rate', 'pick_rate']
-
-            new_str = full_df[str_cols].astype(str).reset_index(drop=True)
-            new_num = full_df[num_cols].astype(float).round(4)
-            new_compare = pd.concat([new_str, new_num], axis=1).sort_values(str_cols + num_cols).reset_index(drop=True)
-
-            old_str = latest_df[str_cols].astype(str).reset_index(drop=True)
-            old_num = latest_df[num_cols].astype(float).round(4)
-            old_compare = pd.concat([old_str, old_num], axis=1).sort_values(str_cols + num_cols).reset_index(drop=True)
-
-            if new_compare.equals(old_compare):
-                elapsed = format_elapsed(perf_counter() - started_at)
-                print(f"⏭️  데이터 변동 없음. 업데이트를 건너뜁니다. (최신 날짜: {latest_date}, 소요 시간: {elapsed})")
-                return
-
-        merged_df = pd.concat([existing_df, full_df], ignore_index=True)
-    else:
-        merged_df = full_df
-
-    # 같은 날짜에 재수집 시 중복 방지: 최신 값을 우선 유지
-    merged_df = merged_df.drop_duplicates(
-        subset=['hero', 'data_tier', 'map', 'update_date'],
-        keep='last'
+    latest_df = full_df.drop_duplicates(
+        subset=['hero', 'data_tier', 'map'],
+        keep='last',
     ).reset_index(drop=True)
 
-    merged_df.to_csv(stats_csv_path, index=False, encoding='utf-8-sig')
+    # 대시보드 호환을 위해 기존 CSV 파일명과 최신 전용 CSV를 함께 저장
+    latest_df.to_csv(LATEST_STATS_CSV_PATH, index=False, encoding='utf-8-sig')
+    latest_df.to_csv(DASHBOARD_LATEST_CSV_PATH, index=False, encoding='utf-8-sig')
+
+    snapshot_df = latest_df.copy()
+    snapshot_df['snapshot_date'] = today_obj.isoformat()
+
+    latest_parquet_saved_as = LATEST_PARQUET_PATH
+    os.makedirs(os.path.dirname(LATEST_PARQUET_PATH), exist_ok=True)
+    try:
+        snapshot_df.to_parquet(LATEST_PARQUET_PATH, index=False)
+    except (ImportError, ModuleNotFoundError, ValueError) as exc:
+        latest_parquet_saved_as = "(skip) parquet 엔진 없음"
+        print(f"⚠️  최신 Parquet 저장 실패({exc}). CSV 최신 파일만 유지합니다.")
+
+    weekly_saved_as = "(skip) 저장 요일 아님"
+    if today_obj.weekday() == WEEKLY_SNAPSHOT_WEEKDAY:
+        iso = today_obj.isocalendar()
+        weekly_dir = os.path.join(
+            WEEKLY_HISTORY_ROOT,
+            f"year={iso.year}",
+            f"week={iso.week:02d}",
+        )
+        os.makedirs(weekly_dir, exist_ok=True)
+        weekly_parquet_path = os.path.join(weekly_dir, "tier_snapshot.parquet")
+        weekly_saved_as = weekly_parquet_path
+        try:
+            snapshot_df.to_parquet(weekly_parquet_path, index=False)
+        except (ImportError, ModuleNotFoundError, ValueError) as exc:
+            weekly_csv_path = os.path.join(weekly_dir, "tier_snapshot.csv")
+            snapshot_df.to_csv(weekly_csv_path, index=False, encoding='utf-8-sig')
+            weekly_saved_as = weekly_csv_path
+            print(f"⚠️  주간 Parquet 저장 실패({exc}). CSV fallback으로 저장했습니다: {weekly_csv_path}")
 
     elapsed = format_elapsed(perf_counter() - started_at)
     print(
-        f"🎉 {today} 데이터 추가 완료! "
-        f"(누적 {len(merged_df)}행, 소요 시간: {elapsed})"
+        f"🎉 {today} 데이터 갱신 완료! "
+        f"(latest={len(latest_df)}행, 소요 시간: {elapsed})"
     )
+    print(f"📁 최신 데이터: {DASHBOARD_LATEST_CSV_PATH}")
+    print(f"📁 최신 Parquet: {latest_parquet_saved_as}")
+    print(f"📁 주간 스냅샷: {weekly_saved_as}")
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Update Overwatch competitive stats and/or hero perks data."
+    )
+    parser.add_argument(
+        "--mode",
+        choices=["stats", "perks", "all"],
+        default="stats",
+        help="What to update (default: stats)",
+    )
+    parser.add_argument("--locale", default=DEFAULT_LOCALE, help="Perk scraper locale")
+    parser.add_argument("--output", default=DEFAULT_PERK_OUTPUT, help="Perk output CSV path")
+    parser.add_argument("--max-heroes", type=int, default=None, help="Perk scrape hero limit")
+    parser.add_argument(
+        "--headed",
+        action="store_true",
+        help="Run browser in headed mode for perk scraping",
+    )
+    return parser.parse_args()
+
+
+def main():
+    args = parse_args()
+
+    if args.mode in ("stats", "all"):
+        run_stats_update()
+    if args.mode in ("perks", "all"):
+        run_perk_update(
+            locale=args.locale,
+            output=args.output,
+            max_heroes=args.max_heroes,
+            headed=args.headed,
+        )
 
 
 if __name__ == "__main__":

@@ -1,10 +1,15 @@
 import streamlit as st
 import pandas as pd
-import urllib.request
-import json
 import html
 import os
 import re
+from app_data import (
+    get_hero_image_url,
+    get_map_image_url,
+    load_latest_stats,
+    translate_role_name,
+    translate_tier_name,
+)
 from ui import (
     GLOBAL_FONT_FAMILY,
     apply_global_theme,
@@ -14,191 +19,6 @@ from ui import (
 
 st.set_page_config(page_title="영웅 상세", layout="wide")
 apply_global_theme()
-
-ROLE_LABELS = {
-    "Tank": "돌격",
-    "Damage": "공격",
-    "Support": "지원",
-    "Unknown": "미분류",
-}
-TIER_LABELS = {
-    "All": "전체 티어",
-    "Bronze": "브론즈",
-    "Silver": "실버",
-    "Gold": "골드",
-    "Platinum": "플래티넘",
-    "Diamond": "다이아몬드",
-    "Master": "마스터",
-    "Grandmaster": "그랜드마스터",
-}
-
-
-def translate_role_name(role_name):
-    return ROLE_LABELS.get(str(role_name), str(role_name))
-
-
-def translate_tier_name(tier_name):
-    return TIER_LABELS.get(str(tier_name), str(tier_name))
-
-
-@st.cache_data
-def load_data():
-    df = pd.read_csv("overwatch_competitive_stats.csv")
-
-    def is_degenerate_snapshot(snapshot_df):
-        if snapshot_df.empty:
-            return True
-
-        map_rows = snapshot_df[snapshot_df["map"].astype(str) != "all-maps"].copy()
-        if map_rows.empty:
-            return False
-
-        map_rows["win_rate"] = pd.to_numeric(map_rows.get("win_rate"), errors="coerce")
-        map_rows["pick_rate"] = pd.to_numeric(map_rows.get("pick_rate"), errors="coerce")
-
-        # If almost every hero-tier pair has only one map win/pick value,
-        # treat this snapshot as corrupted and fall back to an older date.
-        group_cols = ["hero", "data_tier"]
-        win_nunique = map_rows.groupby(group_cols)["win_rate"].nunique(dropna=True)
-        pick_nunique = map_rows.groupby(group_cols)["pick_rate"].nunique(dropna=True)
-        if win_nunique.empty or pick_nunique.empty:
-            return False
-
-        no_win_variance_ratio = (win_nunique <= 1).mean()
-        no_pick_variance_ratio = (pick_nunique <= 1).mean()
-        return no_win_variance_ratio >= 0.98 and no_pick_variance_ratio >= 0.98
-
-    if "update_date" in df.columns and not df.empty:
-        df["update_date"] = df["update_date"].astype(str)
-        selected_date = None
-        for candidate_date in sorted(df["update_date"].dropna().unique(), reverse=True):
-            candidate_df = df[df["update_date"] == candidate_date].copy()
-            if not is_degenerate_snapshot(candidate_df):
-                selected_date = candidate_date
-                break
-
-        if selected_date is None:
-            selected_date = df["update_date"].max()
-
-        df = df[df["update_date"] == selected_date].copy()
-
-    if "map" not in df.columns:
-        df["map"] = "all-maps"
-    if "map_name" not in df.columns:
-        df["map_name"] = df["map"]
-    if "role" not in df.columns:
-        df["role"] = "Unknown"
-
-    for col in ["win_rate", "pick_rate", "total_score"]:
-        if col in df.columns:
-            df[col] = pd.to_numeric(df[col], errors="coerce")
-
-    return df
-
-
-@st.cache_data
-def load_hero_portrait_map():
-    url = "https://overfast-api.tekrop.fr/heroes"
-    try:
-        with urllib.request.urlopen(url, timeout=20) as resp:
-            heroes = json.load(resp)
-    except Exception:
-        return {}
-    return {
-        hero.get("name"): hero.get("portrait")
-        for hero in heroes
-        if hero.get("name") and hero.get("portrait")
-    }
-
-
-HERO_NAME_TO_API_NAME = {
-    "D.VA": "D.Va",
-    "겐지": "Genji",
-    "도미나": "Domina",
-    "둠피스트": "Doomfist",
-    "라마트라": "Ramattra",
-    "라이프위버": "Lifeweaver",
-    "라인하르트": "Reinhardt",
-    "레킹볼": "Wrecking Ball",
-    "로드호그": "Roadhog",
-    "루시우": "Lúcio",
-    "리퍼": "Reaper",
-    "마우가": "Mauga",
-    "메르시": "Mercy",
-    "메이": "Mei",
-    "모이라": "Moira",
-    "미즈키": "Mizuki",
-    "바스티온": "Bastion",
-    "바티스트": "Baptiste",
-    "벤데타": "Vendetta",
-    "벤처": "Venture",
-    "브리기테": "Brigitte",
-    "소전": "Sojourn",
-    "솔저: 76": "Soldier: 76",
-    "솜브라": "Sombra",
-    "시그마": "Sigma",
-    "시메트라": "Symmetra",
-    "시에라": "Sierra",
-    "아나": "Ana",
-    "안란": "Anran",
-    "애쉬": "Ashe",
-    "에코": "Echo",
-    "엠레": "Emre",
-    "오리사": "Orisa",
-    "우양": "Wuyang",
-    "위도우메이커": "Widowmaker",
-    "윈스턴": "Winston",
-    "일리아리": "Illari",
-    "자리야": "Zarya",
-    "정커퀸": "Junker Queen",
-    "정크랫": "Junkrat",
-    "제트팩 캣": "Jetpack Cat",
-    "젠야타": "Zenyatta",
-    "주노": "Juno",
-    "캐서디": "Cassidy",
-    "키리코": "Kiriko",
-    "토르비욘": "Torbjörn",
-    "트레이서": "Tracer",
-    "파라": "Pharah",
-    "프레야": "Freja",
-    "한조": "Hanzo",
-    "해저드": "Hazard",
-}
-
-
-def get_hero_image_url(hero_name):
-    api_name = HERO_NAME_TO_API_NAME.get(hero_name, hero_name)
-    portrait_map = load_hero_portrait_map()
-    return portrait_map.get(api_name)
-
-
-@st.cache_data
-def load_map_image_map():
-    url = "https://overfast-api.tekrop.fr/maps"
-    try:
-        with urllib.request.urlopen(url, timeout=20) as resp:
-            maps_data = json.load(resp)
-    except Exception:
-        return {}
-    return {
-        m.get("key", "").lower(): m.get("screenshot")
-        for m in maps_data
-        if m.get("key") and m.get("screenshot")
-    }
-
-
-MAP_ID_ALIAS = {
-    "paraiso": "paraíso",
-    "esperanca": "esperança",
-}
-
-
-def get_map_image_url(map_id):
-    alias = MAP_ID_ALIAS.get(map_id, map_id)
-    image_map = load_map_image_map()
-    url = image_map.get(alias) or image_map.get(map_id)
-    return url if url else f"https://dummyimage.com/600x100/1f2937/475569.png&text={map_id}"
-
 
 PERK_DATA_PATH = "overwatch_hero_perks.csv"
 DEFAULT_PERK_IMAGE_URL = "https://dummyimage.com/48x48/1f2937/94a3b8.png&text=Perk"
@@ -268,7 +88,7 @@ if not hero_from_query:
 
 hero_name = str(hero_from_query)
 
-df_raw = load_data()
+df_raw = load_latest_stats()
 hero_summary_df = df_raw[(df_raw["hero"].astype(str) == hero_name) & (df_raw["map"] == "all-maps")].copy()
 
 if hero_summary_df.empty:
@@ -292,6 +112,7 @@ with tier_col:
         tier_candidates,
         index=tier_candidates.index(default_tier),
         format_func=translate_tier_name,
+        placeholder="티어 선택",
     )
 
 hero_tier_df = hero_summary_df[hero_summary_df["data_tier"] == selected_tier].copy()

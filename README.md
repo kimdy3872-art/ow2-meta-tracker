@@ -1,133 +1,180 @@
-# Overwatch Analysis
+# Overwatch 2 경쟁전 메타 분석 대시보드
 
-오버워치 2 경쟁전 메타를 시각화하는 Streamlit 기반 대시보드 프로젝트입니다.  
-티어별/포지션별 승률과 픽률을 바탕으로 영웅 랭크를 계산하고, 페이지별로 분포/비중/영웅 상세 정보를 확인할 수 있습니다.
+오버워치 2 경쟁전 데이터를 수집·분석하고, 티어별/포지션별 승률·픽률·밴률 기반의 영웅 랭크를 Streamlit으로 시각화하는 프로젝트입니다.
+
+---
 
 ## 주요 기능
 
-- 메인 대시보드
-  - 티어, 포지션, 정렬, 영웅 검색 필터
-  - 승률/픽률 기반 영웅 랭크 테이블 (S/A/B/C)
-  - 장인챔프(낮은 픽률 대비 높은 승률) 표시
-- 픽률/승률 분포 페이지
-  - 선택한 티어/포지션 기준 분포 시각화
-- 역할별 랭크 비중 페이지
-  - 포지션별 랭크 구성 비율 분석
-- 영웅 상세 페이지
-  - 특정 영웅의 상세 지표와 관련 정보 확인
-- 데이터 수집 자동화 스크립트
-  - 경쟁전 메타 데이터 수집: update.py
-  - 영웅 퍼크 데이터 수집: update_perk.py
+| 페이지 | 설명 |
+|---|---|
+| **메인** | 티어·포지션·영웅 필터, 승률/픽률/밴률 기반 S/A/B/C 랭크 테이블, 장인챔프 표시 |
+| **픽률/승률 분포** | 선택 티어·포지션 기준 분포 시각화 |
+| **영웅 시계열** | 영웅별 승률·픽률·밴률 변화 추이 확인 |
+| **영웅 상세** | 특정 영웅의 세부 지표 및 퍼크 정보 확인 |
 
-## 사용 기술
+---
 
-- Python
-- Streamlit
-- Pandas / NumPy
-- Plotly
-- Selenium (동적 페이지 크롤링)
+## 기술 스택
+
+| 분류 | 라이브러리 |
+|---|---|
+| 대시보드 | Streamlit |
+| 데이터 처리 | Pandas, NumPy |
+| 시각화 | Plotly |
+| 크롤링 | Selenium |
+
+---
 
 ## 프로젝트 구조
 
-```text
-Overwatch_analysis/
-├─ main.py
-├─ update.py
-├─ update_perk.py
-├─ requirements.txt
-├─ overwatch_competitive_stats.csv
-├─ overwatch_hero_perks.csv
-└─ pages/
-   ├─ 1_pick_win_distribution.py
-   ├─ 2_role_rank_share.py
-   └─ 3_hero_detail.py
 ```
+Overwatch_analysis/
+├── main.py                         # 메인 대시보드
+├── update.py                       # 경쟁전/퍼크 통합 수집
+├── update_perk.py                  # (호환용) update.py 래퍼
+├── requirements.txt
+├── overwatch_competitive_stats.csv  # (호환) 최신 CSV
+├── latest_tier.csv                  # (대시보드) 최신 CSV
+├── data/
+│   ├── latest/latest_tier.parquet   # (대시보드) 최신 Parquet
+│   └── history/weekly/year=YYYY/week=WW/tier_snapshot.parquet  # 주간 스냅샷
+├── overwatch_hero_perks.csv
+└── pages/
+    ├── 1_pick_win_distribution.py
+    ├── 2_hero_trends.py
+    └── 3_hero_detail.py
+```
+
+---
 
 ## 시작하기
 
-### 1) 저장소 클론
+### 1. 저장소 클론
 
 ```bash
 git clone <YOUR_REPOSITORY_URL>
 cd Overwatch_analysis
 ```
 
-### 2) 가상환경 생성 및 활성화
+### 2. 가상환경 생성 및 활성화
 
-macOS/Linux:
-
+**macOS / Linux**
 ```bash
 python3 -m venv venv
 source venv/bin/activate
 ```
 
-Windows (PowerShell):
-
+**Windows (PowerShell)**
 ```powershell
 python -m venv venv
 .\venv\Scripts\Activate.ps1
 ```
 
-### 3) 패키지 설치
+### 3. 패키지 설치
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4) 대시보드 실행
+### 4. 대시보드 실행
 
 ```bash
 streamlit run main.py
 ```
 
-브라우저에서 기본 주소(보통 http://localhost:8501)로 접속합니다.
+브라우저에서 `http://localhost:8501` 로 접속합니다.
+
+---
 
 ## 데이터 갱신
 
-### 경쟁전 통계 데이터 갱신
+### 경쟁전 통계
 
 ```bash
 python update.py
 ```
 
-- Blizzard 경쟁전 통계를 수집해 overwatch_competitive_stats.csv를 갱신합니다.
-- 동일 날짜에 재수집 시 중복을 제거하고 최신 값을 유지합니다.
+Blizzard 경쟁전 통계를 수집해 `overwatch_competitive_stats.csv`를 갱신합니다.  
+동일 날짜 재수집 시 중복을 제거하고 최신 값을 유지합니다.
+최신 데이터는 CSV(`latest_tier.csv`, `overwatch_competitive_stats.csv`)와 Parquet(`data/latest/latest_tier.parquet`)로 저장됩니다.
+주간(월요일)마다 `data/history/weekly/year=YYYY/week=WW/tier_snapshot.parquet`에 스냅샷이 누적됩니다.
 
-### 영웅 퍼크 데이터 갱신
-
-```bash
-python update_perk.py
-```
-
-- OW Perks 데이터를 수집해 overwatch_hero_perks.csv를 갱신합니다.
-- 옵션 예시:
+### 영웅 퍼크
 
 ```bash
-python update_perk.py --max-heroes 5
-python update_perk.py --locale ko --output overwatch_hero_perks.csv
+python update.py --mode perks
+
+# 옵션 예시
+python update.py --mode perks --max-heroes 5
+python update.py --mode perks --locale ko --output overwatch_hero_perks.csv
 ```
 
-## 데이터 컬럼 (요약)
+OW Perks 데이터를 수집해 `overwatch_hero_perks.csv`를 갱신합니다.
 
-### overwatch_competitive_stats.csv
+### 통합 실행 (권장)
 
-- hero, role, data_tier
-- map, map_name, update_date
-- win_rate, pick_rate
-- win_rate_z, pick_rate_log, pick_rate_z
-- total_score, rank
+```bash
+python update.py --mode all
+```
 
-### overwatch_hero_perks.csv
+경쟁전 통계와 퍼크 데이터를 한 번에 갱신합니다.
 
-- hero, hero_slug, role, category
-- perk_type, perk_name, pick_rate
-- perk_slug, perk_image_url, perk_image_raw_url
-- hero_image_url, source_url, update_date
+---
 
-## 실행 환경 메모
+## 데이터 컬럼 및 저장 구조
 
-- Selenium 기반 크롤링을 위해 Chrome(또는 Chromium) 실행 환경이 필요합니다.
-- Streamlit은 최신 수집일(update_date) 데이터를 중심으로 시각화합니다.
+
+### 주요 저장 파일
+
+- **최신 CSV**: `latest_tier.csv` (대시보드), `overwatch_competitive_stats.csv` (호환)
+- **최신 Parquet**: `data/latest/latest_tier.parquet`
+- **주간 스냅샷**: `data/history/weekly/year=YYYY/week=WW/tier_snapshot.parquet`
+
+### 경쟁전 통계 컬럼
+
+| 컬럼 | 설명 |
+|---|---|
+| hero, role, data_tier | 영웅, 역할, 티어 |
+| map, map_name, update_date | 맵 정보, 수집일 |
+| win_rate, pick_rate, ban_rate | 승률, 픽률, 밴률 |
+| win_rate_z, pick_rate_log, pick_rate_z, ban_rate_log, ban_rate_z | 정규화 지표 |
+| total_score, rank | 종합 점수, 랭크 (밴률 반영) |
+
+
+### 영웅 랭크 산정 공식
+
+모든 값은 티어·맵별로 표준화(z-score) 후 아래 가중치로 합산합니다.
+
+```
+total_score = 0.5 * z(win_rate)
+            + 0.3 * z(log(1 + pick_rate))
+            + 0.2 * z(log(1 + ban_rate))
+```
+
+랭크는 S/A/B/C 4분위로 자동 분할됩니다.
+
+### `overwatch_hero_perks.csv`
+
+| 컬럼 | 설명 |
+|---|---|
+| hero, hero_slug, role, category | 영웅 기본 정보 |
+| perk_type, perk_name, pick_rate | 퍼크 정보 |
+| perk_slug, perk_image_url, perk_image_raw_url | 퍼크 이미지 |
+| hero_image_url, source_url, update_date | 출처 및 수집일 |
+
+---
+
+## 참고 및 자동화
+
+- Selenium 크롤링을 위해 **Chrome 또는 Chromium** 실행 환경이 필요합니다.
+- 대시보드는 가장 최근 수집일(`update_date`) 또는 최신 Parquet(`data/latest/latest_tier.parquet`) 기준으로 시각화합니다.
+
+### 자동화 워크플로
+
+GitHub Actions 등에서 `python update.py --mode all`을 주기적으로 실행하면 최신/주간 데이터가 자동 적재됩니다.
+주간 스냅샷은 월요일(요일 변경 가능)에만 생성됩니다.
+
 
 ## 향후 개선 아이디어
 

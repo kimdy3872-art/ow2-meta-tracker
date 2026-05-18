@@ -1,11 +1,16 @@
 import streamlit as st
 import pandas as pd
-import urllib.request
 import urllib.parse
-import json
 import html
+from app_data import (
+    ROLE_ORDER,
+    TIER_ORDER,
+    get_hero_image_url,
+    load_latest_stats,
+    translate_role_name,
+    translate_tier_name,
+)
 from ui import (
-    GLOBAL_ACCENT_COLOR,
     GLOBAL_BG_COLOR,
     GLOBAL_BORDER_COLOR,
     GLOBAL_FONT_FAMILY,
@@ -35,60 +40,7 @@ st.markdown("<div style='height: 0.25rem;'></div>", unsafe_allow_html=True)
 # -------------------------------------------------
 # 2. 데이터 로드
 # -------------------------------------------------
-@st.cache_data
-def load_data():
-    df = pd.read_csv("overwatch_competitive_stats.csv")
-
-    def is_degenerate_snapshot(snapshot_df):
-        if snapshot_df.empty:
-            return True
-
-        map_rows = snapshot_df[snapshot_df["map"].astype(str) != "all-maps"].copy()
-        if map_rows.empty:
-            return False
-
-        map_rows["win_rate"] = pd.to_numeric(map_rows.get("win_rate"), errors="coerce")
-        map_rows["pick_rate"] = pd.to_numeric(map_rows.get("pick_rate"), errors="coerce")
-
-        group_cols = ["hero", "data_tier"]
-        win_nunique = map_rows.groupby(group_cols)["win_rate"].nunique(dropna=True)
-        pick_nunique = map_rows.groupby(group_cols)["pick_rate"].nunique(dropna=True)
-        if win_nunique.empty or pick_nunique.empty:
-            return False
-
-        no_win_variance_ratio = (win_nunique <= 1).mean()
-        no_pick_variance_ratio = (pick_nunique <= 1).mean()
-        return no_win_variance_ratio >= 0.98 and no_pick_variance_ratio >= 0.98
-
-    if "update_date" in df.columns and not df.empty:
-        df["update_date"] = df["update_date"].astype(str)
-        selected_date = None
-        for candidate_date in sorted(df["update_date"].dropna().unique(), reverse=True):
-            candidate_df = df[df["update_date"] == candidate_date].copy()
-            if not is_degenerate_snapshot(candidate_df):
-                selected_date = candidate_date
-                break
-
-        if selected_date is None:
-            selected_date = df["update_date"].max()
-
-        df = df[df["update_date"] == selected_date].copy()
-
-    if "map" not in df.columns:
-        df["map"] = "all-maps"
-    if "map_name" not in df.columns:
-        df["map_name"] = df["map"]
-    if "role" not in df.columns:
-        df["role"] = "Unknown"
-
-    numeric_cols = ["win_rate", "pick_rate", "win_rate_z", "pick_rate_log", "pick_rate_z", "total_score"]
-    for col in numeric_cols:
-        if col in df.columns:
-            df[col] = pd.to_numeric(df[col], errors="coerce")
-
-    return df
-
-df_raw = load_data()
+df_raw = load_latest_stats()
 
 if "update_date" in df_raw.columns and not df_raw.empty:
     base_date = str(df_raw["update_date"].iloc[0])
@@ -100,32 +52,8 @@ st.caption(f"데이터 기준일: {base_date}")
 # -------------------------------------------------
 # 3. 메인 상단 필터
 # -------------------------------------------------
-roles = ["Tank", "Damage", "Support"]
-tiers = ["All", "Bronze", "Silver", "Gold", "Platinum", "Diamond", "Master", "Grandmaster"]
-TIER_LABELS = {
-    "All": "전체 티어",
-    "Bronze": "브론즈",
-    "Silver": "실버",
-    "Gold": "골드",
-    "Platinum": "플래티넘",
-    "Diamond": "다이아몬드",
-    "Master": "마스터",
-    "Grandmaster": "그랜드마스터",
-}
-ROLE_LABELS = {
-    "All": "전체 포지션",
-    "Tank": "돌격",
-    "Damage": "공격",
-    "Support": "지원",
-}
-
-
-def translate_tier_name(tier_name):
-    return TIER_LABELS.get(tier_name, tier_name)
-
-
-def translate_role_name(role_name):
-    return ROLE_LABELS.get(role_name, role_name)
+roles = [role for role in ROLE_ORDER if role != "All"]
+tiers = TIER_ORDER
 
 
 def render_metric_card(title, value, accent_color="#0b69ff"):
@@ -187,7 +115,6 @@ with st.container():
             tiers,
             key="selected_tier",
             format_func=translate_tier_name,
-            label_visibility="collapsed",
             placeholder="티어",
         )
     with c2:
@@ -196,7 +123,6 @@ with st.container():
             ["All"] + roles,
             key="selected_role",
             format_func=translate_role_name,
-            label_visibility="collapsed",
             placeholder="포지션",
         )
     with c3:
@@ -204,7 +130,6 @@ with st.container():
             "정렬",
             ["종합 점수", "승률", "픽률"],
             key="sort_by",
-            label_visibility="collapsed",
             placeholder="정렬",
         )
     with c4:
@@ -212,12 +137,27 @@ with st.container():
             "영웅 검색",
             key="search_hero",
             placeholder="영웅 검색",
-            label_visibility="collapsed",
         )
     with c5:
-        st.button("초기화", use_container_width=True, on_click=reset_filters)
+        st.markdown("<div class='ow-filter-action-spacer'></div>", unsafe_allow_html=True)
+        st.button("초기화", width="stretch", on_click=reset_filters)
 
-st.divider()
+st.markdown(
+    f"""
+    <style>
+    .ow-top4-divider {{
+        height: 1px;
+        background: rgba(66, 88, 126, 0.55);
+        margin: 8px 0 10px;
+    }}
+    .ow-top4-divider.after {{
+        margin: 8px 0 12px;
+    }}
+    </style>
+    <div class="ow-top4-divider"></div>
+    """,
+    unsafe_allow_html=True,
+)
 
 # -------------------------------------------------
 # 4. 데이터 필터링
@@ -265,84 +205,6 @@ if not df_filtered.empty:
     else:
         df_filtered["display_size"] = 1
 
-# -------------------------------------------------
-# 8. 영웅 초상화 URL 매핑
-# -------------------------------------------------
-@st.cache_data
-def load_hero_portrait_map():
-    url = "https://overfast-api.tekrop.fr/heroes"
-    try:
-        with urllib.request.urlopen(url, timeout=20) as resp:
-            heroes = json.load(resp)
-    except Exception:
-        return {}
-    return {
-        hero.get("name"): hero.get("portrait")
-        for hero in heroes
-        if hero.get("name") and hero.get("portrait")
-    }
-
-HERO_NAME_TO_API_NAME = {
-    "D.VA": "D.Va",
-    "겐지": "Genji",
-    "도미나": "Domina",
-    "둠피스트": "Doomfist",
-    "라마트라": "Ramattra",
-    "라이프위버": "Lifeweaver",
-    "라인하르트": "Reinhardt",
-    "레킹볼": "Wrecking Ball",
-    "로드호그": "Roadhog",
-    "루시우": "Lúcio",
-    "리퍼": "Reaper",
-    "마우가": "Mauga",
-    "메르시": "Mercy",
-    "메이": "Mei",
-    "모이라": "Moira",
-    "미즈키": "Mizuki",
-    "바스티온": "Bastion",
-    "바티스트": "Baptiste",
-    "벤데타": "Vendetta",
-    "벤처": "Venture",
-    "브리기테": "Brigitte",
-    "소전": "Sojourn",
-    "솔저: 76": "Soldier: 76",
-    "솜브라": "Sombra",
-    "시그마": "Sigma",
-    "시메트라": "Symmetra",
-    "시에라": "Sierra",
-    "아나": "Ana",
-    "안란": "Anran",
-    "애쉬": "Ashe",
-    "에코": "Echo",
-    "엠레": "Emre",
-    "오리사": "Orisa",
-    "우양": "Wuyang",
-    "위도우메이커": "Widowmaker",
-    "윈스턴": "Winston",
-    "일리아리": "Illari",
-    "자리야": "Zarya",
-    "정커퀸": "Junker Queen",
-    "정크랫": "Junkrat",
-    "제트팩 캣": "Jetpack Cat",
-    "젠야타": "Zenyatta",
-    "주노": "Juno",
-    "캐서디": "Cassidy",
-    "키리코": "Kiriko",
-    "토르비욘": "Torbjörn",
-    "트레이서": "Tracer",
-    "파라": "Pharah",
-    "프레야": "Freja",
-    "한조": "Hanzo",
-    "해저드": "Hazard",
-}
-
-
-def get_hero_image_url(hero_name):
-    api_name = HERO_NAME_TO_API_NAME.get(hero_name, hero_name)
-    portrait_map = load_hero_portrait_map()
-    return portrait_map.get(api_name)
-
-
 def render_rank_table_html(df):
     rank_color_map = {
         "S": "#ef4444",
@@ -353,7 +215,7 @@ def render_rank_table_html(df):
 
     styles = """
     <style>
-    .overwatch-table {border-collapse: collapse; width: 100%; font-family: "Apple SD Gothic Neo", "Segoe UI", sans-serif;}
+    .overwatch-table {border-collapse: collapse; width: 100%; font-family: __GLOBAL_FONT_FAMILY__;}
     .overwatch-table th, .overwatch-table td {border: 1px solid __GLOBAL_BORDER_COLOR__; padding: 11px 13px; vertical-align: middle; color: __GLOBAL_TEXT_COLOR__; font-size: 0.92rem;}
     .overwatch-table {background-color: __GLOBAL_BG_COLOR__;}
     .overwatch-table th {background-color: __GLOBAL_SURFACE_COLOR__; color: #f8fafc; font-weight: 700; font-size: 0.9rem; letter-spacing: 0.03em; text-transform: uppercase;}
@@ -370,6 +232,7 @@ def render_rank_table_html(df):
     .rate-fill {height: 100%; border-radius: 999px;}
     .rate-fill.pick {background: #60a5fa;}
     .rate-fill.win {background: #34d399;}
+    .rate-fill.ban {background: #f87171;}
     .rate-text {font-size: 0.85rem; color: __GLOBAL_TEXT_COLOR__; margin-top: 6px;}
     .header-note {font-size: 0.9rem; color: #cbd5e1; margin-bottom: 8px;}
     </style>
@@ -378,6 +241,7 @@ def render_rank_table_html(df):
     styles = styles.replace("__GLOBAL_TEXT_COLOR__", GLOBAL_TEXT_COLOR)
     styles = styles.replace("__GLOBAL_BORDER_COLOR__", GLOBAL_BORDER_COLOR)
     styles = styles.replace("__GLOBAL_SURFACE_COLOR__", GLOBAL_SURFACE_COLOR)
+    styles = styles.replace("__GLOBAL_FONT_FAMILY__", GLOBAL_FONT_FAMILY)
     rows = []
     for _, row in df.iterrows():
         hero_name = str(row["hero"])
@@ -396,6 +260,7 @@ def render_rank_table_html(df):
         role = html.escape(translate_role_name(str(row["role"])))
         win_rate = f"{row['win_rate']:.1f}%"
         pick_rate = f"{row['pick_rate']:.1f}%"
+        ban_rate_val = pd.to_numeric(row.get("ban_rate", None), errors="coerce")
         rank = html.escape(str(row["rank"]))
         rank_color = rank_color_map.get(str(row["rank"]), GLOBAL_TEXT_COLOR)
         hero_url = get_hero_image_url(row["hero"])
@@ -409,13 +274,21 @@ def render_rank_table_html(df):
             f"<div class='rate-bar'><div class='rate-fill win' style='width:{min(max(row['win_rate'],0),100)}%'></div></div>"
             f"<div class='rate-text'>{win_rate}</div>"
         )
+        if pd.notna(ban_rate_val):
+            ban_rate_str = f"{ban_rate_val:.1f}%"
+            ban_html = (
+                f"<div class='rate-bar'><div class='rate-fill ban' style='width:{min(max(ban_rate_val,0),100)}%'></div></div>"
+                f"<div class='rate-text'>{ban_rate_str}</div>"
+            )
+        else:
+            ban_html = "<div class='rate-text' style='color:#6b7280;'>-</div>"
         rows.append(
-            f"<tr><td class='portrait-cell'>{img_html}</td><td class='hero-cell'>{hero_cell_html}</td><td class='role-cell'>{role}</td><td class='rate-cell'>{win_html}</td><td class='rate-cell'>{pick_html}</td><td class='rank-cell' style='color:{rank_color};'>{rank}</td></tr>"
+            f"<tr><td class='portrait-cell'>{img_html}</td><td class='hero-cell'>{hero_cell_html}</td><td class='role-cell'>{role}</td><td class='rate-cell'>{win_html}</td><td class='rate-cell'>{pick_html}</td><td class='rate-cell'>{ban_html}</td><td class='rank-cell' style='color:{rank_color};'>{rank}</td></tr>"
         )
     table_html = (
         styles
         + "<table class='overwatch-table'><thead><tr>"
-        + "<th>Portrait</th><th>영웅</th><th>포지션</th><th>승률</th><th>픽률</th><th>랭크</th>"
+        + "<th>Portrait</th><th>영웅</th><th>포지션</th><th>승률</th><th>픽률</th><th>밴률</th><th>랭크</th>"
         + "</tr></thead><tbody>"
         + "".join(rows)
         + "</tbody></table>"
@@ -431,46 +304,121 @@ if df_filtered.empty:
     st.stop()
 
 # -------------------------------------------------
-# 9. 상단 요약 지표
+# 9. 상단 요약 지표 — 밴률/승률/픽률 TOP 4 순환
 # -------------------------------------------------
-top_hero = df_filtered.sort_values(
-    "total_score",
-    ascending=False
-).iloc[0]["hero"]
+import streamlit.components.v1 as _ow_components
 
-m1, m2, m3 = st.columns(3)
 
-with m1:
-    st.markdown(
-        render_metric_card(
-            f"{translate_tier_name(selected_tier)} 1위 영웅",
-            top_hero,
-            accent_color="#f8fafc",
-        ),
-        unsafe_allow_html=True,
+def _build_top4_slide(metric_col, label, top4_df):
+    _rank_colors = {1: "#ef4444", 2: "#f59e0b", 3: "#22c55e", 4: "#60a5fa"}
+    is_pick_slide = label == "픽률"
+    title_font_size = "0.82rem" if is_pick_slide else "0.72rem"
+    badge_font_size = "0.72rem" if is_pick_slide else "0.68rem"
+    hero_font_size = "0.98rem" if is_pick_slide else "0.93rem"
+    value_font_size = "1.42rem" if is_pick_slide else "1.3rem"
+    cards = []
+    for i in range(4):
+        rank = i + 1
+        accent = _rank_colors[rank]
+        if i < len(top4_df):
+            row = top4_df.iloc[i]
+            hero_name = str(row["hero"])
+            val = row[metric_col]
+            val = float(val) if pd.notna(val) else 0.0
+            value_str = f"{val:.1f}%"
+            img_url = get_hero_image_url(hero_name)
+        else:
+            hero_name = "-"
+            value_str = "-"
+            img_url = None
+        img_part = (
+            f'<img src="{html.escape(img_url)}" style="width:48px;height:48px;border-radius:10px;object-fit:cover;flex-shrink:0;">'
+            if img_url
+            else '<div style="width:48px;height:48px;border-radius:10px;background:#1f2937;flex-shrink:0;"></div>'
+        )
+        safe = html.escape(hero_name)
+        cards.append(
+            f'<div style="background:linear-gradient(135deg,{GLOBAL_SURFACE_COLOR} 0%,#0f1b31 100%);'
+            f'border:1px solid {GLOBAL_BORDER_COLOR};border-radius:14px;padding:8px 14px;'
+            f'display:flex;align-items:center;gap:12px;">'
+            f'{img_part}'
+            f'<div style="flex:1;min-width:0;">'
+            f'<div style="display:inline-block;padding:2px 7px;border-radius:999px;'
+            f'background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.3);'
+            f'color:#bfdbfe;font-size:{badge_font_size};font-weight:700;margin-bottom:3px;">{label} {rank}위</div>'
+            f'<div style="color:{GLOBAL_TEXT_COLOR};font-size:{hero_font_size};font-weight:700;'
+            f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{safe}</div>'
+            f'</div>'
+            f'<div style="color:{accent};font-size:{value_font_size};font-weight:800;flex-shrink:0;">{value_str}</div>'
+            f'</div>'
+        )
+    grid = (
+        '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">'
+        + "".join(cards)
+        + "</div>"
+    )
+    return (
+        f'<div style="color:#94a3b8;font-size:{title_font_size};font-weight:700;letter-spacing:0.06em;'
+        f'text-transform:uppercase;margin-bottom:5px;">{label} TOP 4</div>'
+        + grid
     )
 
-with m2:
-    st.markdown(
-        render_metric_card(
-            "해당 구간 평균 승률",
-            f"{df_filtered['win_rate'].mean():.1f}%",
-            accent_color="#34d399",
-        ),
-        unsafe_allow_html=True,
-    )
 
-with m3:
-    st.markdown(
-        render_metric_card(
-            "분석 대상 영웅 수",
-            f"{len(df_filtered)}명",
-            accent_color="#60a5fa",
-        ),
-        unsafe_allow_html=True,
-    )
+if "ban_rate" in df_filtered.columns:
+    _ban_top4 = df_filtered[df_filtered["ban_rate"].notna()].sort_values("ban_rate", ascending=False).head(4)
+else:
+    _ban_top4 = pd.DataFrame(columns=["hero", "ban_rate"])
 
-st.divider()
+_win_top4 = df_filtered[df_filtered["win_rate"].notna()].sort_values("win_rate", ascending=False).head(4)
+_pick_top4 = df_filtered[df_filtered["pick_rate"].notna()].sort_values("pick_rate", ascending=False).head(4)
+
+_slides = [
+    _build_top4_slide("ban_rate", "밴률", _ban_top4),
+    _build_top4_slide("win_rate", "승률", _win_top4),
+    _build_top4_slide("pick_rate", "픽률", _pick_top4),
+]
+
+_slides_markup = ""
+for _i, _s in enumerate(_slides):
+    _cls = "ow-slide ow-active" if _i == 0 else "ow-slide"
+    _slides_markup += f'<div class="{_cls}" id="owSlide{_i}">{_s}</div>'
+
+_dots_markup = ""
+for _i in range(3):
+    _cls = "ow-dot ow-dot-active" if _i == 0 else "ow-dot"
+    _dots_markup += f'<div class="{_cls}" onclick="owGoTo({_i})"></div>'
+
+_ow_components.html(f"""
+<style>
+*{{box-sizing:border-box;margin:0;padding:0;font-family:{GLOBAL_FONT_FAMILY};}}
+@keyframes owFade{{from{{opacity:0;transform:translateY(5px)}}to{{opacity:1;transform:translateY(0)}}}}
+@keyframes owProg{{from{{width:0%}}to{{width:100%}}}}
+.ow-slide{{display:none}}.ow-slide.ow-active{{display:block;animation:owFade .55s ease}}
+.ow-dot{{width:8px;height:8px;border-radius:50%;background:#374151;cursor:pointer;display:inline-block;transition:background .3s,transform .2s}}
+.ow-dot:hover{{background:#60a5fa;transform:scale(1.3)}}.ow-dot-active{{background:#60a5fa!important;transform:scale(1.2)}}
+</style>
+<div>
+  {_slides_markup}
+  <div style="height:2px;background:#1f2937;border-radius:1px;overflow:hidden;margin-top:7px;">
+    <div id="owFill" style="height:100%;background:#3b82f6;border-radius:1px;animation:owProg 10s linear infinite;width:0;"></div>
+  </div>
+  <div style="display:flex;justify-content:center;gap:8px;margin-top:7px;">{_dots_markup}</div>
+</div>
+<script>
+var owC=0,owN=3;
+var owS=document.querySelectorAll('.ow-slide');
+var owD=document.querySelectorAll('.ow-dot');
+var owF=document.getElementById('owFill');
+function owGoTo(i){{
+  owS[owC].classList.remove('ow-active');owD[owC].classList.remove('ow-dot-active');
+  owC=i;owS[owC].classList.add('ow-active');owD[owC].classList.add('ow-dot-active');
+  owF.style.animation='none';void owF.offsetWidth;owF.style.animation='owProg 10s linear infinite';
+}}
+setInterval(function(){{owGoTo((owC+1)%owN)}},10000);
+</script>
+""", height=112, scrolling=False)
+
+st.markdown('<div class="ow-top4-divider after"></div>', unsafe_allow_html=True)
 
 st.subheader("🏆 영웅 랭크 순위표")
 st.caption("영웅 이름을 클릭하면 상세 페이지로 이동합니다.")
@@ -479,7 +427,7 @@ with st.expander("랭크는 어떻게 산정되나요?"):
     st.markdown(
         """
         - 랭크는 티어/포지션/전장(all-maps) 필터 기준의 종합 지표로 산정됩니다.
-        - 기본적으로 승률과 픽률 기반 점수를 함께 반영해 `S > A > B > C`로 구간화합니다.
+        - 기본적으로 승률과 픽률, 밴률 기반 점수를 함께 반영해 `S > A > B > C`로 구간화합니다.
         - 표의 정렬 기준(종합 점수/승률/픽률)을 바꾸면 같은 집합 내 우선순위가 달라집니다.
         - 데이터는 최신 수집일 기준으로만 비교됩니다.
         """
@@ -500,17 +448,12 @@ sort_col = {
     "픽률": "pick_rate"
 }.get(sort_by, "total_score")
 
+# 밴률 컬럼이 있으면 포함
+display_cols = ["hero", "role", "win_rate", "pick_rate", "ban_rate", "rank", "is_master"] if "ban_rate" in df_filtered.columns else ["hero", "role", "win_rate", "pick_rate", "rank", "is_master"]
 display_df = df_filtered.sort_values(
     sort_col,
     ascending=False
-)[[
-    "hero",
-    "role",
-    "win_rate",
-    "pick_rate",
-    "rank",
-    "is_master",
-]]
+)[display_cols]
 
 if not display_df.empty:
     st.markdown(render_rank_table_html(display_df), unsafe_allow_html=True)

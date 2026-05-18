@@ -1,0 +1,64 @@
+name: Weekly & Latest Data Update
+
+on:
+  schedule:
+    # 매주 월요일 00:00 UTC (한국 시간 09:00)에 실행
+    - cron: '0 0 * * 1'
+  # 수동으로도 실행 가능하게 설정
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Clear webdriver-manager cache
+        run: |
+          rm -rf ~/.wdm .wdm
+      
+      - name: Run update.py (Stats + Perk Crawler)
+        env:
+          MAX_WORKERS: "2"
+        run: python update.py --mode all
+        #
+        # 주요 산출물:
+        # - latest_tier.csv, overwatch_competitive_stats.csv (최신 CSV)
+        # - data/latest/latest_tier.parquet (최신 Parquet)
+        # - data/history/weekly/year=YYYY/week=WW/tier_snapshot.parquet (주간)
+      
+      - name: Configure Git
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+      
+      - name: Commit and Push changes
+        run: |
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: Monthly data update - $(date +'%Y-%m-%d')"
+            BRANCH="${GITHUB_REF_NAME:-main}"
+            git fetch origin "$BRANCH"
+            git rebase "origin/$BRANCH"
+            git push origin "HEAD:$BRANCH"
+          else
+            echo "No changes to commit"
+          fi

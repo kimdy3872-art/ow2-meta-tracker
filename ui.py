@@ -30,6 +30,13 @@ def apply_global_theme() -> None:
             --app-muted: {GLOBAL_MUTED_TEXT_COLOR};
             --app-accent: {GLOBAL_ACCENT_COLOR};
             --app-font: {GLOBAL_FONT_FAMILY};
+            --app-menu-bg: #08111f;
+            --app-menu-surface: #0d1a2e;
+            --app-menu-hover: #172d4d;
+            --app-menu-selected: #1d426f;
+            --app-menu-text: #f2f7ff;
+            --app-menu-muted: #a9bddc;
+            --app-menu-border: #3b5f92;
             --primary-color: {GLOBAL_ACCENT_COLOR};
             --background-color: {GLOBAL_BG_COLOR};
             --secondary-background-color: {GLOBAL_SURFACE_COLOR};
@@ -111,9 +118,12 @@ def apply_global_theme() -> None:
         button[data-testid^="stBaseButton-"] {{
             border-radius: 12px !important;
             border: 1px solid var(--app-border) !important;
-            min-height: 42px !important;
+            min-height: 44px !important;
             background: linear-gradient(180deg, rgba(18,31,54,0.95), rgba(13,23,42,0.95)) !important;
             color: var(--app-text) !important;
+            font-size: 0.92rem !important;
+            font-weight: 760 !important;
+            letter-spacing: 0.01em !important;
             transition: all 0.18s ease;
         }}
 
@@ -131,28 +141,62 @@ def apply_global_theme() -> None:
             box-shadow: 0 0 0 1px rgba(86, 216, 255, 0.25), 0 8px 20px rgba(16, 184, 255, 0.28) !important;
         }}
 
+        [data-testid="stWidgetLabel"] {{
+            margin-bottom: 0.36rem !important;
+        }}
+
+        [data-testid="stWidgetLabel"] p {{
+            color: var(--app-muted) !important;
+            font-size: 0.76rem !important;
+            font-weight: 820 !important;
+            letter-spacing: 0.06em !important;
+            line-height: 1.15 !important;
+        }}
+
+        .stSelectbox,
+        .stMultiSelect,
+        .stTextInput,
+        .stSlider {{
+            margin-bottom: 0.35rem !important;
+        }}
+
+        .stSelectbox [data-baseweb="select"],
+        .stMultiSelect [data-baseweb="select"] {{
+            background: transparent !important;
+        }}
+
+        .stSelectbox [data-baseweb="select"] [data-baseweb="popover"],
+        .stMultiSelect [data-baseweb="select"] [data-baseweb="popover"] {{
+            color-scheme: dark !important;
+        }}
+
         .stSelectbox [data-baseweb="select"] > div,
+        .stMultiSelect [data-baseweb="select"] > div,
         [data-baseweb="input"],
         [data-testid="stTextInputRootElement"],
         [data-baseweb="input"] > div,
         .stTextArea textarea,
         .stNumberInput input {{
             border-radius: 12px !important;
-            border: 1px solid var(--app-border) !important;
-            background: rgba(13, 23, 42, 0.92) !important;
+            border: 1px solid rgba(79, 119, 181, 0.72) !important;
+            min-height: 44px !important;
+            background: linear-gradient(180deg, rgba(18,31,54,0.96), rgba(10,18,33,0.96)) !important;
             color: var(--app-text) !important;
-            box-shadow: none !important;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 8px 18px rgba(2,6,23,0.16) !important;
+            transition: border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease !important;
         }}
 
         .stTextInput [data-baseweb="input"] > div,
         .stTextInput div[data-baseweb="input"] > div,
         div[data-baseweb="base-input"] > div {{
-            border: 1px solid var(--app-border) !important;
+            border: 1px solid rgba(79, 119, 181, 0.72) !important;
             border-radius: 12px !important;
             box-shadow: none !important;
-            background: rgba(13, 23, 42, 0.92) !important;
+            background: transparent !important;
         }}
 
+        .stSelectbox [data-baseweb="select"] *,
+        .stMultiSelect [data-baseweb="select"] *,
         .stTextInput input,
         .stTextInput input:focus,
         .stTextInput input:focus-visible {{
@@ -162,15 +206,25 @@ def apply_global_theme() -> None:
             background: transparent !important;
             color: var(--app-text) !important;
             -webkit-text-fill-color: var(--app-text) !important;
+            font-size: 0.94rem !important;
+            font-weight: 650 !important;
         }}
 
+        .stTextInput input::placeholder,
+        [data-baseweb="select"] input::placeholder {{
+            color: rgba(143, 167, 204, 0.78) !important;
+            -webkit-text-fill-color: rgba(143, 167, 204, 0.78) !important;
+        }}
+
+        .stSelectbox [data-baseweb="select"]:focus-within > div,
+        .stMultiSelect [data-baseweb="select"]:focus-within > div,
         [data-baseweb="input"]:focus-within > div,
         [data-baseweb="input"]:focus-within,
         [data-testid="stTextInputRootElement"]:focus-within,
         [data-baseweb="input"] > div:focus-within,
         .stTextInput div[data-baseweb="input"]:focus-within > div {{
             border-color: var(--app-accent) !important;
-            box-shadow: 0 0 0 1px rgba(55, 208, 255, 0.35) !important;
+            box-shadow: 0 0 0 1px rgba(55, 208, 255, 0.42), 0 10px 22px rgba(2,6,23,0.22) !important;
             outline: none !important;
         }}
 
@@ -183,22 +237,130 @@ def apply_global_theme() -> None:
         }}
 
         .stSelectbox svg,
+        .stMultiSelect svg,
         [data-baseweb="select"] svg {{
-            color: var(--app-text) !important;
-            fill: var(--app-text) !important;
+            color: var(--app-muted) !important;
+            fill: var(--app-muted) !important;
         }}
 
-        [data-baseweb="popover"],
-        [data-baseweb="menu"],
-        [role="listbox"] {{
-            background: rgba(10, 18, 33, 0.98) !important;
-            border: 1px solid var(--app-border) !important;
+        body [data-baseweb="popover"],
+        body [data-baseweb="popover"] > div,
+        body [data-baseweb="popover"] > div > div,
+        body [data-baseweb="popover"] [data-baseweb],
+        body [data-baseweb="popover"] [data-baseweb="menu"],
+        body [data-baseweb="popover"] [data-baseweb="select-dropdown"],
+        body [data-baseweb="popover"] [role="listbox"],
+        body [data-baseweb="popover"] ul,
+        div[data-baseweb="popover"],
+        div[data-baseweb="popover"] > div,
+        div[data-baseweb="popover"] [role="listbox"] {{
+            background: var(--app-menu-bg) !important;
+            background-color: var(--app-menu-bg) !important;
+            color: var(--app-menu-text) !important;
+            color-scheme: dark !important;
+        }}
+
+        body [data-baseweb="popover"],
+        div[data-baseweb="popover"] {{
+            border: 1px solid var(--app-menu-border) !important;
             border-radius: 12px !important;
-            color: var(--app-text) !important;
+            color: var(--app-menu-text) !important;
+            box-shadow: 0 18px 38px rgba(2, 6, 23, 0.5) !important;
+            overflow: hidden !important;
         }}
 
-        [role="option"]:hover {{
-            background: rgba(55, 208, 255, 0.2) !important;
+        body [data-baseweb="popover"] [role="option"],
+        body [data-baseweb="popover"] [data-baseweb="menu"] li,
+        body [data-baseweb="popover"] li,
+        div[data-baseweb="popover"] [role="option"],
+        div[data-baseweb="popover"] li {{
+            background: var(--app-menu-bg) !important;
+            background-color: var(--app-menu-bg) !important;
+            color: var(--app-menu-text) !important;
+            font-size: 0.92rem !important;
+            font-weight: 620 !important;
+        }}
+
+        body [data-baseweb="popover"] [role="option"] *,
+        body [data-baseweb="popover"] [data-baseweb="menu"] li *,
+        body [data-baseweb="popover"] li *,
+        div[data-baseweb="popover"] [role="option"] *,
+        div[data-baseweb="popover"] li * {{
+            color: var(--app-menu-text) !important;
+            -webkit-text-fill-color: var(--app-menu-text) !important;
+            background-color: transparent !important;
+        }}
+
+        body [data-baseweb="popover"] [role="option"]:hover,
+        body [data-baseweb="popover"] [role="option"]:hover *,
+        body [data-baseweb="popover"] [data-highlighted="true"],
+        body [data-baseweb="popover"] [data-baseweb="menu"] li:hover,
+        body [data-baseweb="popover"] li:hover,
+        div[data-baseweb="popover"] [role="option"]:hover,
+        div[data-baseweb="popover"] li:hover {{
+            background: var(--app-menu-hover) !important;
+            background-color: var(--app-menu-hover) !important;
+        }}
+
+        body [data-baseweb="popover"] [aria-selected="true"],
+        body [data-baseweb="popover"] [role="option"][aria-selected="true"],
+        div[data-baseweb="popover"] [aria-selected="true"],
+        div[data-baseweb="popover"] [role="option"][aria-selected="true"] {{
+            background: var(--app-menu-selected) !important;
+            background-color: var(--app-menu-selected) !important;
+            color: #ffffff !important;
+        }}
+
+        body [data-baseweb="popover"] [aria-selected="true"] *,
+        div[data-baseweb="popover"] [aria-selected="true"] * {{
+            color: #ffffff !important;
+            -webkit-text-fill-color: #ffffff !important;
+        }}
+
+        body [data-baseweb="popover"] input,
+        div[data-baseweb="popover"] input {{
+            background: var(--app-menu-surface) !important;
+            background-color: var(--app-menu-surface) !important;
+            color: var(--app-menu-text) !important;
+            -webkit-text-fill-color: var(--app-menu-text) !important;
+        }}
+
+        body [data-baseweb="popover"] input::placeholder,
+        div[data-baseweb="popover"] input::placeholder {{
+            color: var(--app-menu-muted) !important;
+            -webkit-text-fill-color: var(--app-menu-muted) !important;
+        }}
+
+        body [data-baseweb="popover"] ::-webkit-scrollbar-thumb {{
+            background: #5d7192 !important;
+            border-radius: 999px !important;
+        }}
+
+        body [data-baseweb="popover"] ::-webkit-scrollbar-track {{
+            background: var(--app-menu-surface) !important;
+        }}
+
+        .stMultiSelect [data-baseweb="tag"] {{
+            border: 1px solid rgba(86, 216, 255, 0.4) !important;
+            border-radius: 999px !important;
+            background: rgba(55, 208, 255, 0.12) !important;
+            color: #dff8ff !important;
+        }}
+
+        .stMultiSelect [data-baseweb="tag"] span {{
+            color: #dff8ff !important;
+            font-size: 0.82rem !important;
+            font-weight: 760 !important;
+        }}
+
+        [data-testid="stSlider"] [role="slider"] {{
+            background: var(--app-accent) !important;
+            border: 2px solid #dff8ff !important;
+            box-shadow: 0 0 0 5px rgba(55, 208, 255, 0.16) !important;
+        }}
+
+        .ow-filter-action-spacer {{
+            height: 1.52rem;
         }}
 
         [data-testid="stExpander"] > details {{
@@ -291,7 +453,7 @@ def render_top_navigation(current_page: str) -> None:
     nav_items = [
         ("main", "메인", "main.py"),
         ("pick_win", "픽률·승률", "pages/1_pick_win_distribution.py"),
-        ("role_rank", "포지션 비중", "pages/2_role_rank_share.py"),
+        ("hero_trends", "영웅 시계열", "pages/2_hero_trends.py"),
     ]
 
     cols = st.columns(len(nav_items))
@@ -301,7 +463,7 @@ def render_top_navigation(current_page: str) -> None:
             clicked = st.button(
                 label,
                 key=f"nav_{current_page}_{page_key}",
-                use_container_width=True,
+                width="stretch",
                 type="primary" if is_current else "secondary",
                 disabled=is_current,
             )
