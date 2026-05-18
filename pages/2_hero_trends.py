@@ -68,15 +68,13 @@ def rank_color(rank):
 def load_history_data():
     frames = []
     sources = [
-        (os.path.join("data", "history", "weekly", "**", "*.parquet"), "parquet", 1),
-        (os.path.join("data", "tier_history", "date=*", "*.parquet"), "parquet", 2),
-        (os.path.join("data", "latest", "latest_tier.parquet"), "parquet", 3),
-        ("overwatch_competitive_stats.csv", "csv", 4),
-        ("latest_tier.csv", "csv", 5),
+        (os.path.join("data", "history", "weekly", "**", "*.parquet"), 1),
+        (os.path.join("data", "tier_history", "date=*", "*.parquet"), 2),
+        (os.path.join("data", "latest", "latest_tier.parquet"), 3),
     ]
     seen_paths = set()
 
-    for pattern, source_type, priority in sources:
+    for pattern, priority in sources:
         paths = sorted(glob.glob(pattern, recursive=True)) if any(ch in pattern for ch in "*?[") else [pattern]
         for path in paths:
             if path in seen_paths or not os.path.exists(path):
@@ -84,10 +82,7 @@ def load_history_data():
 
             seen_paths.add(path)
             try:
-                if source_type == "parquet":
-                    frame = pd.read_parquet(path)
-                else:
-                    frame = pd.read_csv(path)
+                frame = pd.read_parquet(path)
             except Exception:
                 continue
 

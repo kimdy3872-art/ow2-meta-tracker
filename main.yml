@@ -41,8 +41,7 @@ jobs:
         run: python update.py --mode all
         #
         # 주요 산출물:
-        # - latest_tier.csv, overwatch_competitive_stats.csv (최신 CSV)
-        # - data/latest/latest_tier.parquet (최신 Parquet)
+        # - data/latest/latest_tier.parquet (최신)
         # - data/history/weekly/year=YYYY/week=WW/tier_snapshot.parquet (주간)
       
       - name: Configure Git

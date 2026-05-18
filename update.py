@@ -88,8 +88,6 @@ STATS_COLUMNS = [
     'win_rate', 'pick_rate', 'ban_rate', 'win_rate_z', 'pick_rate_log', 'pick_rate_z', 'total_score', 'rank',
 ]
 
-LATEST_STATS_CSV_PATH = "overwatch_competitive_stats.csv"
-DASHBOARD_LATEST_CSV_PATH = "latest_tier.csv"
 LATEST_PARQUET_PATH = os.path.join("data", "latest", "latest_tier.parquet")
 WEEKLY_HISTORY_ROOT = os.path.join("data", "history", "weekly")
 WEEKLY_SNAPSHOT_WEEKDAY = int(os.getenv("WEEKLY_SNAPSHOT_WEEKDAY", "0"))
@@ -652,10 +650,8 @@ def run_stats_update():
     today = str(today_obj)
 
     previous_latest_df = None
-    if os.path.exists(DASHBOARD_LATEST_CSV_PATH):
-        previous_latest_df = pd.read_csv(DASHBOARD_LATEST_CSV_PATH)
-    elif os.path.exists(LATEST_STATS_CSV_PATH):
-        previous_latest_df = pd.read_csv(LATEST_STATS_CSV_PATH)
+    if os.path.exists(LATEST_PARQUET_PATH):
+        previous_latest_df = pd.read_parquet(LATEST_PARQUET_PATH)
 
     if previous_latest_df is not None and not previous_latest_df.empty:
         old_compare = build_snapshot_compare_frame(previous_latest_df.copy())
@@ -670,20 +666,11 @@ def run_stats_update():
         keep='last',
     ).reset_index(drop=True)
 
-    # 대시보드 호환을 위해 기존 CSV 파일명과 최신 전용 CSV를 함께 저장
-    latest_df.to_csv(LATEST_STATS_CSV_PATH, index=False, encoding='utf-8-sig')
-    latest_df.to_csv(DASHBOARD_LATEST_CSV_PATH, index=False, encoding='utf-8-sig')
-
     snapshot_df = latest_df.copy()
     snapshot_df['snapshot_date'] = today_obj.isoformat()
 
-    latest_parquet_saved_as = LATEST_PARQUET_PATH
     os.makedirs(os.path.dirname(LATEST_PARQUET_PATH), exist_ok=True)
-    try:
-        snapshot_df.to_parquet(LATEST_PARQUET_PATH, index=False)
-    except (ImportError, ModuleNotFoundError, ValueError) as exc:
-        latest_parquet_saved_as = "(skip) parquet 엔진 없음"
-        print(f"⚠️  최신 Parquet 저장 실패({exc}). CSV 최신 파일만 유지합니다.")
+    snapshot_df.to_parquet(LATEST_PARQUET_PATH, index=False)
 
     weekly_saved_as = "(skip) 저장 요일 아님"
     if today_obj.weekday() == WEEKLY_SNAPSHOT_WEEKDAY:
@@ -696,21 +683,14 @@ def run_stats_update():
         os.makedirs(weekly_dir, exist_ok=True)
         weekly_parquet_path = os.path.join(weekly_dir, "tier_snapshot.parquet")
         weekly_saved_as = weekly_parquet_path
-        try:
-            snapshot_df.to_parquet(weekly_parquet_path, index=False)
-        except (ImportError, ModuleNotFoundError, ValueError) as exc:
-            weekly_csv_path = os.path.join(weekly_dir, "tier_snapshot.csv")
-            snapshot_df.to_csv(weekly_csv_path, index=False, encoding='utf-8-sig')
-            weekly_saved_as = weekly_csv_path
-            print(f"⚠️  주간 Parquet 저장 실패({exc}). CSV fallback으로 저장했습니다: {weekly_csv_path}")
+        snapshot_df.to_parquet(weekly_parquet_path, index=False)
 
     elapsed = format_elapsed(perf_counter() - started_at)
     print(
         f"🎉 {today} 데이터 갱신 완료! "
         f"(latest={len(latest_df)}행, 소요 시간: {elapsed})"
     )
-    print(f"📁 최신 데이터: {DASHBOARD_LATEST_CSV_PATH}")
-    print(f"📁 최신 Parquet: {latest_parquet_saved_as}")
+    print(f"📁 최신 데이터: {LATEST_PARQUET_PATH}")
     print(f"📁 주간 스냅샷: {weekly_saved_as}")
 
 

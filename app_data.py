@@ -126,8 +126,8 @@ def is_degenerate_snapshot(snapshot_df):
 
 @st.cache_data
 def load_latest_stats():
-    stats_path = "latest_tier.csv" if os.path.exists("latest_tier.csv") else "overwatch_competitive_stats.csv"
-    df = pd.read_csv(stats_path)
+    stats_path = os.path.join("data", "latest", "latest_tier.parquet")
+    df = pd.read_parquet(stats_path)
 
     if "update_date" in df.columns and not df.empty:
         df["update_date"] = df["update_date"].astype(str)

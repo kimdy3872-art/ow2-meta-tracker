@@ -451,9 +451,9 @@ def render_page_hero(title: str, subtitle: str, badge: str = "Overwatch 2 Meta")
 
 def render_top_navigation(current_page: str) -> None:
     nav_items = [
-        ("main", "메인", "main.py"),
-        ("pick_win", "픽률·승률", "pages/1_pick_win_distribution.py"),
-        ("hero_trends", "영웅 시계열", "pages/2_hero_trends.py"),
+        ("main", "영웅 랭크 순위표", "main.py"),
+        ("pick_win", "픽률 · 승률 · 밴률 3D 분포", "pages/1_pick_win_distribution.py"),
+        ("hero_trends", "영웅 시계열 분석", "pages/2_hero_trends.py"),
     ]
 
     cols = st.columns(len(nav_items))

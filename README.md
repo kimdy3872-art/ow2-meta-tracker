@@ -34,8 +34,6 @@ Overwatch_analysis/
 ├── update.py                       # 경쟁전/퍼크 통합 수집
 ├── update_perk.py                  # (호환용) update.py 래퍼
 ├── requirements.txt
-├── overwatch_competitive_stats.csv  # (호환) 최신 CSV
-├── latest_tier.csv                  # (대시보드) 최신 CSV
 ├── data/
 │   ├── latest/latest_tier.parquet   # (대시보드) 최신 Parquet
 │   └── history/weekly/year=YYYY/week=WW/tier_snapshot.parquet  # 주간 스냅샷
@@ -95,9 +93,9 @@ streamlit run main.py
 python update.py
 ```
 
-Blizzard 경쟁전 통계를 수집해 `overwatch_competitive_stats.csv`를 갱신합니다.  
+Blizzard 경쟁전 통계를 수집해 `data/latest/latest_tier.parquet`를 갱신합니다.  
 동일 날짜 재수집 시 중복을 제거하고 최신 값을 유지합니다.
-최신 데이터는 CSV(`latest_tier.csv`, `overwatch_competitive_stats.csv`)와 Parquet(`data/latest/latest_tier.parquet`)로 저장됩니다.
+최신 데이터는 Parquet(`data/latest/latest_tier.parquet`)로 저장됩니다.
 주간(월요일)마다 `data/history/weekly/year=YYYY/week=WW/tier_snapshot.parquet`에 스냅샷이 누적됩니다.
 
 ### 영웅 퍼크
@@ -127,7 +125,6 @@ python update.py --mode all
 
 ### 주요 저장 파일
 
-- **최신 CSV**: `latest_tier.csv` (대시보드), `overwatch_competitive_stats.csv` (호환)
 - **최신 Parquet**: `data/latest/latest_tier.parquet`
 - **주간 스냅샷**: `data/history/weekly/year=YYYY/week=WW/tier_snapshot.parquet`
 
