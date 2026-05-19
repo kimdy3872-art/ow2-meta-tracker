@@ -1,9 +1,9 @@
-name: Weekly & Latest Data Update
+name: Daily Data Update
 
 on:
   schedule:
-    # 매주 월요일 00:00 UTC (한국 시간 09:00)에 실행
-    - cron: '0 0 * * 1'
+    # 매일 00:00 UTC (한국 시간 09:00)에 실행
+    - cron: '0 0 * * *'
   # 수동으로도 실행 가능하게 설정
   workflow_dispatch:
 
@@ -41,8 +41,8 @@ jobs:
         run: python update.py --mode all
         #
         # 주요 산출물:
-        # - latest_tier.csv, overwatch_competitive_stats.csv (최신 CSV)
-        # - data/latest/latest_tier.parquet (최신 Parquet)
+        # - data/latest/latest_tier.parquet (최신)
+        # - data/latest/latest_perks.parquet (최신 퍼크)
         # - data/history/weekly/year=YYYY/week=WW/tier_snapshot.parquet (주간)
       
       - name: Configure Git
@@ -54,7 +54,7 @@ jobs:
         run: |
           git add -A
           if ! git diff --cached --quiet; then
-            git commit -m "chore: Monthly data update - $(date +'%Y-%m-%d')"
+            git commit -m "chore: update latest data - $(date +'%Y-%m-%d')"
             BRANCH="${GITHUB_REF_NAME:-main}"
             git fetch origin "$BRANCH"
             git rebase "origin/$BRANCH"
