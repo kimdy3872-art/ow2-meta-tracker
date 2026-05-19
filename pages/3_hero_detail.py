@@ -20,7 +20,7 @@ from ui import (
 st.set_page_config(page_title="영웅 상세", layout="wide")
 apply_global_theme()
 
-PERK_DATA_PATH = "overwatch_hero_perks.csv"
+PERK_DATA_PATH = os.path.join("data", "latest", "latest_perks.parquet")
 DEFAULT_PERK_IMAGE_URL = "https://dummyimage.com/48x48/1f2937/94a3b8.png&text=Perk"
 
 
@@ -35,7 +35,7 @@ def load_hero_perk_data():
         return pd.DataFrame()
 
     try:
-        df = pd.read_csv(PERK_DATA_PATH)
+        df = pd.read_parquet(PERK_DATA_PATH)
     except Exception:
         return pd.DataFrame()
 

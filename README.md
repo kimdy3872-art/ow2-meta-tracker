@@ -36,8 +36,8 @@ Overwatch_analysis/
 ├── requirements.txt
 ├── data/
 │   ├── latest/latest_tier.parquet   # (대시보드) 최신 Parquet
+│   ├── latest/latest_perks.parquet   # (대시보드) 최신 퍼크 Parquet
 │   └── history/weekly/year=YYYY/week=WW/tier_snapshot.parquet  # 주간 스냅샷
-├── overwatch_hero_perks.csv
 └── pages/
     ├── 1_pick_win_distribution.py
     ├── 2_hero_trends.py
@@ -105,10 +105,10 @@ python update.py --mode perks
 
 # 옵션 예시
 python update.py --mode perks --max-heroes 5
-python update.py --mode perks --locale ko --output overwatch_hero_perks.csv
+python update.py --mode perks --locale ko
 ```
 
-OW Perks 데이터를 수집해 `overwatch_hero_perks.csv`를 갱신합니다.
+OW Perks 데이터를 수집해 `data/latest/latest_perks.parquet`를 갱신합니다.
 
 ### 통합 실행 (권장)
 
@@ -126,6 +126,7 @@ python update.py --mode all
 ### 주요 저장 파일
 
 - **최신 Parquet**: `data/latest/latest_tier.parquet`
+- **최신 퍼크 Parquet**: `data/latest/latest_perks.parquet`
 - **주간 스냅샷**: `data/history/weekly/year=YYYY/week=WW/tier_snapshot.parquet`
 
 ### 경쟁전 통계 컬럼
@@ -151,7 +152,7 @@ total_score = 0.5 * z(win_rate)
 
 랭크는 S/A/B/C 4분위로 자동 분할됩니다.
 
-### `overwatch_hero_perks.csv`
+### `data/latest/latest_perks.parquet`
 
 | 컬럼 | 설명 |
 |---|---|
@@ -165,11 +166,11 @@ total_score = 0.5 * z(win_rate)
 ## 참고 및 자동화
 
 - Selenium 크롤링을 위해 **Chrome 또는 Chromium** 실행 환경이 필요합니다.
-- 대시보드는 가장 최근 수집일(`update_date`) 또는 최신 Parquet(`data/latest/latest_tier.parquet`) 기준으로 시각화합니다.
+- 대시보드는 최신 Parquet(`data/latest/latest_tier.parquet`, `data/latest/latest_perks.parquet`) 기준으로 시각화합니다.
 
 ### 자동화 워크플로
 
-GitHub Actions 등에서 `python update.py --mode all`을 주기적으로 실행하면 최신/주간 데이터가 자동 적재됩니다.
+GitHub Actions 등에서 `python update.py --mode all`을 매일 실행하면 최신/주간 데이터가 자동 적재됩니다.
 주간 스냅샷은 월요일(요일 변경 가능)에만 생성됩니다.
 
 

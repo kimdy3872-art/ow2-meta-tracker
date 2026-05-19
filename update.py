@@ -88,8 +88,13 @@ STATS_COLUMNS = [
     'win_rate', 'pick_rate', 'ban_rate', 'win_rate_z', 'pick_rate_log', 'pick_rate_z', 'total_score', 'rank',
 ]
 
-LATEST_PARQUET_PATH = os.path.join("data", "latest", "latest_tier.parquet")
-WEEKLY_HISTORY_ROOT = os.path.join("data", "history", "weekly")
+DATA_DIR = "data"
+LATEST_DIR = os.path.join(DATA_DIR, "latest")
+HISTORY_DIR = os.path.join(DATA_DIR, "history")
+
+LATEST_STATS_PATH = os.path.join(LATEST_DIR, "latest_tier.parquet")
+LATEST_PERKS_PATH = os.path.join(LATEST_DIR, "latest_perks.parquet")
+WEEKLY_HISTORY_ROOT = os.path.join(HISTORY_DIR, "weekly")
 WEEKLY_SNAPSHOT_WEEKDAY = int(os.getenv("WEEKLY_SNAPSHOT_WEEKDAY", "0"))
 
 WIN_RATE_WEIGHT = 0.5
@@ -98,7 +103,6 @@ BAN_RATE_WEIGHT = 0.2
 
 BASE_URL = "https://owperks.com"
 DEFAULT_LOCALE = "ko"
-DEFAULT_PERK_OUTPUT = "overwatch_hero_perks.csv"
 
 CATEGORY_TO_ROLE = {
     "tanks": "Tank",
@@ -256,6 +260,43 @@ def build_snapshot_compare_frame(df):
         .sort_values(compare_cols)
         .reset_index(drop=True)
     )
+
+
+def build_perk_compare_frame(df):
+    ignore_cols = {"update_date"}
+    compare_cols = [col for col in df.columns if col not in ignore_cols]
+
+    if not compare_cols:
+        return pd.DataFrame()
+
+    compare_df = df[compare_cols].copy()
+    for col in compare_df.columns:
+        if pd.api.types.is_numeric_dtype(compare_df[col]):
+            compare_df[col] = pd.to_numeric(compare_df[col], errors="coerce").round(4)
+        else:
+            compare_df[col] = compare_df[col].fillna("").astype(str)
+
+    return compare_df.sort_values(compare_cols).reset_index(drop=True)
+
+
+def save_parquet(df, path):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    df.to_parquet(path, index=False)
+
+
+def save_weekly_snapshot_if_due(snapshot_df, today_obj):
+    if today_obj.weekday() != WEEKLY_SNAPSHOT_WEEKDAY:
+        return "(skip) 저장 요일 아님"
+
+    iso = today_obj.isocalendar()
+    weekly_dir = os.path.join(
+        WEEKLY_HISTORY_ROOT,
+        f"year={iso.year}",
+        f"week={iso.week:02d}",
+    )
+    weekly_parquet_path = os.path.join(weekly_dir, "tier_snapshot.parquet")
+    save_parquet(snapshot_df, weekly_parquet_path)
+    return weekly_parquet_path
 
 
 def scrape_data(driver, tier_name, map_id):
@@ -501,7 +542,7 @@ def scrape_hero_page(driver, hero_url):
     return rows
 
 
-def run_perk_update(locale=DEFAULT_LOCALE, output=DEFAULT_PERK_OUTPUT, max_heroes=None, headed=False):
+def run_perk_update(locale=DEFAULT_LOCALE, max_heroes=None, headed=False):
     started_at = time.time()
 
     driver = create_driver(headless=not headed)
@@ -559,11 +600,24 @@ def run_perk_update(locale=DEFAULT_LOCALE, output=DEFAULT_PERK_OUTPUT, max_heroe
             "update_date",
         ]
         df = df.reindex(columns=columns)
-        df.to_csv(output, index=False, encoding="utf-8-sig")
+
+        if os.path.exists(LATEST_PERKS_PATH):
+            previous_perks_df = pd.read_parquet(LATEST_PERKS_PATH)
+            old_compare = build_perk_compare_frame(previous_perks_df)
+            new_compare = build_perk_compare_frame(df)
+            if new_compare.equals(old_compare):
+                elapsed = int(time.time() - started_at)
+                print(
+                    f"Perks unchanged. Skipped saving {LATEST_PERKS_PATH} "
+                    f"(heroes={df['hero_slug'].nunique()}, elapsed={elapsed}s)"
+                )
+                return
+
+        save_parquet(df, LATEST_PERKS_PATH)
 
         elapsed = int(time.time() - started_at)
         print(
-            f"Done. Saved {len(df)} rows to {output} "
+            f"Done. Saved {len(df)} rows to {LATEST_PERKS_PATH} "
             f"(heroes={df['hero_slug'].nunique()}, elapsed={elapsed}s)"
         )
     finally:
@@ -650,8 +704,8 @@ def run_stats_update():
     today = str(today_obj)
 
     previous_latest_df = None
-    if os.path.exists(LATEST_PARQUET_PATH):
-        previous_latest_df = pd.read_parquet(LATEST_PARQUET_PATH)
+    if os.path.exists(LATEST_STATS_PATH):
+        previous_latest_df = pd.read_parquet(LATEST_STATS_PATH)
 
     if previous_latest_df is not None and not previous_latest_df.empty:
         old_compare = build_snapshot_compare_frame(previous_latest_df.copy())
@@ -669,28 +723,16 @@ def run_stats_update():
     snapshot_df = latest_df.copy()
     snapshot_df['snapshot_date'] = today_obj.isoformat()
 
-    os.makedirs(os.path.dirname(LATEST_PARQUET_PATH), exist_ok=True)
-    snapshot_df.to_parquet(LATEST_PARQUET_PATH, index=False)
+    save_parquet(snapshot_df, LATEST_STATS_PATH)
 
-    weekly_saved_as = "(skip) 저장 요일 아님"
-    if today_obj.weekday() == WEEKLY_SNAPSHOT_WEEKDAY:
-        iso = today_obj.isocalendar()
-        weekly_dir = os.path.join(
-            WEEKLY_HISTORY_ROOT,
-            f"year={iso.year}",
-            f"week={iso.week:02d}",
-        )
-        os.makedirs(weekly_dir, exist_ok=True)
-        weekly_parquet_path = os.path.join(weekly_dir, "tier_snapshot.parquet")
-        weekly_saved_as = weekly_parquet_path
-        snapshot_df.to_parquet(weekly_parquet_path, index=False)
+    weekly_saved_as = save_weekly_snapshot_if_due(snapshot_df, today_obj)
 
     elapsed = format_elapsed(perf_counter() - started_at)
     print(
         f"🎉 {today} 데이터 갱신 완료! "
         f"(latest={len(latest_df)}행, 소요 시간: {elapsed})"
     )
-    print(f"📁 최신 데이터: {LATEST_PARQUET_PATH}")
+    print(f"📁 최신 데이터: {LATEST_STATS_PATH}")
     print(f"📁 주간 스냅샷: {weekly_saved_as}")
 
 
@@ -705,7 +747,6 @@ def parse_args():
         help="What to update (default: stats)",
     )
     parser.add_argument("--locale", default=DEFAULT_LOCALE, help="Perk scraper locale")
-    parser.add_argument("--output", default=DEFAULT_PERK_OUTPUT, help="Perk output CSV path")
     parser.add_argument("--max-heroes", type=int, default=None, help="Perk scrape hero limit")
     parser.add_argument(
         "--headed",
@@ -723,7 +764,6 @@ def main():
     if args.mode in ("perks", "all"):
         run_perk_update(
             locale=args.locale,
-            output=args.output,
             max_heroes=args.max_heroes,
             headed=args.headed,
         )
