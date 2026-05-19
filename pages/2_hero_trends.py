@@ -282,36 +282,26 @@ with controls_1[2]:
 
 tier_df = hero_df[hero_df["data_tier"].astype(str) == selected_tier].copy()
 
-controls_2 = st.columns([1.35, 1.55])
-with controls_2[0]:
-    map_options = sorted(tier_df["map"].dropna().astype(str).unique().tolist())
-    if "all-maps" in map_options:
-        map_options = ["all-maps"] + [m for m in map_options if m != "all-maps"]
-    selected_map = st.selectbox(
-        "전장",
-        map_options,
-        index=0,
-        format_func=lambda value: format_map_option(value, tier_df),
-        placeholder="전장 선택",
-    )
+map_options = sorted(tier_df["map"].dropna().astype(str).unique().tolist())
+if "all-maps" in map_options:
+    map_options = ["all-maps"] + [m for m in map_options if m != "all-maps"]
+selected_map = st.selectbox(
+    "전장",
+    map_options,
+    index=0,
+    format_func=lambda value: format_map_option(value, tier_df),
+    placeholder="전장 선택",
+)
 
 map_df = tier_df[tier_df["map"].astype(str) == selected_map].copy()
 available_metrics = [
     metric for metric in METRIC_CONFIG
     if metric in map_df.columns and map_df[metric].notna().any()
 ]
-default_metrics = [metric for metric in ["win_rate", "pick_rate", "ban_rate"] if metric in available_metrics]
-if not default_metrics and available_metrics:
-    default_metrics = available_metrics[:1]
-
-with controls_2[1]:
-    selected_metrics = st.multiselect(
-        "표시 지표",
-        available_metrics,
-        default=default_metrics,
-        format_func=lambda value: METRIC_CONFIG[value]["label"],
-        placeholder="지표 선택",
-    )
+chart_metrics = [
+    metric for metric in ["win_rate", "pick_rate", "ban_rate"]
+    if metric in available_metrics
+]
 
 if map_df.empty:
     st.warning("선택한 조건에 해당하는 시계열 데이터가 없습니다.")
@@ -399,21 +389,22 @@ with metric_cols[3]:
         unsafe_allow_html=True,
     )
 
-if not selected_metrics:
-    st.warning("차트에 표시할 지표를 하나 이상 선택해주세요.")
+if not chart_metrics:
+    st.warning("차트에 표시할 지표가 없습니다.")
     st.stop()
 
-fig = go.Figure()
-for metric in selected_metrics:
+
+def render_metric_chart(metric, chart_df):
     cfg = METRIC_CONFIG[metric]
     suffix = cfg["suffix"]
+    fig = go.Figure()
     fig.add_trace(
         go.Scatter(
-            x=map_df["period_date"],
-            y=map_df[metric],
+            x=chart_df["period_date"],
+            y=chart_df[metric],
             mode="lines+markers",
             name=cfg["label"],
-            customdata=map_df[["rank", "period_label"]],
+            customdata=chart_df[["rank", "period_label"]],
             line=dict(color=cfg["color"], width=3),
             marker=dict(size=9, line=dict(width=1, color="#e2e8f0")),
             hovertemplate=(
@@ -424,42 +415,52 @@ for metric in selected_metrics:
         )
     )
 
-fig.update_layout(
-    height=520,
-    margin=dict(l=10, r=10, t=20, b=10),
-    font=dict(family=GLOBAL_FONT_FAMILY, color=GLOBAL_TEXT_COLOR, size=13),
-    paper_bgcolor=GLOBAL_BG_COLOR,
-    plot_bgcolor=GLOBAL_BG_COLOR,
-    hovermode="x unified",
-    legend=dict(
-        orientation="h",
-        yanchor="bottom",
-        y=1.02,
-        xanchor="right",
-        x=1,
-        bgcolor="rgba(17,24,39,0.75)",
-        bordercolor="#374151",
-        borderwidth=1,
-    ),
-    xaxis=dict(
-        title="스냅샷 날짜",
-        gridcolor="#1f2937",
-        zerolinecolor="#374151",
-        showline=True,
-        linecolor="#334155",
-    ),
-    yaxis=dict(
-        title="지표 값",
-        gridcolor="#1f2937",
-        zerolinecolor="#374151",
-        showline=True,
-        linecolor="#334155",
-    ),
-)
+    if suffix == "%" and chart_df[metric].notna().any():
+        y_min = float(chart_df[metric].min())
+        y_max = float(chart_df[metric].max())
+        padding = max((y_max - y_min) * 0.18, 1.0)
+        y_range = [max(0, y_min - padding), min(100, y_max + padding)]
+    else:
+        y_range = None
 
-st.plotly_chart(fig, config={"displayModeBar": True})
+    fig.update_layout(
+        height=300,
+        margin=dict(l=10, r=10, t=34, b=10),
+        font=dict(family=GLOBAL_FONT_FAMILY, color=GLOBAL_TEXT_COLOR, size=13),
+        paper_bgcolor=GLOBAL_BG_COLOR,
+        plot_bgcolor=GLOBAL_BG_COLOR,
+        hovermode="x unified",
+        showlegend=False,
+        title=dict(
+            text=cfg["label"],
+            font=dict(size=17, color=cfg["color"]),
+            x=0,
+            xanchor="left",
+        ),
+        xaxis=dict(
+            title="스냅샷 날짜",
+            gridcolor="#1f2937",
+            zerolinecolor="#374151",
+            showline=True,
+            linecolor="#334155",
+        ),
+        yaxis=dict(
+            title=f"{cfg['label']} ({suffix})" if suffix else cfg["label"],
+            range=y_range,
+            gridcolor="#1f2937",
+            zerolinecolor="#374151",
+            showline=True,
+            linecolor="#334155",
+        ),
+    )
 
-table_cols = ["period_label", "win_rate", "pick_rate", "ban_rate", "total_score", "rank"]
+    st.plotly_chart(fig, config={"displayModeBar": True})
+
+
+for metric in chart_metrics:
+    render_metric_chart(metric, map_df)
+
+table_cols = ["period_label", "win_rate", "pick_rate", "ban_rate", "rank"]
 table_cols = [col for col in table_cols if col in map_df.columns]
 history_table = (
     map_df[table_cols]
@@ -469,7 +470,6 @@ history_table = (
             "win_rate": "승률",
             "pick_rate": "픽률",
             "ban_rate": "밴률",
-            "total_score": "종합 점수",
             "rank": "랭크",
         }
     )
@@ -485,6 +485,5 @@ with st.expander("스냅샷 원본 표"):
             "승률": st.column_config.NumberColumn(format="%.1f%%"),
             "픽률": st.column_config.NumberColumn(format="%.1f%%"),
             "밴률": st.column_config.NumberColumn(format="%.1f%%"),
-            "종합 점수": st.column_config.NumberColumn(format="%.2f"),
         },
     )

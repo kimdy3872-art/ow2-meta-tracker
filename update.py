@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import os
 import re
+import threading
 import time
 from datetime import date
 from typing import Dict, List
@@ -16,7 +17,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import SessionNotCreatedException, WebDriverException
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from time import perf_counter
 
 # 1. 영웅별 포지션 매핑 딕셔너리
@@ -103,6 +104,10 @@ BAN_RATE_WEIGHT = 0.2
 
 BASE_URL = "https://owperks.com"
 DEFAULT_LOCALE = "ko"
+STATS_INPUT = "PC"
+STATS_REGION = "Asia"
+STATS_ROLE = "All"
+STATS_GAME_MODE_RQ = "2"
 
 CATEGORY_TO_ROLE = {
     "tanks": "Tank",
@@ -118,6 +123,12 @@ MAX_WORKERS = int(os.getenv("MAX_WORKERS", str(DEFAULT_MAX_WORKERS)))
 DRIVER_CREATE_RETRIES = 3
 TASK_RETRIES = 2
 MIN_HERO_ROWS = 20
+DRIVER_PAGE_LOAD_TIMEOUT = int(os.getenv("DRIVER_PAGE_LOAD_TIMEOUT", "45"))
+DRIVER_SCRIPT_TIMEOUT = int(os.getenv("DRIVER_SCRIPT_TIMEOUT", "30"))
+
+STOP_REQUESTED = threading.Event()
+ACTIVE_DRIVERS = set()
+ACTIVE_DRIVERS_LOCK = threading.Lock()
 
 
 def normalize_tier_name(tier_name):
@@ -149,19 +160,45 @@ def build_chrome_options(headless=True):
     return opts
 
 
+def register_driver(driver):
+    with ACTIVE_DRIVERS_LOCK:
+        ACTIVE_DRIVERS.add(driver)
+
+
+def unregister_driver(driver):
+    with ACTIVE_DRIVERS_LOCK:
+        ACTIVE_DRIVERS.discard(driver)
+
+
+def quit_active_drivers():
+    with ACTIVE_DRIVERS_LOCK:
+        drivers = list(ACTIVE_DRIVERS)
+
+    for driver in drivers:
+        try:
+            driver.quit()
+        except Exception:
+            pass
+
+
 def create_driver(headless=True, max_retries=DRIVER_CREATE_RETRIES):
     """Create Chrome session with retries for CI renderer startup failures."""
     last_error = None
     for attempt in range(1, max_retries + 1):
         try:
             opts = build_chrome_options(headless=headless)
-            return webdriver.Chrome(options=opts)
+            driver = webdriver.Chrome(options=opts)
+            driver.set_page_load_timeout(DRIVER_PAGE_LOAD_TIMEOUT)
+            driver.set_script_timeout(DRIVER_SCRIPT_TIMEOUT)
+            return driver
         except (SessionNotCreatedException, WebDriverException) as exc:
             last_error = exc
             wait_sec = attempt * 2
             print(f"⚠️  드라이버 세션 생성 실패(시도 {attempt}/{max_retries}), {wait_sec}초 후 재시도")
             if attempt < max_retries:
-                time.sleep(wait_sec)
+                STOP_REQUESTED.wait(wait_sec)
+            if STOP_REQUESTED.is_set():
+                raise KeyboardInterrupt
 
     raise RuntimeError(f"Chrome 세션 생성 실패: {last_error}")
 
@@ -178,22 +215,60 @@ def normalize_dataset_for_scoring(df):
 
 def build_rates_url(map_id, tier_name):
     params = {
-        "input": "PC",
+        "input": STATS_INPUT,
         "map": map_id,
-        "region": "Asia",
-        "role": "All",
-        "rq": "1",
+        "region": STATS_REGION,
+        "role": STATS_ROLE,
+        "rq": STATS_GAME_MODE_RQ,
         "tier": normalize_tier_name(tier_name),
     }
     return "https://overwatch.blizzard.com/ko-kr/rates/?" + urlencode(params)
 
 
 def page_context_matches(driver, expected_map, expected_tier):
+    context = current_page_context(driver)
+    return (
+        context["input"] == STATS_INPUT
+        and context["map"] == expected_map
+        and context["region"] == STATS_REGION
+        and context["role"] == STATS_ROLE
+        and context["rq"] == STATS_GAME_MODE_RQ
+        and context["tier"] == normalize_tier_name(expected_tier)
+    )
+
+
+def current_page_context(driver):
     parsed = urlparse(driver.current_url)
     query = parse_qs(parsed.query)
-    actual_map = query.get("map", [""])[0]
-    actual_tier = query.get("tier", [""])[0]
-    return actual_map == expected_map and actual_tier == expected_tier
+    return {
+        "input": query.get("input", [""])[0],
+        "map": query.get("map", [""])[0],
+        "region": query.get("region", [""])[0],
+        "role": query.get("role", [""])[0],
+        "rq": query.get("rq", [""])[0],
+        "tier": query.get("tier", [""])[0],
+        "url": driver.current_url,
+    }
+
+
+def is_unsupported_all_maps_tier_redirect(expected_map, expected_tier, page_context):
+    return (
+        expected_map == "all-maps"
+        and normalize_tier_name(expected_tier) != "All"
+        and page_context.get("rq") == STATS_GAME_MODE_RQ
+        and page_context.get("map") == "all-maps"
+        and page_context.get("tier") == "All"
+    )
+
+
+def wait_for_page_context(driver, expected_map, expected_tier, timeout=8):
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        if page_context_matches(driver, expected_map, expected_tier):
+            return True, current_page_context(driver)
+        time.sleep(0.5)
+
+    return False, current_page_context(driver)
 
 
 def validate_scraped_df(df):
@@ -306,10 +381,18 @@ def scrape_data(driver, tier_name, map_id):
         driver.get(url)
         wait = WebDriverWait(driver, 20)
         wait.until(EC.presence_of_element_located((By.CLASS_NAME, "hero-name")))
-        if not page_context_matches(driver, map_id, tier_name):
-            print(f"⚠️  페이지 파라미터 불일치: 요청 map={map_id}, tier={tier_name} / 현재 URL={driver.current_url}")
+        context_ok, page_context = wait_for_page_context(driver, map_id, tier_name)
+        if not context_ok:
+            if is_unsupported_all_maps_tier_redirect(map_id, tier_name, page_context):
+                print(
+                    f"↪️  {tier_name} / {map_id} 조합은 현재 페이지에서 All 티어로 리다이렉트됩니다. "
+                    "기존 latest 행 유지 대상으로 표시합니다."
+                )
+                return None
+
+            print(f"⚠️  페이지 파라미터 불일치: 요청 map={map_id}, tier={tier_name} / 현재 URL={page_context['url']}")
             return pd.DataFrame()
-        time.sleep(2)
+        time.sleep(1)
 
         script = """
         let data = [];
@@ -354,27 +437,45 @@ def scrape_data(driver, tier_name, map_id):
 def scrape_task(task):
     tier_name, map_id = task
     for attempt in range(1, TASK_RETRIES + 1):
+        if STOP_REQUESTED.is_set():
+            break
+
         driver = None
         try:
             driver = create_driver()
+            register_driver(driver)
             df = scrape_data(driver, tier_name, map_id)
+            if df is None:
+                return {
+                    'tier_name': tier_name,
+                    'map_id': map_id,
+                    'df': pd.DataFrame(),
+                    'missing': [],
+                    'skipped': True,
+                    'skip_reason': 'unsupported_all_maps_tier_redirect',
+                }
             missing = []
             if not df.empty:
                 missing = df[df['role'].isna()]['hero'].unique().tolist()
             if df.empty and attempt < TASK_RETRIES:
                 print(f"⚠️  {tier_name} / {map_id} 빈 결과(시도 {attempt}/{TASK_RETRIES}), 재시도")
-                time.sleep(attempt)
+                STOP_REQUESTED.wait(attempt)
                 continue
             return {
                 'tier_name': tier_name,
                 'map_id': map_id,
                 'df': df,
                 'missing': missing,
+                'skipped': False,
+                'skip_reason': '',
             }
+        except KeyboardInterrupt:
+            STOP_REQUESTED.set()
+            raise
         except Exception as exc:
             if attempt < TASK_RETRIES:
                 print(f"⚠️  {tier_name} / {map_id} 작업 실패(시도 {attempt}/{TASK_RETRIES}), 재시도: {exc}")
-                time.sleep(attempt * 2)
+                STOP_REQUESTED.wait(attempt * 2)
                 continue
             print(f"❌ {tier_name} / {map_id} 최종 실패: {exc}")
             return {
@@ -382,10 +483,25 @@ def scrape_task(task):
                 'map_id': map_id,
                 'df': pd.DataFrame(),
                 'missing': [],
+                'skipped': False,
+                'skip_reason': '',
             }
         finally:
             if driver is not None:
-                driver.quit()
+                unregister_driver(driver)
+                try:
+                    driver.quit()
+                except Exception:
+                    pass
+
+    return {
+        'tier_name': tier_name,
+        'map_id': map_id,
+        'df': pd.DataFrame(),
+        'missing': [],
+        'skipped': STOP_REQUESTED.is_set(),
+        'skip_reason': 'stop_requested' if STOP_REQUESTED.is_set() else '',
+    }
 
 
 def normalize_url(href):
@@ -635,18 +751,39 @@ def run_stats_update():
 
     final_list = []
     failed_tasks = []
-    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-        futures = {executor.submit(scrape_task, task): task for task in tasks}
-        for done, future in enumerate(as_completed(futures), start=1):
-            tier_name, map_id = futures[future]
-            print(f"🚀 [{done}/{total}] {tier_name} / {map_id} 완료")
-            result = future.result()
-            if result['missing']:
-                print(f"⚠️  누락 영웅: {result['missing']}")
-            if not result['df'].empty:
-                final_list.append(result['df'])
-            else:
-                failed_tasks.append((tier_name, map_id))
+    skipped_tasks = []
+    done_count = 0
+    executor = ThreadPoolExecutor(max_workers=MAX_WORKERS)
+    futures = {executor.submit(scrape_task, task): task for task in tasks}
+    pending = set(futures)
+
+    try:
+        while pending:
+            done_futures, pending = wait(pending, timeout=1, return_when=FIRST_COMPLETED)
+            for future in done_futures:
+                done_count += 1
+                tier_name, map_id = futures[future]
+                print(f"🚀 [{done_count}/{total}] {tier_name} / {map_id} 완료")
+                result = future.result()
+                if result['missing']:
+                    print(f"⚠️  누락 영웅: {result['missing']}")
+                if result.get('skipped'):
+                    skipped_tasks.append((tier_name, map_id, result.get('skip_reason', '')))
+                elif not result['df'].empty:
+                    final_list.append(result['df'])
+                else:
+                    failed_tasks.append((tier_name, map_id))
+    except KeyboardInterrupt:
+        STOP_REQUESTED.set()
+        print("\n🛑 중단 요청 감지. 실행 중인 브라우저 세션을 정리합니다.")
+        for future in pending:
+            future.cancel()
+        quit_active_drivers()
+        executor.shutdown(wait=False, cancel_futures=True)
+        raise SystemExit(130)
+    finally:
+        if not STOP_REQUESTED.is_set():
+            executor.shutdown(wait=True, cancel_futures=False)
 
     if not final_list:
         print("❌ 수집된 데이터가 없습니다.")
@@ -695,6 +832,29 @@ def run_stats_update():
     full_df['rank'] = full_df.groupby(group_key)['total_score'].transform(assign_rank)
     full_df = normalize_dataset_for_scoring(full_df)
     full_df = full_df.reindex(columns=STATS_COLUMNS)
+
+    if skipped_tasks and os.path.exists(LATEST_STATS_PATH):
+        previous_latest_df = pd.read_parquet(LATEST_STATS_PATH)
+        preserved_frames = []
+        for tier_name, map_id, _reason in skipped_tasks:
+            preserved = previous_latest_df[
+                (previous_latest_df['data_tier'].astype(str) == normalize_tier_name(tier_name))
+                & (previous_latest_df['map'].astype(str) == map_id)
+            ].copy()
+            if not preserved.empty:
+                preserved_frames.append(preserved.reindex(columns=STATS_COLUMNS))
+
+        if preserved_frames:
+            preserved_df = pd.concat(preserved_frames, ignore_index=True)
+            full_df = pd.concat([full_df, preserved_df], ignore_index=True)
+            print(
+                f"↪️  리다이렉트로 수집 불가한 조합 {len(skipped_tasks)}개는 "
+                f"기존 latest 행 {len(preserved_df)}개를 유지합니다."
+            )
+        else:
+            print(f"⚠️  리다이렉트로 수집 불가한 조합 {len(skipped_tasks)}개가 있고 유지할 기존 행이 없습니다.")
+    elif skipped_tasks:
+        print(f"⚠️  리다이렉트로 수집 불가한 조합 {len(skipped_tasks)}개가 있고 기존 latest 파일이 없습니다.")
 
     if is_degenerate_snapshot(full_df):
         print("❌ 비정상 스냅샷 감지(전장별 분산 부족). 저장을 중단합니다.")
