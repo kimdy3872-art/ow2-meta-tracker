@@ -107,7 +107,7 @@ DEFAULT_LOCALE = "ko"
 STATS_INPUT = "PC"
 STATS_REGION = "Asia"
 STATS_ROLE = "All"
-STATS_GAME_MODE_RQ = os.getenv("STATS_GAME_MODE_RQ", "0")
+STATS_GAME_MODE_RQ = os.getenv("STATS_GAME_MODE_RQ", "1")
 
 CATEGORY_TO_ROLE = {
     "tanks": "Tank",
