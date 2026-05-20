@@ -107,7 +107,7 @@ DEFAULT_LOCALE = "ko"
 STATS_INPUT = "PC"
 STATS_REGION = "Asia"
 STATS_ROLE = "All"
-STATS_GAME_MODE_RQ = "2"
+STATS_GAME_MODE_RQ = os.getenv("STATS_GAME_MODE_RQ", "0")
 
 CATEGORY_TO_ROLE = {
     "tanks": "Tank",
@@ -253,10 +253,8 @@ def current_page_context(driver):
 
 def is_unsupported_all_maps_tier_redirect(expected_map, expected_tier, page_context):
     return (
-        expected_map == "all-maps"
-        and normalize_tier_name(expected_tier) != "All"
-        and page_context.get("rq") == STATS_GAME_MODE_RQ
-        and page_context.get("map") == "all-maps"
+        normalize_tier_name(expected_tier) != "All"
+        and page_context.get("map") == expected_map
         and page_context.get("tier") == "All"
     )
 
@@ -269,6 +267,91 @@ def wait_for_page_context(driver, expected_map, expected_tier, timeout=8):
         time.sleep(0.5)
 
     return False, current_page_context(driver)
+
+
+def wait_for_rates_content(driver, timeout=20):
+    def has_rates_content(active_driver):
+        if active_driver.find_elements(By.CLASS_NAME, "hero-name"):
+            return True
+        body_text = active_driver.find_element(By.TAG_NAME, "body").text
+        return "영웅" in body_text and "%" in body_text
+
+    WebDriverWait(driver, timeout).until(has_rates_content)
+
+
+def parse_percent(value):
+    if value is None:
+        return "0%"
+    text = str(value).strip()
+    return text if text else "0%"
+
+
+def scrape_rates_from_dom(driver):
+    script = """
+    let data = [];
+    let names = document.querySelectorAll('.hero-name');
+    let winrates = document.querySelectorAll('.winrate-cell');
+    let pickrates = document.querySelectorAll('.pickrate-cell');
+    let banrates = document.querySelectorAll('.banrate-cell');
+    if (banrates.length === 0) {
+        banrates = document.querySelectorAll('[class*=\"ban\"]');
+    }
+    for (let i = 0; i < names.length; i++) {
+        data.push({
+            'hero': names[i].innerText.trim(),
+            'win_rate': winrates[i] ? winrates[i].innerText : '0%',
+            'pick_rate': pickrates[i] ? pickrates[i].innerText : '0%',
+            'ban_rate': banrates[i] ? banrates[i].innerText : '0%'
+        });
+    }
+    return data;
+    """
+    return pd.DataFrame(driver.execute_script(script))
+
+
+def scrape_rates_from_text(driver):
+    body_text = driver.find_element(By.TAG_NAME, "body").text
+    lines = [line.strip() for line in body_text.splitlines() if line.strip()]
+    try:
+        start_idx = lines.index("영웅 픽률 승률") + 1
+    except ValueError:
+        try:
+            start_idx = lines.index("영웅") + 1
+        except ValueError:
+            return pd.DataFrame()
+
+    rows = []
+    i = start_idx
+    percent_re = re.compile(r"^(?:--|\d+(?:\.\d+)?)%$")
+    stop_markers = {"자주 묻는 질문", "미래는 쟁취할 가치가 있습니다. 함께하세요!", "지금 플레이"}
+    while i < len(lines):
+        hero = lines[i]
+        if hero in stop_markers or hero.startswith("## "):
+            break
+        if percent_re.match(hero):
+            i += 1
+            continue
+        if i + 2 >= len(lines):
+            break
+
+        first_rate = lines[i + 1]
+        second_rate = lines[i + 2]
+        if percent_re.match(first_rate) and percent_re.match(second_rate):
+            rows.append(
+                {
+                    "hero": hero,
+                    # The visible Korean table says pick/win, but the rendered text
+                    # order is hero, win rate, pick rate on the current Blizzard page.
+                    "win_rate": parse_percent(first_rate),
+                    "pick_rate": parse_percent(second_rate),
+                    "ban_rate": "0%",
+                }
+            )
+            i += 3
+        else:
+            i += 1
+
+    return pd.DataFrame(rows)
 
 
 def validate_scraped_df(df):
@@ -379,8 +462,7 @@ def scrape_data(driver, tier_name, map_id):
     url = build_rates_url(map_id, tier_name)
     try:
         driver.get(url)
-        wait = WebDriverWait(driver, 20)
-        wait.until(EC.presence_of_element_located((By.CLASS_NAME, "hero-name")))
+        wait_for_rates_content(driver)
         context_ok, page_context = wait_for_page_context(driver, map_id, tier_name)
         if not context_ok:
             if is_unsupported_all_maps_tier_redirect(map_id, tier_name, page_context):
@@ -394,27 +476,11 @@ def scrape_data(driver, tier_name, map_id):
             return pd.DataFrame()
         time.sleep(1)
 
-        script = """
-        let data = [];
-        let names    = document.querySelectorAll('.hero-name');
-        let winrates  = document.querySelectorAll('.winrate-cell');
-        let pickrates = document.querySelectorAll('.pickrate-cell');
-        let banrates  = document.querySelectorAll('.banrate-cell');
-        if (banrates.length === 0) {
-            banrates = document.querySelectorAll('[class*=\"ban\"]');
-        }
-        for (let i = 0; i < names.length; i++) {
-            data.push({
-                'hero':      names[i].innerText.trim(),
-                'win_rate':  winrates[i]  ? winrates[i].innerText  : '0%',
-                'pick_rate': pickrates[i] ? pickrates[i].innerText : '0%',
-                'ban_rate':  banrates[i]  ? banrates[i].innerText  : '0%'
-            });
-        }
-        return data;
-        """
-        hero_list = driver.execute_script(script)
-        df = pd.DataFrame(hero_list)
+        df = scrape_rates_from_dom(driver)
+        dom_ok, _dom_reason = validate_scraped_df(df)
+        if not dom_ok:
+            df = scrape_rates_from_text(driver)
+
         if 'ban_rate' not in df.columns:
             df['ban_rate'] = '0%'
         ok, reason = validate_scraped_df(df)
@@ -423,7 +489,7 @@ def scrape_data(driver, tier_name, map_id):
             return pd.DataFrame()
 
         if not df.empty:
-            df['role'] = df['hero'].map(role_dict)
+            df['role'] = df['hero'].map(role_dict).fillna("Unknown")
             df['data_tier'] = normalize_tier_name(tier_name)
             df['map'] = map_id
             df['map_name'] = df['map'].map(map_dict)
