@@ -37,7 +37,9 @@ jobs:
       
       - name: Run update.py (Stats + Perk Crawler)
         env:
-          MAX_WORKERS: "2"
+          MAX_WORKERS: "1"
+          TASK_RETRIES: "4"
+          DRIVER_PAGE_LOAD_TIMEOUT: "90"
         run: python update.py --mode all
         #
         # 주요 산출물:
