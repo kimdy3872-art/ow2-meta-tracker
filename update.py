@@ -121,9 +121,9 @@ HERO_LINK_RE = re.compile(r"^https://owperks\.com/ko/(tanks|damages|supports)/([
 DEFAULT_MAX_WORKERS = 2
 MAX_WORKERS = int(os.getenv("MAX_WORKERS", str(DEFAULT_MAX_WORKERS)))
 DRIVER_CREATE_RETRIES = 3
-TASK_RETRIES = 2
+TASK_RETRIES = int(os.getenv("TASK_RETRIES", "3"))
 MIN_HERO_ROWS = 20
-DRIVER_PAGE_LOAD_TIMEOUT = int(os.getenv("DRIVER_PAGE_LOAD_TIMEOUT", "45"))
+DRIVER_PAGE_LOAD_TIMEOUT = int(os.getenv("DRIVER_PAGE_LOAD_TIMEOUT", "75"))
 DRIVER_SCRIPT_TIMEOUT = int(os.getenv("DRIVER_SCRIPT_TIMEOUT", "30"))
 
 STOP_REQUESTED = threading.Event()
@@ -149,12 +149,18 @@ def format_elapsed(seconds):
 
 def build_chrome_options(headless=True):
     opts = Options()
+    opts.page_load_strategy = "eager"
     if headless:
         opts.add_argument("--headless=new")
     opts.add_argument("--no-sandbox")
     opts.add_argument("--disable-dev-shm-usage")
     opts.add_argument("--disable-gpu")
     opts.add_argument("--disable-extensions")
+    opts.add_argument("--disable-background-networking")
+    opts.add_argument("--disable-sync")
+    opts.add_argument("--no-first-run")
+    opts.add_argument("--no-default-browser-check")
+    opts.add_argument("--blink-settings=imagesEnabled=false")
     opts.add_argument("--remote-debugging-pipe")
     opts.add_argument("--window-size=1920,1080")
     return opts
