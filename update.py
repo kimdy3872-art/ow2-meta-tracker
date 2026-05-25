@@ -939,14 +939,6 @@ def run_stats_update():
     if os.path.exists(LATEST_STATS_PATH):
         previous_latest_df = pd.read_parquet(LATEST_STATS_PATH)
 
-    if previous_latest_df is not None and not previous_latest_df.empty:
-        old_compare = build_snapshot_compare_frame(previous_latest_df.copy())
-        new_compare = build_snapshot_compare_frame(full_df.copy())
-        if new_compare.equals(old_compare):
-            elapsed = format_elapsed(perf_counter() - started_at)
-            print(f"⏭️  데이터 변동 없음. 업데이트를 건너뜁니다. (소요 시간: {elapsed})")
-            return
-
     latest_df = full_df.drop_duplicates(
         subset=['hero', 'data_tier', 'map'],
         keep='last',
@@ -955,16 +947,31 @@ def run_stats_update():
     snapshot_df = latest_df.copy()
     snapshot_df['snapshot_date'] = today_obj.isoformat()
 
-    save_parquet(snapshot_df, LATEST_STATS_PATH)
+    data_changed = True
+    if previous_latest_df is not None and not previous_latest_df.empty:
+        old_compare = build_snapshot_compare_frame(previous_latest_df.copy())
+        new_compare = build_snapshot_compare_frame(full_df.copy())
+        data_changed = not new_compare.equals(old_compare)
+
+    if not data_changed and today_obj.weekday() != WEEKLY_SNAPSHOT_WEEKDAY:
+        elapsed = format_elapsed(perf_counter() - started_at)
+        print(f"⏭️  데이터 변동 없음. 업데이트를 건너뜁니다. (소요 시간: {elapsed})")
+        return
+
+    if data_changed:
+        save_parquet(snapshot_df, LATEST_STATS_PATH)
 
     weekly_saved_as = save_weekly_snapshot_if_due(snapshot_df, today_obj)
 
     elapsed = format_elapsed(perf_counter() - started_at)
-    print(
-        f"🎉 {today} 데이터 갱신 완료! "
-        f"(latest={len(latest_df)}행, 소요 시간: {elapsed})"
-    )
-    print(f"📁 최신 데이터: {LATEST_STATS_PATH}")
+    if data_changed:
+        print(
+            f"🎉 {today} 데이터 갱신 완료! "
+            f"(latest={len(latest_df)}행, 소요 시간: {elapsed})"
+        )
+        print(f"📁 최신 데이터: {LATEST_STATS_PATH}")
+    else:
+        print(f"⏭️  데이터 변동 없음. latest 유지. (소요 시간: {elapsed})")
     print(f"📁 주간 스냅샷: {weekly_saved_as}")
 
 
