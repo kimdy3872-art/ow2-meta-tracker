@@ -69,6 +69,7 @@ def load_history_data():
     frames = []
     sources = [
         (os.path.join("data", "history", "weekly", "**", "*.parquet"), 1),
+        (os.path.join("data", "latest", "latest_tier.parquet"), 2),
     ]
     seen_paths = set()
 
