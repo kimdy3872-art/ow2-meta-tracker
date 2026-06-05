@@ -72,7 +72,7 @@ def get_hero_perk_rows(hero_name):
 
 render_page_hero(
     "영웅 상세 리포트",
-    "선택한 영웅의 티어별 지표, 전장 성능, 퍼크 선호도를 한 번에 확인합니다.",
+    "선택한 영웅의 티어별 지표, 전장 성능, 특전 선호도를 한 번에 확인합니다.",
     badge="Hero Deep Dive",
 )
 render_top_navigation("detail")
