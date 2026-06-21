@@ -5,9 +5,11 @@ import os
 import re
 from app_data import (
     get_hero_image_url,
+    get_hero_subrole,
     get_map_image_url,
     load_latest_stats,
     translate_role_name,
+    translate_subrole_name,
     translate_tier_name,
 )
 from ui import (
@@ -125,6 +127,18 @@ left_col, right_col = st.columns([1, 2.5], gap="large")
 
 with left_col:
     image_url = get_hero_image_url(hero_name) or "https://dummyimage.com/320x320/1f2937/f8fafc.png&text=Hero"
+    subrole = get_hero_subrole(hero_name)
+    subrole_badge = ""
+    if subrole:
+        subrole_label = html.escape(translate_subrole_name(subrole))
+        subrole_badge = (
+            f'<div title="하위 역할: {subrole_label}" style="display:inline-block;'
+            f'font-family:{GLOBAL_FONT_FAMILY};font-size:0.9rem;font-weight:700;color:#fde68a;'
+            'letter-spacing:0.03em;background:linear-gradient(180deg,rgba(69,48,13,0.94) 0%,'
+            'rgba(30,24,12,0.96) 100%);border:1px solid rgba(251,191,36,0.48);'
+            'border-radius:999px;padding:4px 10px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.12);">'
+            f'하위 역할 · {subrole_label}</div>'
+        )
     st.markdown(
         f"""
         <div style="
@@ -180,26 +194,19 @@ with left_col:
         """,
         unsafe_allow_html=True,
     )
-    st.markdown(
-        f"""
-        <div style="
-            display: inline-block;
-            font-family: {GLOBAL_FONT_FAMILY};
-            font-size: 0.9rem;
-            font-weight: 700;
-            color: #bfdbfe;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            margin-top: 8px;
-            background: linear-gradient(180deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
-            border: 1px solid rgba(96, 165, 250, 0.45);
-            border-radius: 999px;
-            padding: 4px 10px;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.16);
-        ">{html.escape(translate_role_name(str(hero_row.get("role", "Unknown"))))}</div>
-        """,
-        unsafe_allow_html=True,
+    role_label = html.escape(translate_role_name(str(hero_row.get("role", "Unknown"))))
+    role_badge = (
+        f'<div style="display:inline-block;font-family:{GLOBAL_FONT_FAMILY};font-size:0.9rem;'
+        'font-weight:700;color:#bfdbfe;letter-spacing:0.06em;text-transform:uppercase;'
+        'background:linear-gradient(180deg,rgba(30,41,59,0.95) 0%,rgba(15,23,42,0.95) 100%);'
+        'border:1px solid rgba(96,165,250,0.45);border-radius:999px;padding:4px 10px;'
+        f'box-shadow:inset 0 1px 0 rgba(255,255,255,0.16);">{role_label}</div>'
     )
+    badge_row = (
+        '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:7px;margin-top:8px;">'
+        f'{role_badge}{subrole_badge}</div>'
+    )
+    st.markdown(badge_row, unsafe_allow_html=True)
 
     perk_rows = get_hero_perk_rows(hero_name)
 

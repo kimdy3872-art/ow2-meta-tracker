@@ -32,6 +32,7 @@ role_dict = {
     '토르비욘': 'Damage', '바스티온': 'Damage', '시메트라': 'Damage', '에코': 'Damage', '소전': 'Damage',
     '시에라': 'Damage',
     '벤처': 'Damage', '벤데타': 'Damage', '안란': 'Damage', '엠레': 'Damage', '프레야': 'Damage',
+    '시온': 'Damage',
     '메르시': 'Support', '아나': 'Support', '루시우': 'Support', '젠야타': 'Support', 
     '모이라': 'Support', '바티스트': 'Support', '브리기테': 'Support', '키리코': 'Support', 
     '라이프위버': 'Support', '일리아리': 'Support', '주노': 'Support', '미즈키': 'Support', '우양' : 'Support',

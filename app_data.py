@@ -13,6 +13,18 @@ ROLE_LABELS = {
     "Support": "지원",
     "Unknown": "미분류",
 }
+SUBROLE_LABELS = {
+    "bruiser": "투사",
+    "initiator": "개시자",
+    "stalwart": "강건한 자",
+    "flanker": "측면 공격가",
+    "recon": "수색가",
+    "sharpshooter": "명사수",
+    "specialist": "전문가",
+    "medic": "의무관",
+    "survivor": "생존왕",
+    "tactician": "전술가",
+}
 TIER_LABELS = {
     "All": "전체 티어",
     "Bronze": "브론즈",
@@ -63,6 +75,7 @@ HERO_NAME_TO_API_NAME = {
     "시그마": "Sigma",
     "시메트라": "Symmetra",
     "시에라": "Sierra",
+    "시온": "Shion",
     "아나": "Ana",
     "안란": "Anran",
     "애쉬": "Ashe",
@@ -88,6 +101,64 @@ HERO_NAME_TO_API_NAME = {
     "한조": "Hanzo",
     "해저드": "Hazard",
 }
+HERO_PORTRAIT_FALLBACKS = {
+    "시온": "https://d15f34w2p8l1cc.cloudfront.net/overwatch/070481cf871590a2b45a51d1335f9fe3d65eb4e4d361ecdd998b34fae2ed65d5.png",
+}
+# Blizzard 공식 영웅 목록의 하위 역할 분류.
+HERO_SUBROLES = {
+    "D.VA": "initiator",
+    "겐지": "flanker",
+    "도미나": "stalwart",
+    "둠피스트": "initiator",
+    "라마트라": "stalwart",
+    "라이프위버": "medic",
+    "라인하르트": "stalwart",
+    "레킹볼": "initiator",
+    "로드호그": "bruiser",
+    "루시우": "tactician",
+    "리퍼": "flanker",
+    "마우가": "bruiser",
+    "메르시": "medic",
+    "메이": "specialist",
+    "모이라": "medic",
+    "미즈키": "survivor",
+    "바스티온": "specialist",
+    "바티스트": "tactician",
+    "벤데타": "flanker",
+    "벤처": "flanker",
+    "브리기테": "survivor",
+    "소전": "sharpshooter",
+    "솔저: 76": "specialist",
+    "솜브라": "recon",
+    "시그마": "stalwart",
+    "시메트라": "specialist",
+    "시에라": "recon",
+    "시온": "flanker",
+    "아나": "tactician",
+    "안란": "flanker",
+    "애쉬": "sharpshooter",
+    "에코": "recon",
+    "엠레": "specialist",
+    "오리사": "bruiser",
+    "우양": "survivor",
+    "위도우메이커": "sharpshooter",
+    "윈스턴": "initiator",
+    "일리아리": "survivor",
+    "자리야": "bruiser",
+    "정커퀸": "stalwart",
+    "정크랫": "specialist",
+    "제트팩 캣": "tactician",
+    "젠야타": "tactician",
+    "주노": "survivor",
+    "캐서디": "sharpshooter",
+    "키리코": "medic",
+    "토르비욘": "specialist",
+    "트레이서": "flanker",
+    "파라": "recon",
+    "프레야": "recon",
+    "한조": "sharpshooter",
+    "해저드": "initiator",
+}
 MAP_ID_ALIAS = {
     "paraiso": "paraíso",
     "esperanca": "esperança",
@@ -96,6 +167,14 @@ MAP_ID_ALIAS = {
 
 def translate_role_name(role_name):
     return ROLE_LABELS.get(str(role_name), str(role_name))
+
+
+def get_hero_subrole(hero_name):
+    return HERO_SUBROLES.get(str(hero_name))
+
+
+def translate_subrole_name(subrole_name):
+    return SUBROLE_LABELS.get(str(subrole_name), str(subrole_name))
 
 
 def translate_tier_name(tier_name):
@@ -194,7 +273,7 @@ def load_hero_portrait_map():
 
 def get_hero_image_url(hero_name):
     api_name = HERO_NAME_TO_API_NAME.get(hero_name, hero_name)
-    return load_hero_portrait_map().get(api_name)
+    return load_hero_portrait_map().get(api_name) or HERO_PORTRAIT_FALLBACKS.get(hero_name)
 
 
 @st.cache_data
