@@ -21,6 +21,116 @@ from ui import (
 
 st.set_page_config(page_title="영웅 상세", layout="wide")
 apply_global_theme()
+st.markdown(
+    """
+    <style>
+    .perk-card {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(15, 23, 42, 0.72);
+        border: 1px solid #334155;
+        border-radius: 10px;
+        padding: 6px 8px;
+        margin-top: 6px;
+        cursor: help;
+        outline: none;
+        transition: border-color 150ms ease, background 150ms ease, transform 150ms ease;
+    }
+    [data-testid="stHorizontalBlock"]:has(.perk-card) {
+        position: relative;
+        overflow: visible;
+    }
+    [data-testid="stColumn"]:has(.perk-card) {
+        position: relative;
+        z-index: 20;
+        overflow: visible;
+    }
+    [data-testid="stColumn"]:has(.perk-card:hover),
+    [data-testid="stColumn"]:has(.perk-card:focus-visible) {
+        z-index: 10000;
+    }
+    [data-testid="stColumn"]:has(.perk-card) [data-testid="stVerticalBlock"],
+    [data-testid="stColumn"]:has(.perk-card) [data-testid="stMarkdownContainer"] {
+        overflow: visible;
+    }
+    .perk-card:hover,
+    .perk-card:focus-visible {
+        border-color: rgba(34, 211, 238, 0.7);
+        background: rgba(30, 41, 59, 0.96);
+        transform: translateY(-1px);
+    }
+    .perk-tooltip {
+        position: absolute;
+        left: calc(100% + 12px);
+        top: 50%;
+        z-index: 10001;
+        width: min(360px, 46vw);
+        padding: 14px;
+        color: #e2e8f0;
+        background: linear-gradient(145deg, rgba(15, 31, 49, 0.99), rgba(17, 24, 39, 0.99));
+        border: 2px solid #22d3ee;
+        border-radius: 10px;
+        box-shadow: 0 18px 45px rgba(2, 6, 23, 0.72), 0 0 18px rgba(34, 211, 238, 0.18);
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transform: translate(8px, -50%);
+        transition: opacity 140ms ease, transform 140ms ease, visibility 140ms ease;
+    }
+    .perk-card:hover .perk-tooltip,
+    .perk-card:focus-visible .perk-tooltip {
+        opacity: 1;
+        visibility: visible;
+        transform: translate(0, -50%);
+    }
+    .perk-tooltip-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .perk-tooltip-icon {
+        width: 42px;
+        height: 42px;
+        object-fit: contain;
+        flex-shrink: 0;
+    }
+    .perk-tooltip-name {
+        flex: 1;
+        color: #a5f3fc;
+        font-size: 1rem;
+        font-weight: 800;
+        line-height: 1.25;
+    }
+    .perk-tooltip-rate {
+        color: #67e8f9;
+        font-size: 1.18rem;
+        font-weight: 900;
+    }
+    .perk-tooltip-description {
+        margin-top: 10px;
+        color: #cbd5e1;
+        font-size: 0.88rem;
+        line-height: 1.55;
+        word-break: keep-all;
+    }
+    @media (max-width: 900px) {
+        .perk-tooltip {
+            left: 0;
+            top: calc(100% + 8px);
+            width: min(360px, 82vw);
+            transform: translateY(8px);
+        }
+        .perk-card:hover .perk-tooltip,
+        .perk-card:focus-visible .perk-tooltip {
+            transform: translateY(0);
+        }
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 PERK_DATA_PATH = os.path.join("data", "latest", "latest_perks.parquet")
 DEFAULT_PERK_IMAGE_URL = "https://dummyimage.com/48x48/1f2937/94a3b8.png&text=Perk"
@@ -49,6 +159,9 @@ def load_hero_perk_data():
         df["update_date"] = df["update_date"].astype(str)
         latest_date = df["update_date"].max()
         df = df[df["update_date"] == latest_date].copy()
+
+    if "perk_description" not in df.columns:
+        df["perk_description"] = ""
 
     df["hero_norm"] = df["hero"].astype(str).map(normalize_hero_key)
     df["perk_type"] = df["perk_type"].astype(str).str.lower()
@@ -227,6 +340,10 @@ with left_col:
         cards = []
         for idx, perk in enumerate(perks):
             perk_name = html.escape(str(perk.get("perk_name", "-")))
+            raw_description = perk.get("perk_description", "")
+            if pd.isna(raw_description) or not str(raw_description).strip():
+                raw_description = "상세 설명 데이터가 없습니다."
+            perk_description = html.escape(str(raw_description).strip())
             perk_rate = perk.get("pick_rate")
             if pd.notna(perk_rate):
                 perk_rate_text = f"{float(perk_rate):.0f}%"
@@ -238,10 +355,18 @@ with left_col:
             perk_image_url = html.escape(str(perk_image_url))
 
             cards.append(
-                f'<div style="display:flex;align-items:center;gap:8px;background:rgba(15,23,42,0.72);border:1px solid #334155;border-radius:10px;padding:6px 8px;margin-top:6px;">'
+                f'<div class="perk-card" tabindex="0" aria-label="{perk_name} 특전 상세 설명">'
                 f'<img src="{perk_image_url}" style="width:28px;height:28px;object-fit:cover;border-radius:6px;border:1px solid #475569;flex-shrink:0;" />'
                 f'<div style="flex:1;color:#e2e8f0;font-size:0.82rem;font-weight:700;line-height:1.2;">{perk_name}</div>'
                 f'<div style="color:{accent_color};font-size:0.82rem;font-weight:800;min-width:56px;text-align:right;">{best_mark}{perk_rate_text}</div>'
+                f'<div class="perk-tooltip" role="tooltip">'
+                f'<div class="perk-tooltip-head">'
+                f'<img class="perk-tooltip-icon" src="{perk_image_url}" alt="" />'
+                f'<div class="perk-tooltip-name">{perk_name}</div>'
+                f'<div class="perk-tooltip-rate">{perk_rate_text}</div>'
+                f'</div>'
+                f'<div class="perk-tooltip-description">{perk_description}</div>'
+                f'</div>'
                 f'</div>'
             )
 

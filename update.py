@@ -754,9 +754,15 @@ def scrape_hero_page(driver, hero_url):
                     perkName = lines.length ? lines[0] : '';
                 }
 
+                const descriptionElement = Array.from(li.children).find(
+                    element => element.tagName === 'SPAN' && element.classList.contains('text-gray-300')
+                );
+                const perkDescription = (descriptionElement?.textContent || '').trim();
+
                 rows.push({
                     perk_type: perkType,
                     perk_name: perkName,
+                    perk_description: perkDescription,
                     pick_rate: pickRate,
                     perk_image_url: perkImage,
                 });
@@ -790,6 +796,7 @@ def scrape_hero_page(driver, hero_url):
                 "category": category,
                 "perk_type": row.get("perk_type", ""),
                 "perk_name": (row.get("perk_name") or "").strip(),
+                "perk_description": (row.get("perk_description") or "").strip(),
                 "pick_rate": row.get("pick_rate"),
                 "perk_slug": extract_perk_slug(perk_image_url),
                 "perk_image_url": perk_image_url,
@@ -862,6 +869,7 @@ def run_perk_update(locale=DEFAULT_LOCALE, max_heroes=None, headed=False):
             "category",
             "perk_type",
             "perk_name",
+            "perk_description",
             "pick_rate",
             "perk_slug",
             "perk_image_url",

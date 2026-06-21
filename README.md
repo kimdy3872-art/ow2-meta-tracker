@@ -158,7 +158,7 @@ total_score = 0.5 * z(win_rate)
 | 컬럼 | 설명 |
 |---|---|
 | hero, hero_slug, role, category | 영웅 기본 정보 |
-| perk_type, perk_name, pick_rate | 퍼크 정보 |
+| perk_type, perk_name, perk_description, pick_rate | 퍼크 정보 및 상세 설명 |
 | perk_slug, perk_image_url, perk_image_raw_url | 퍼크 이미지 |
 | hero_image_url, source_url, update_date | 출처 및 수집일 |
 
