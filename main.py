@@ -6,6 +6,8 @@ from app_data import (
     ROLE_ORDER,
     TIER_ORDER,
     get_hero_image_url,
+    load_latest_patch_ai_analysis,
+    load_latest_patch_note,
     load_latest_stats,
     translate_role_name,
     translate_tier_name,
@@ -36,6 +38,202 @@ render_page_hero(
 )
 render_top_navigation("main")
 st.markdown("<div style='height: 0.25rem;'></div>", unsafe_allow_html=True)
+
+
+def _as_list(value):
+    return value if isinstance(value, list) else []
+
+
+def _clip_text(value, limit=220):
+    text = " ".join(str(value or "").split())
+    if len(text) <= limit:
+        return text
+    return text[: limit - 1].rstrip() + "..."
+
+
+def render_patch_intelligence_block():
+    patch_note = load_latest_patch_note()
+    if not patch_note:
+        return
+
+    analysis = load_latest_patch_ai_analysis(patch_note.get("id"))
+    affected_heroes = _as_list(patch_note.get("affected_heroes"))
+    summary_items = _as_list(patch_note.get("summary_items"))
+    source_url = str(patch_note.get("source_url") or "")
+    title = str(patch_note.get("title") or "최근 패치노트")
+    patch_date = str(patch_note.get("patch_date") or "-")
+    summary_text = str(patch_note.get("summary") or "")
+    if not summary_text and summary_items:
+        summary_text = " · ".join(str(item) for item in summary_items[:3])
+
+    hero_badges = "".join(
+        f"<span class='patch-hero-badge'>{html.escape(str(hero_name))}</span>"
+        for hero_name in affected_heroes[:8]
+    )
+    if not hero_badges:
+        hero_badges = "<span class='patch-hero-badge muted'>영향 영웅 자동 태깅 대기</span>"
+
+    source_link = ""
+    if source_url:
+        safe_url = html.escape(source_url, quote=True)
+        source_link = (
+            f"<a class='patch-link' href='{safe_url}' target='_blank' "
+            "rel='noopener noreferrer'>공식 원문</a>"
+        )
+
+    if analysis:
+        hero_impacts = _as_list(analysis.get("hero_impacts"))
+        impact_text = ""
+        if hero_impacts:
+            impact_text = " · ".join(
+                f"{row.get('hero', '-')}: {row.get('direction', '')}"
+                for row in hero_impacts[:5]
+                if isinstance(row, dict)
+            )
+        ai_panel_html = f"""
+<div class="patch-ai-box">
+    <div class="patch-ai-title">AI 패치 영향 분석</div>
+    <div class="patch-ai-summary">{html.escape(_clip_text(analysis.get("summary"), 320))}</div>
+    <div class="patch-summary" style="margin-top:6px;">{html.escape(impact_text)}</div>
+</div>
+"""
+    else:
+        ai_panel_html = """
+<div class="patch-ai-box">
+    <div class="patch-ai-title">AI 패치 영향 분석</div>
+    <div class="patch-ai-summary">아직 오늘 지표와 연결된 AI 분석이 생성되지 않았습니다.</div>
+</div>
+"""
+
+    card_html = "\n".join(line.lstrip() for line in f"""
+        <style>
+        .patch-intel-wrap {{
+            border: 1px solid {GLOBAL_BORDER_COLOR};
+            border-radius: 8px;
+            background: linear-gradient(180deg, {GLOBAL_SURFACE_COLOR} 0%, #101a2d 100%);
+            padding: 16px 18px;
+            margin: 4px 0 14px;
+        }}
+        .patch-intel-top {{
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            align-items: flex-start;
+        }}
+        .patch-kicker {{
+            color: #93c5fd;
+            font-size: 0.76rem;
+            font-weight: 800;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }}
+        .patch-title {{
+            color: {GLOBAL_TEXT_COLOR};
+            font-size: 1.04rem;
+            font-weight: 850;
+            line-height: 1.35;
+            margin-bottom: 6px;
+        }}
+        .patch-summary {{
+            color: #cbd5e1;
+            font-size: 0.92rem;
+            line-height: 1.55;
+        }}
+        .patch-meta {{
+            color: #94a3b8;
+            font-size: 0.82rem;
+            white-space: nowrap;
+            text-align: right;
+        }}
+        .patch-link {{
+            display: inline-block;
+            margin-top: 8px;
+            color: #bfdbfe;
+            font-weight: 800;
+            text-decoration: none;
+            border-bottom: 1px solid rgba(191, 219, 254, 0.55);
+        }}
+        .patch-hero-row {{
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 12px;
+        }}
+        .patch-hero-badge {{
+            color: #e0f2fe;
+            background: rgba(14, 165, 233, 0.12);
+            border: 1px solid rgba(125, 211, 252, 0.25);
+            border-radius: 999px;
+            padding: 3px 9px;
+            font-size: 0.76rem;
+            font-weight: 750;
+        }}
+        .patch-hero-badge.muted {{
+            color: #cbd5e1;
+            background: rgba(148, 163, 184, 0.1);
+            border-color: rgba(148, 163, 184, 0.22);
+        }}
+        .patch-ai-box {{
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(66, 88, 126, 0.6);
+        }}
+        .patch-ai-title {{
+            color: #f8fafc;
+            font-size: 0.9rem;
+            font-weight: 850;
+            margin-bottom: 5px;
+        }}
+        .patch-ai-summary {{
+            color: #dbeafe;
+            font-size: 0.92rem;
+            line-height: 1.55;
+        }}
+        @media (max-width: 760px) {{
+            .patch-intel-top {{display: block;}}
+            .patch-meta {{text-align: left; margin-top: 8px; white-space: normal;}}
+        }}
+        </style>
+        <section class="patch-intel-wrap">
+            <div class="patch-intel-top">
+                <div>
+                    <div class="patch-kicker">Recent Patch Notes</div>
+                    <div class="patch-title">{html.escape(title)}</div>
+                    <div class="patch-summary">{html.escape(_clip_text(summary_text, 260))}</div>
+                </div>
+                <div class="patch-meta">
+                    <div>{html.escape(patch_date)}</div>
+                    {source_link}
+                </div>
+            </div>
+            <div class="patch-hero-row">{hero_badges}</div>
+{ai_panel_html}
+        </section>
+        """.splitlines())
+    st.markdown(card_html, unsafe_allow_html=True)
+
+    with st.expander("패치노트 자세히 보기"):
+        if summary_items:
+            st.markdown("**핵심 요약**")
+            for item in summary_items[:8]:
+                st.markdown(f"- {item}")
+        st.markdown("**상세 내용**")
+        st.markdown(str(patch_note.get("parsed_content") or patch_note.get("raw_content") or "상세 내용이 없습니다."))
+
+    if analysis:
+        with st.expander("AI 분석 자세히 보기"):
+            st.markdown(str(analysis.get("meta_analysis") or analysis.get("summary") or "상세 분석이 없습니다."))
+            hero_impacts = _as_list(analysis.get("hero_impacts"))
+            if hero_impacts:
+                st.markdown("**영웅별 영향**")
+                for row in hero_impacts:
+                    if not isinstance(row, dict):
+                        continue
+                    hero_name = row.get("hero", "-")
+                    direction = row.get("direction", "-")
+                    reason = row.get("reason", "")
+                    st.markdown(f"- **{hero_name}** ({direction}): {reason}")
 
 # -------------------------------------------------
 # 2. 데이터 로드
@@ -158,6 +356,8 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+
+render_patch_intelligence_block()
 
 # -------------------------------------------------
 # 4. 데이터 필터링

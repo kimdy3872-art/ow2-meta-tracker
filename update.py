@@ -1,22 +1,35 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 import os
 import re
 import threading
 import time
-from datetime import date
+import urllib.request
+from datetime import date, datetime
+from html.parser import HTMLParser
 from typing import Dict, List
 from urllib.parse import urlencode, urlparse, parse_qs, unquote, urljoin
 
 import numpy as np
 import pandas as pd
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import SessionNotCreatedException, WebDriverException
+try:
+    from selenium import webdriver
+    from selenium.webdriver.chrome.options import Options
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.support.ui import WebDriverWait
+    from selenium.webdriver.support import expected_conditions as EC
+    from selenium.common.exceptions import SessionNotCreatedException, WebDriverException
+except ImportError:
+    webdriver = None
+    Options = None
+    By = None
+    WebDriverWait = None
+    EC = None
+    SessionNotCreatedException = RuntimeError
+    WebDriverException = RuntimeError
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from time import perf_counter
 
@@ -97,6 +110,10 @@ HISTORY_DIR = os.path.join(DATA_DIR, "history")
 LATEST_STATS_PATH = os.path.join(LATEST_DIR, "latest_tier.parquet")
 LATEST_PERKS_PATH = os.path.join(LATEST_DIR, "latest_perks.parquet")
 WEEKLY_HISTORY_ROOT = os.path.join(HISTORY_DIR, "weekly")
+DAILY_HISTORY_ROOT = os.path.join(HISTORY_DIR, "daily")
+PATCH_NOTES_DIR = os.path.join(DATA_DIR, "patch_notes")
+PATCH_NOTES_PATH = os.path.join(PATCH_NOTES_DIR, "patch_notes.json")
+PATCH_AI_ANALYSIS_PATH = os.path.join(PATCH_NOTES_DIR, "patch_ai_analysis.json")
 WEEKLY_SNAPSHOT_WEEKDAY = int(os.getenv("WEEKLY_SNAPSHOT_WEEKDAY", "0"))
 
 WIN_RATE_WEIGHT = 0.5
@@ -105,6 +122,15 @@ BAN_RATE_WEIGHT = 0.2
 RANK_LABELS = ['C', 'B', 'A', 'S']
 
 BASE_URL = "https://owperks.com"
+OFFICIAL_PATCH_NOTES_BASE_URL = "https://overwatch.blizzard.com/ko-kr/news/patch-notes/live"
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen3:14b")
+OLLAMA_GENERATE_URL = os.getenv("OLLAMA_GENERATE_URL", "http://localhost:11434/api/generate")
+ENABLE_OLLAMA_ANALYSIS = os.getenv(
+    "ENABLE_OLLAMA_ANALYSIS",
+    "0" if os.getenv("GITHUB_ACTIONS") == "true" else "1",
+) != "0"
+OLLAMA_TIMEOUT = int(os.getenv("OLLAMA_TIMEOUT", "90"))
+PATCH_PROMPT_VERSION = "patch-impact-v1"
 DEFAULT_LOCALE = "ko"
 STATS_INPUT = "PC"
 STATS_REGION = "Asia"
@@ -201,6 +227,9 @@ def quit_active_drivers():
 
 def create_driver(headless=True, max_retries=DRIVER_CREATE_RETRIES):
     """Create Chrome session with retries for CI renderer startup failures."""
+    if webdriver is None or Options is None:
+        raise RuntimeError("selenium이 설치되어 있지 않아 브라우저 수집을 실행할 수 없습니다.")
+
     last_error = None
     for attempt in range(1, max_retries + 1):
         try:
@@ -514,6 +543,424 @@ def save_weekly_snapshot_if_due(snapshot_df, today_obj):
     weekly_parquet_path = os.path.join(weekly_dir, "tier_snapshot.parquet")
     save_parquet(snapshot_df, weekly_parquet_path)
     return weekly_parquet_path
+
+
+def save_daily_snapshot(snapshot_df, today_obj):
+    daily_dir = os.path.join(
+        DAILY_HISTORY_ROOT,
+        f"year={today_obj.year}",
+        f"month={today_obj.month:02d}",
+    )
+    daily_parquet_path = os.path.join(daily_dir, "tier_snapshot.parquet")
+
+    existing_df = None
+    if os.path.exists(daily_parquet_path):
+        try:
+            existing_df = pd.read_parquet(daily_parquet_path)
+        except Exception:
+            existing_df = None
+
+    if existing_df is not None and not existing_df.empty:
+        existing_df = existing_df[
+            existing_df.get("snapshot_date", "").astype(str) != today_obj.isoformat()
+        ].copy()
+        snapshot_df = pd.concat([existing_df, snapshot_df], ignore_index=True, sort=False)
+
+    save_parquet(snapshot_df, daily_parquet_path)
+    return daily_parquet_path
+
+
+class PatchTextExtractor(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.parts = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag in {"p", "li", "h3", "h4", "h5", "div", "br"}:
+            self.parts.append("\n")
+
+    def handle_endtag(self, tag):
+        if tag in {"p", "li", "h3", "h4", "h5", "div"}:
+            self.parts.append("\n")
+
+    def handle_data(self, data):
+        text = data.strip()
+        if text:
+            self.parts.append(text)
+
+    def get_text(self):
+        raw = "\n".join(self.parts)
+        lines = []
+        for line in raw.splitlines():
+            cleaned = re.sub(r"\s+", " ", line).strip()
+            if cleaned and cleaned not in {"위로 이동"}:
+                lines.append(cleaned)
+        return "\n".join(lines)
+
+
+def html_to_text(html_text):
+    parser = PatchTextExtractor()
+    parser.feed(html_text)
+    return parser.get_text()
+
+
+def load_json_list(path):
+    if not os.path.exists(path):
+        return []
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            payload = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return []
+    return payload if isinstance(payload, list) else []
+
+
+def save_json_list(rows, path):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(rows, f, ensure_ascii=False, indent=2)
+        f.write("\n")
+
+
+def fetch_patch_month_html(year, month):
+    url = f"{OFFICIAL_PATCH_NOTES_BASE_URL}/{year}/{month}/"
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    with urllib.request.urlopen(req, timeout=25) as resp:
+        return resp.read().decode("utf-8", errors="ignore"), resp.url
+
+
+def month_candidates(today_obj, months_back=6):
+    year = today_obj.year
+    month = today_obj.month
+    for _ in range(months_back):
+        yield year, month
+        month -= 1
+        if month == 0:
+            month = 12
+            year -= 1
+
+
+def parse_patch_blocks(page_html, page_url):
+    blocks = re.split(r'(?=<div class="PatchNotes-patch[^"]*")', page_html)
+    patches = []
+    for block in blocks:
+        if 'class="PatchNotes-patch' not in block:
+            continue
+
+        patch_id_match = re.search(r'<div class="anchor" id="([^"]+)"', block)
+        date_match = re.search(r'<div class="PatchNotes-date">(.+?)</div>', block, re.S)
+        title_match = re.search(r'<h3 class="PatchNotes-patchTitle">(.+?)</h3>', block, re.S)
+        if not date_match or not title_match:
+            continue
+
+        patch_id = patch_id_match.group(1) if patch_id_match else ""
+        raw_date = html_to_text(date_match.group(1))
+        title = html_to_text(title_match.group(1))
+        parsed_date = parse_korean_patch_date(raw_date, title, patch_id)
+        if not parsed_date:
+            continue
+
+        raw_content = html_to_text(block)
+        content_lines = [
+            line for line in raw_content.splitlines()
+            if line not in {raw_date, title, "위로 이동"}
+        ]
+        parsed_content = "\n".join(content_lines).strip()
+        affected_heroes = sorted(set(re.findall(r'class="PatchNotesHeroUpdate-icon"[^>]*alt="([^"]+)"', block)))
+        summary_items = build_patch_summary_items(parsed_content, affected_heroes)
+        summary = " · ".join(summary_items[:3]) if summary_items else "상세 패치노트를 확인하세요."
+        if not patch_id:
+            patch_id = "patch-" + hashlib.sha1(f"{parsed_date}-{title}".encode("utf-8")).hexdigest()[:12]
+
+        patches.append(
+            {
+                "id": patch_id,
+                "patch_version": patch_id.replace("patch-", ""),
+                "title": title,
+                "patch_date": parsed_date,
+                "source_url": f"{page_url.split('#')[0]}#{patch_id}",
+                "raw_content": raw_content,
+                "parsed_content": parsed_content,
+                "summary": summary,
+                "summary_items": summary_items,
+                "affected_heroes": affected_heroes,
+                "created_at": datetime.now().isoformat(timespec="seconds"),
+                "updated_at": datetime.now().isoformat(timespec="seconds"),
+            }
+        )
+
+    return patches
+
+
+def parse_korean_patch_date(raw_date, title, patch_id):
+    candidates = [raw_date, title, patch_id]
+    for value in candidates:
+        match = re.search(r"(\d{4})\D+(\d{1,2})\D+(\d{1,2})", str(value))
+        if match:
+            year, month, day = (int(part) for part in match.groups())
+            try:
+                return date(year, month, day).isoformat()
+            except ValueError:
+                continue
+    return ""
+
+
+def build_patch_summary_items(parsed_content, affected_heroes):
+    lines = []
+    for line in parsed_content.splitlines():
+        cleaned = re.sub(r"\s+", " ", line).strip()
+        if len(cleaned) < 8:
+            continue
+        if cleaned.startswith("오버워치 2 패치 노트"):
+            continue
+        if re.match(r"^\d{4}년", cleaned):
+            continue
+        lines.append(cleaned)
+
+    items = []
+    if affected_heroes:
+        preview = ", ".join(affected_heroes[:6])
+        suffix = " 등" if len(affected_heroes) > 6 else ""
+        items.append(f"영향 영웅: {preview}{suffix}")
+    for line in lines:
+        if line not in items:
+            items.append(line)
+        if len(items) >= 6:
+            break
+    return items
+
+
+def fetch_latest_patch_note(today_obj=None):
+    today_obj = today_obj or date.today()
+    all_patches = []
+    for year, month in month_candidates(today_obj):
+        try:
+            page_html, page_url = fetch_patch_month_html(year, month)
+            all_patches.extend(parse_patch_blocks(page_html, page_url))
+        except Exception as exc:
+            print(f"⚠️  패치노트 페이지 수집 실패({year}/{month}): {exc}")
+        if all_patches:
+            break
+
+    if not all_patches:
+        return None
+
+    return max(all_patches, key=lambda row: (row["patch_date"], row["id"]))
+
+
+def upsert_patch_note(patch_note):
+    rows = load_json_list(PATCH_NOTES_PATH)
+    now = datetime.now().isoformat(timespec="seconds")
+    patch_note = dict(patch_note)
+    patch_note["updated_at"] = now
+
+    for idx, row in enumerate(rows):
+        if row.get("id") == patch_note.get("id"):
+            patch_note["created_at"] = row.get("created_at") or patch_note.get("created_at") or now
+            rows[idx] = patch_note
+            save_json_list(sorted(rows, key=lambda item: item.get("patch_date", "")), PATCH_NOTES_PATH)
+            return patch_note, False
+
+    patch_note["created_at"] = patch_note.get("created_at") or now
+    rows.append(patch_note)
+    save_json_list(sorted(rows, key=lambda item: item.get("patch_date", "")), PATCH_NOTES_PATH)
+    return patch_note, True
+
+
+def build_metrics_digest(current_df, previous_df=None, tier="Gold"):
+    if current_df is None or current_df.empty:
+        return "지표 데이터가 없습니다."
+
+    current = current_df[
+        (current_df["map"].astype(str) == "all-maps")
+        & (current_df["data_tier"].astype(str) == tier)
+    ].copy()
+    if current.empty:
+        current = current_df[current_df["map"].astype(str) == "all-maps"].copy()
+
+    for col in ["win_rate", "pick_rate", "ban_rate", "total_score"]:
+        if col in current.columns:
+            current[col] = pd.to_numeric(current[col], errors="coerce")
+
+    compare = current[["hero", "role", "data_tier", "win_rate", "pick_rate", "ban_rate", "rank"]].copy()
+    if previous_df is not None and not previous_df.empty:
+        previous = previous_df[
+            (previous_df["map"].astype(str) == "all-maps")
+            & (previous_df["data_tier"].astype(str).isin(compare["data_tier"].astype(str).unique()))
+        ].copy()
+        for col in ["win_rate", "pick_rate", "ban_rate"]:
+            if col in previous.columns:
+                previous[col] = pd.to_numeric(previous[col], errors="coerce")
+        previous = previous[["hero", "data_tier", "win_rate", "pick_rate", "ban_rate", "rank"]].rename(
+            columns={
+                "win_rate": "prev_win_rate",
+                "pick_rate": "prev_pick_rate",
+                "ban_rate": "prev_ban_rate",
+                "rank": "prev_rank",
+            }
+        )
+        compare = compare.merge(previous, on=["hero", "data_tier"], how="left")
+        compare["win_delta"] = compare["win_rate"] - compare["prev_win_rate"]
+        compare["pick_delta"] = compare["pick_rate"] - compare["prev_pick_rate"]
+        compare["ban_delta"] = compare["ban_rate"] - compare["prev_ban_rate"]
+        compare["impact_score"] = (
+            compare["win_delta"].abs().fillna(0)
+            + compare["pick_delta"].abs().fillna(0)
+            + compare["ban_delta"].abs().fillna(0) * 0.5
+        )
+        compare = compare.sort_values("impact_score", ascending=False)
+    else:
+        compare = compare.sort_values(["rank", "pick_rate"], ascending=[False, False])
+
+    rows = []
+    for _, row in compare.head(16).iterrows():
+        rows.append(
+            {
+                "hero": row.get("hero"),
+                "role": row.get("role"),
+                "tier": row.get("data_tier"),
+                "rank": row.get("rank"),
+                "prev_rank": row.get("prev_rank", ""),
+                "win_rate": round(float(row.get("win_rate", 0) or 0), 2),
+                "pick_rate": round(float(row.get("pick_rate", 0) or 0), 2),
+                "ban_rate": round(float(row.get("ban_rate", 0) or 0), 2),
+                "win_delta": round(float(row.get("win_delta", 0) or 0), 2),
+                "pick_delta": round(float(row.get("pick_delta", 0) or 0), 2),
+                "ban_delta": round(float(row.get("ban_delta", 0) or 0), 2),
+            }
+        )
+
+    return json.dumps(rows, ensure_ascii=False, indent=2)
+
+
+def request_ollama_patch_analysis(patch_note, metrics_digest):
+    prompt = f"""
+너는 오버워치 2 메타 분석 도우미다.
+아래 공식 패치노트와 최신 영웅 지표 변화를 연결해서 한국어로 짧고 근거 중심의 분석을 작성해라.
+
+반드시 JSON만 출력해라. 스키마:
+{{
+  "summary": "메인 페이지에 보여줄 1~2문장 요약",
+  "meta_analysis": "상세 분석 3~6문장",
+  "hero_impacts": [
+    {{"hero": "영웅명", "direction": "상승|하락|중립|관찰", "reason": "지표와 패치 내용을 연결한 이유"}}
+  ],
+  "confidence_note": "표본/시차/주의사항"
+}}
+
+[패치노트]
+제목: {patch_note.get("title")}
+날짜: {patch_note.get("patch_date")}
+영향 영웅: {", ".join(patch_note.get("affected_heroes") or [])}
+내용:
+{str(patch_note.get("parsed_content") or "")[:8000]}
+
+[최신 지표 변화]
+{metrics_digest}
+""".strip()
+
+    payload = {
+        "model": OLLAMA_MODEL,
+        "prompt": prompt,
+        "stream": False,
+        "format": "json",
+        "options": {"temperature": 0.2},
+    }
+    data = json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(
+        OLLAMA_GENERATE_URL,
+        data=data,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    with urllib.request.urlopen(req, timeout=OLLAMA_TIMEOUT) as resp:
+        body = json.loads(resp.read().decode("utf-8"))
+
+    response_text = body.get("response", "").strip()
+    return json.loads(response_text)
+
+
+def upsert_patch_ai_analysis(analysis_row):
+    rows = load_json_list(PATCH_AI_ANALYSIS_PATH)
+    replaced = False
+    for idx, row in enumerate(rows):
+        if (
+            row.get("patch_note_id") == analysis_row.get("patch_note_id")
+            and row.get("analysis_date") == analysis_row.get("analysis_date")
+            and row.get("metrics_snapshot_id") == analysis_row.get("metrics_snapshot_id")
+        ):
+            rows[idx] = analysis_row
+            replaced = True
+            break
+    if not replaced:
+        rows.append(analysis_row)
+    rows = sorted(rows, key=lambda item: (item.get("analysis_date", ""), item.get("patch_note_id", "")))
+    save_json_list(rows, PATCH_AI_ANALYSIS_PATH)
+    return not replaced
+
+
+def run_patch_update(stats_result=None):
+    today_obj = date.today()
+    patch_note = fetch_latest_patch_note(today_obj=today_obj)
+    if not patch_note:
+        print("⚠️  최신 패치노트를 찾지 못했습니다.")
+        return
+
+    patch_note, is_new = upsert_patch_note(patch_note)
+    print(f"{'🆕' if is_new else '✅'} 최신 패치노트 저장: {patch_note['title']} ({patch_note['patch_date']})")
+
+    current_df = None
+    previous_df = None
+    metrics_snapshot_id = ""
+    data_changed = False
+
+    if stats_result:
+        current_df = stats_result.get("latest_df")
+        previous_df = stats_result.get("previous_latest_df")
+        metrics_snapshot_id = stats_result.get("daily_snapshot_path") or ""
+        data_changed = bool(stats_result.get("data_changed"))
+    elif os.path.exists(LATEST_STATS_PATH):
+        current_df = pd.read_parquet(LATEST_STATS_PATH)
+        snapshot_dates = current_df.get("snapshot_date", pd.Series(dtype=str)).astype(str)
+        update_dates = current_df.get("update_date", pd.Series(dtype=str)).astype(str)
+        data_changed = today_obj.isoformat() in set(snapshot_dates) or today_obj.isoformat() in set(update_dates)
+        metrics_snapshot_id = LATEST_STATS_PATH
+
+    if current_df is None or current_df.empty:
+        print("⚠️  AI 분석 생성을 건너뜁니다. 지표 데이터가 없습니다.")
+        return
+    if not data_changed:
+        print("⏭️  지표 변동이 없어 AI 패치 영향 분석 생성을 건너뜁니다.")
+        return
+    if not ENABLE_OLLAMA_ANALYSIS:
+        print("⏭️  ENABLE_OLLAMA_ANALYSIS=0 설정으로 AI 패치 영향 분석 생성을 건너뜁니다.")
+        return
+
+    metrics_digest = build_metrics_digest(current_df, previous_df=previous_df)
+    try:
+        ai_payload = request_ollama_patch_analysis(patch_note, metrics_digest)
+    except Exception as exc:
+        print(f"⚠️  Ollama AI 분석 생성 실패: {exc}")
+        return
+
+    now = datetime.now().isoformat(timespec="seconds")
+    analysis_row = {
+        "id": hashlib.sha1(
+            f"{patch_note['id']}|{today_obj.isoformat()}|{metrics_snapshot_id}|{OLLAMA_MODEL}|{PATCH_PROMPT_VERSION}".encode("utf-8")
+        ).hexdigest()[:16],
+        "patch_note_id": patch_note["id"],
+        "analysis_date": today_obj.isoformat(),
+        "metrics_snapshot_id": metrics_snapshot_id,
+        "model_name": OLLAMA_MODEL,
+        "prompt_version": PATCH_PROMPT_VERSION,
+        "summary": ai_payload.get("summary", ""),
+        "hero_impacts": ai_payload.get("hero_impacts", []),
+        "meta_analysis": ai_payload.get("meta_analysis", ""),
+        "confidence_note": ai_payload.get("confidence_note", ""),
+        "created_at": now,
+    }
+    created = upsert_patch_ai_analysis(analysis_row)
+    print(f"{'🧠' if created else '♻️'} AI 패치 영향 분석 저장: {analysis_row['analysis_date']}")
 
 
 def resolve_stats_game_mode_rq():
@@ -1045,6 +1492,7 @@ def run_stats_update():
         data_changed = not new_compare.equals(old_compare)
 
     save_parquet(snapshot_df, LATEST_STATS_PATH)
+    daily_saved_as = save_daily_snapshot(snapshot_df, today_obj)
     weekly_saved_as = save_weekly_snapshot_if_due(snapshot_df, today_obj)
 
     elapsed = format_elapsed(perf_counter() - started_at)
@@ -1056,7 +1504,15 @@ def run_stats_update():
         print(f"📁 최신 데이터: {LATEST_STATS_PATH}")
     else:
         print(f"⏭️  데이터 변동 없음. latest 덮어쓰기 완료. (소요 시간: {elapsed})")
+    print(f"📁 일별 스냅샷: {daily_saved_as}")
     print(f"📁 주간 스냅샷: {weekly_saved_as}")
+    return {
+        "latest_df": latest_df,
+        "previous_latest_df": previous_latest_df,
+        "data_changed": data_changed,
+        "daily_snapshot_path": daily_saved_as,
+        "weekly_snapshot_path": weekly_saved_as,
+    }
 
 
 def parse_args():
@@ -1065,7 +1521,7 @@ def parse_args():
     )
     parser.add_argument(
         "--mode",
-        choices=["stats", "perks", "all"],
+        choices=["stats", "perks", "patch", "all"],
         default="stats",
         help="What to update (default: stats)",
     )
@@ -1082,14 +1538,17 @@ def parse_args():
 def main():
     args = parse_args()
 
+    stats_result = None
     if args.mode in ("stats", "all"):
-        run_stats_update()
+        stats_result = run_stats_update()
     if args.mode in ("perks", "all"):
         run_perk_update(
             locale=args.locale,
             max_heroes=args.max_heroes,
             headed=args.headed,
         )
+    if args.mode in ("patch", "all"):
+        run_patch_update(stats_result=stats_result)
 
 
 if __name__ == "__main__":

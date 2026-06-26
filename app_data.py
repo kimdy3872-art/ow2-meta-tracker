@@ -46,6 +46,8 @@ NUMERIC_STATS_COLUMNS = [
     "pick_rate_z",
     "total_score",
 ]
+PATCH_NOTES_PATH = os.path.join("data", "patch_notes", "patch_notes.json")
+PATCH_AI_ANALYSIS_PATH = os.path.join("data", "patch_notes", "patch_ai_analysis.json")
 
 HERO_NAME_TO_API_NAME = {
     "D.VA": "D.Va",
@@ -274,6 +276,50 @@ def load_hero_portrait_map():
 def get_hero_image_url(hero_name):
     api_name = HERO_NAME_TO_API_NAME.get(hero_name, hero_name)
     return load_hero_portrait_map().get(api_name) or HERO_PORTRAIT_FALLBACKS.get(hero_name)
+
+
+def _load_json_list(path):
+    if not os.path.exists(path):
+        return []
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            payload = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return []
+    return payload if isinstance(payload, list) else []
+
+
+@st.cache_data
+def load_latest_patch_note():
+    notes = _load_json_list(PATCH_NOTES_PATH)
+    if not notes:
+        return None
+    return max(
+        notes,
+        key=lambda row: (
+            str(row.get("patch_date", "")),
+            str(row.get("created_at", "")),
+        ),
+    )
+
+
+@st.cache_data
+def load_latest_patch_ai_analysis(patch_note_id=None):
+    analyses = _load_json_list(PATCH_AI_ANALYSIS_PATH)
+    if patch_note_id:
+        analyses = [
+            row for row in analyses
+            if str(row.get("patch_note_id", "")) == str(patch_note_id)
+        ]
+    if not analyses:
+        return None
+    return max(
+        analyses,
+        key=lambda row: (
+            str(row.get("analysis_date", "")),
+            str(row.get("created_at", "")),
+        ),
+    )
 
 
 @st.cache_data
