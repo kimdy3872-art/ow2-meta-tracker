@@ -102,6 +102,7 @@ WEEKLY_SNAPSHOT_WEEKDAY = int(os.getenv("WEEKLY_SNAPSHOT_WEEKDAY", "0"))
 WIN_RATE_WEIGHT = 0.5
 PICK_RATE_WEIGHT = 0.3
 BAN_RATE_WEIGHT = 0.2
+RANK_LABELS = ['C', 'B', 'A', 'S']
 
 BASE_URL = "https://owperks.com"
 DEFAULT_LOCALE = "ko"
@@ -434,6 +435,29 @@ def is_degenerate_snapshot(df):
     no_win_variance_ratio = (by_hero_tier_win <= 1).mean()
     no_pick_variance_ratio = (by_hero_tier_pick <= 1).mean()
     return no_win_variance_ratio >= 0.98 and no_pick_variance_ratio >= 0.98
+
+
+def assign_score_rank(scores):
+    if len(scores) < len(RANK_LABELS) or scores.nunique(dropna=True) < 2:
+        return pd.Series(['A'] * len(scores), index=scores.index)
+
+    try:
+        bins = pd.qcut(
+            scores,
+            q=len(RANK_LABELS),
+            labels=False,
+            duplicates='drop',
+        )
+    except ValueError:
+        return pd.Series(['A'] * len(scores), index=scores.index)
+
+    bin_count = int(bins.max()) + 1 if not bins.isna().all() else 0
+    if bin_count < 2:
+        return pd.Series(['A'] * len(scores), index=scores.index)
+
+    label_indexes = np.linspace(0, len(RANK_LABELS) - 1, bin_count).round().astype(int)
+    dynamic_labels = [RANK_LABELS[index] for index in label_indexes]
+    return bins.map(lambda bin_index: dynamic_labels[int(bin_index)] if pd.notna(bin_index) else 'A')
 
 
 def build_snapshot_compare_frame(df):
@@ -991,12 +1015,7 @@ def run_stats_update():
         + full_df['ban_rate_z'] * BAN_RATE_WEIGHT
     )
 
-    def assign_rank(scores):
-        if len(scores) >= 4:
-            return pd.qcut(scores, q=4, labels=['C', 'B', 'A', 'S'], duplicates='drop')
-        return pd.Series(['A'] * len(scores), index=scores.index)
-
-    full_df['rank'] = full_df.groupby(group_key)['total_score'].transform(assign_rank)
+    full_df['rank'] = full_df.groupby(group_key)['total_score'].transform(assign_score_rank)
     full_df = normalize_dataset_for_scoring(full_df)
     full_df = full_df.reindex(columns=STATS_COLUMNS)
 
