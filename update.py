@@ -9,6 +9,7 @@ import threading
 import time
 import urllib.request
 from datetime import date, datetime
+from difflib import get_close_matches
 from html.parser import HTMLParser
 from typing import Dict, List
 from urllib.parse import urlencode, urlparse, parse_qs, unquote, urljoin
@@ -130,7 +131,7 @@ ENABLE_OLLAMA_ANALYSIS = os.getenv(
     "0" if os.getenv("GITHUB_ACTIONS") == "true" else "1",
 ) != "0"
 OLLAMA_TIMEOUT = int(os.getenv("OLLAMA_TIMEOUT", "90"))
-PATCH_PROMPT_VERSION = "patch-impact-v1"
+PATCH_PROMPT_VERSION = "patch-impact-v2"
 DEFAULT_LOCALE = "ko"
 STATS_INPUT = "PC"
 STATS_REGION = "Asia"
@@ -151,6 +152,20 @@ CATEGORY_TO_ROLE = {
     "tanks": "Tank",
     "damages": "Damage",
     "supports": "Support",
+}
+
+VALID_HERO_NAMES = set(role_dict.keys())
+HERO_NAME_ALIASES = {
+    "두피스트": "둠피스트",
+    "둠피": "둠피스트",
+    "디바": "D.VA",
+    "D.Va": "D.VA",
+    "DVA": "D.VA",
+    "솔저76": "솔저: 76",
+    "솔저 76": "솔저: 76",
+    "위도우": "위도우메이커",
+    "브리": "브리기테",
+    "루시": "루시우",
 }
 
 HERO_LINK_RE = re.compile(r"^https://owperks\.com/ko/(tanks|damages|supports)/([^/?#]+)$")
@@ -833,20 +848,259 @@ def build_metrics_digest(current_df, previous_df=None, tier="Gold"):
     return json.dumps(rows, ensure_ascii=False, indent=2)
 
 
+def normalize_hero_name(hero_name):
+    text = str(hero_name or "").strip()
+    if not text:
+        return ""
+    if text in VALID_HERO_NAMES:
+        return text
+    if text in HERO_NAME_ALIASES:
+        return HERO_NAME_ALIASES[text]
+
+    normalized = re.sub(r"[\s\.\-_:]+", "", text).lower()
+    for alias, hero in HERO_NAME_ALIASES.items():
+        if re.sub(r"[\s\.\-_:]+", "", alias).lower() == normalized:
+            return hero
+    for hero in VALID_HERO_NAMES:
+        if re.sub(r"[\s\.\-_:]+", "", hero).lower() == normalized:
+            return hero
+
+    match = get_close_matches(text, sorted(VALID_HERO_NAMES), n=1, cutoff=0.72)
+    return match[0] if match else ""
+
+
+def polish_korean_sentence(text):
+    cleaned = re.sub(r"\s+", " ", str(text or "")).strip()
+    if not cleaned:
+        return ""
+
+    replacements = [
+        ("반영한다.", "반영한 것으로 보입니다."),
+        ("나타낸다.", "나타내고 있습니다."),
+        ("보여준다.", "보여주고 있습니다."),
+        ("보인다.", "보입니다."),
+        ("예상된다.", "예상됩니다."),
+        ("가능성이 있다.", "가능성이 있습니다."),
+        ("수 있다.", "수 있습니다."),
+        ("영향을 미치고 있다.", "영향을 주고 있습니다."),
+        ("기록하고 있다.", "기록하고 있습니다."),
+        ("유지하고 있다.", "유지하고 있습니다."),
+        ("강화시킨 것으로 보인다.", "강화한 것으로 보입니다."),
+        ("약한 지위를 나타내며", "다소 약한 흐름을 보이며"),
+        ("그의", "해당 영웅의"),
+        ("그들의", "해당 영웅들의"),
+    ]
+    for old, new in replacements:
+        cleaned = cleaned.replace(old, new)
+
+    if cleaned.endswith("다"):
+        cleaned = cleaned[:-1] + "습니다"
+    if not cleaned.endswith((".", "요", "니다", "습니다")):
+        cleaned += "."
+    return cleaned
+
+
+def build_display_sentence(hero_name, tone_label, reason):
+    reason_text = polish_korean_sentence(reason)
+    if not reason_text:
+        return f"{topic_phrase(hero_name)} 최신 지표 변화가 관찰되어 추가 추이를 확인해볼 만합니다."
+
+    if reason_text.startswith(hero_name):
+        return reason_text
+
+    label = str(tone_label or "").strip()
+    if label:
+        return f"{topic_phrase(hero_name)} {label}. {reason_text}"
+    return f"{topic_phrase(hero_name)} {reason_text}"
+
+
+def topic_particle(word):
+    text = str(word or "")
+    if not text:
+        return "은"
+    last = text[-1]
+    code = ord(last)
+    if 0xAC00 <= code <= 0xD7A3:
+        return "은" if (code - 0xAC00) % 28 else "는"
+    return "은"
+
+
+def topic_phrase(word):
+    return f"{word}{topic_particle(word)}"
+
+
+def normalize_tone_label(label):
+    text = polish_korean_sentence(label).rstrip(".")
+    label_map = {
+        "상승": "지표가 좋아진 편입니다",
+        "하락": "지표가 다소 약해진 편입니다",
+        "중립": "큰 변화는 아직 뚜렷하지 않습니다",
+        "관찰": "추이를 더 지켜볼 필요가 있습니다",
+    }
+    return label_map.get(text, text or "추이를 더 지켜볼 필요가 있습니다")
+
+
+def sanitize_patch_ai_payload(ai_payload):
+    summary = polish_korean_sentence(ai_payload.get("summary", ""))
+    meta_analysis = polish_korean_sentence(ai_payload.get("meta_analysis", ""))
+    confidence_note = polish_korean_sentence(ai_payload.get("confidence_note", ""))
+
+    hero_impacts = []
+    seen_heroes = set()
+    for row in ai_payload.get("hero_impacts", []):
+        if not isinstance(row, dict):
+            continue
+
+        hero_name = normalize_hero_name(row.get("hero"))
+        if not hero_name or hero_name in seen_heroes:
+            continue
+
+        raw_hero_name = str(row.get("hero") or "").strip()
+        tone_label = normalize_tone_label(row.get("tone_label") or row.get("direction") or "주목할 만합니다")
+        reason = polish_korean_sentence(row.get("reason", ""))
+        if raw_hero_name and raw_hero_name != hero_name:
+            reason = reason.replace(raw_hero_name, hero_name)
+        display_sentence = polish_korean_sentence(
+            row.get("display_sentence") or build_display_sentence(hero_name, tone_label, reason)
+        )
+        if raw_hero_name and raw_hero_name != hero_name:
+            display_sentence = display_sentence.replace(raw_hero_name, hero_name)
+        hero_impacts.append(
+            {
+                "hero": hero_name,
+                "tone_label": tone_label,
+                "reason": reason,
+                "display_sentence": display_sentence,
+            }
+        )
+        seen_heroes.add(hero_name)
+        if len(hero_impacts) >= 5:
+            break
+
+    if not summary:
+        summary = "최신 지표와 패치 내용을 함께 보면 일부 영웅의 선택률과 견제 흐름을 조금 더 지켜볼 필요가 있습니다."
+    if not meta_analysis:
+        meta_analysis = summary
+    if not confidence_note:
+        confidence_note = "이 분석은 현재 수집된 지표를 기준으로 작성되었으며, 표본이 쌓이면 해석이 달라질 수 있습니다."
+
+    return {
+        "summary": summary,
+        "meta_analysis": meta_analysis,
+        "hero_impacts": hero_impacts,
+        "confidence_note": confidence_note,
+    }
+
+
+def build_metrics_fallback_analysis(patch_note, metrics_digest):
+    try:
+        metrics_rows = json.loads(metrics_digest)
+    except json.JSONDecodeError:
+        metrics_rows = []
+
+    scored_rows = []
+    for row in metrics_rows:
+        if not isinstance(row, dict):
+            continue
+        hero_name = normalize_hero_name(row.get("hero"))
+        if not hero_name:
+            continue
+        win_rate = float(row.get("win_rate") or 0)
+        pick_rate = float(row.get("pick_rate") or 0)
+        ban_rate = float(row.get("ban_rate") or 0)
+        score = (ban_rate * 0.45) + (pick_rate * 0.35) + (max(win_rate - 50, 0) * 0.2)
+        scored_rows.append((score, hero_name, win_rate, pick_rate, ban_rate))
+
+    scored_rows.sort(reverse=True)
+    top_rows = scored_rows[:5]
+    hero_names = [row[1] for row in top_rows[:3]]
+    hero_preview = ", ".join(hero_names) if hero_names else "일부 영웅"
+    title = str(patch_note.get("title") or "최근 패치")
+
+    summary = (
+        "이번 패치는 영웅 성능을 직접 바꾸는 패치라기보다 이벤트 조정에 가까워 보입니다. "
+        f"다만 현재 지표 기준으로는 {hero_preview}의 선택률과 견제 흐름을 함께 지켜볼 필요가 있습니다."
+    )
+    hero_impacts = []
+    for _score, hero_name, win_rate, pick_rate, ban_rate in top_rows:
+        if ban_rate >= 25:
+            tone_label = "견제 비중이 높은 편입니다"
+            sentence = (
+                f"{topic_phrase(hero_name)} 현재 밴률이 {ban_rate:.1f}%로 높게 나타나 "
+                "상대 팀이 우선적으로 의식하는 영웅으로 보입니다."
+            )
+        elif pick_rate >= 20:
+            tone_label = "선택률이 눈에 띄는 편입니다"
+            sentence = (
+                f"{topic_phrase(hero_name)} 현재 픽률이 {pick_rate:.1f}%로 높아 "
+                "실전에서 자주 선택되는 흐름이 확인됩니다."
+            )
+        elif win_rate >= 52:
+            tone_label = "성과가 안정적인 편입니다"
+            sentence = (
+                f"{topic_phrase(hero_name)} 현재 승률이 {win_rate:.1f}%로 안정적이라 "
+                "추가 추이를 확인해볼 만합니다."
+            )
+        else:
+            tone_label = "추이를 더 지켜볼 필요가 있습니다"
+            sentence = (
+                f"{topic_phrase(hero_name)} 현재 지표 변화가 관찰되어 "
+                "다음 수집 데이터와 함께 비교해볼 필요가 있습니다."
+            )
+        hero_impacts.append(
+            {
+                "hero": hero_name,
+                "tone_label": tone_label,
+                "reason": sentence,
+                "display_sentence": sentence,
+            }
+        )
+
+    meta_analysis = (
+        f"{title} 내용을 보면 영웅 밸런스 직접 조정보다는 이벤트 조건 완화에 가깝습니다. "
+        "따라서 영웅별 지표 변화는 패치 효과라고 단정하기보다, 현재 수집된 경쟁전 지표에서 관찰되는 메타 흐름으로 보는 편이 안전합니다. "
+        f"현재는 {hero_preview}처럼 선택률이나 밴률이 두드러지는 영웅을 중심으로 후속 데이터를 확인해볼 필요가 있습니다."
+    )
+    return {
+        "summary": summary,
+        "meta_analysis": meta_analysis,
+        "hero_impacts": hero_impacts,
+        "confidence_note": "이번 분석은 영웅 밸런스 직접 변경이 없는 패치와 최신 지표를 함께 본 결과이므로, 패치 영향으로 단정하지 않고 관찰 흐름으로 해석하는 것이 좋습니다.",
+    }
+
+
 def request_ollama_patch_analysis(patch_note, metrics_digest):
     prompt = f"""
-너는 오버워치 2 메타 분석 도우미다.
-아래 공식 패치노트와 최신 영웅 지표 변화를 연결해서 한국어로 짧고 근거 중심의 분석을 작성해라.
+너는 오버워치 2 메타 분석 대시보드의 한국어 에디터입니다.
+아래 공식 패치노트와 최신 영웅 지표 변화를 연결해서, 사용자에게 설명하는 자연스러운 존댓말로 작성해 주세요.
 
-반드시 JSON만 출력해라. 스키마:
+작성 규칙:
+- 반드시 JSON만 출력해 주세요.
+- 모든 문장은 존댓말로 작성해 주세요.
+- "~한다", "~이다", "~보인다" 같은 반말/딱딱한 보고서체 종결을 피하고, "~습니다", "~보입니다", "~확인됩니다"를 사용해 주세요.
+- "상승", "하락" 같은 단어만 단독으로 쓰지 말고, "선택률이 좋아진 편입니다", "지표가 다소 약해졌습니다", "추이를 더 지켜볼 필요가 있습니다"처럼 자연스럽게 작성해 주세요.
+- 영웅명은 아래 [사용 가능한 영웅명] 목록에 있는 표기만 사용해 주세요. 목록에 없는 이름은 절대 만들지 마세요.
+- 패치노트에 영웅 밸런스 변경이 없으면, 패치가 직접적인 영웅 성능 변경은 아니라고 조심스럽게 표현해 주세요.
+- 영웅 밸런스 변경이 없더라도 최신 지표에서 눈에 띄는 영웅 3~5명은 "패치 효과"가 아니라 "현재 지표상 관찰되는 흐름"으로 작성해 주세요.
+- 지표만으로 단정하지 말고 "현재 지표 기준", "관찰됩니다", "가능성이 있습니다"처럼 신중하게 작성해 주세요.
+
+스키마:
 {{
-  "summary": "메인 페이지에 보여줄 1~2문장 요약",
-  "meta_analysis": "상세 분석 3~6문장",
+  "summary": "메인 페이지에 보여줄 존댓말 1~2문장 요약",
+  "meta_analysis": "상세 분석 존댓말 3~6문장",
   "hero_impacts": [
-    {{"hero": "영웅명", "direction": "상승|하락|중립|관찰", "reason": "지표와 패치 내용을 연결한 이유"}}
+    {{
+      "hero": "사용 가능한 영웅명 중 하나",
+      "tone_label": "자연어 상태 표현",
+      "reason": "지표와 패치 내용을 연결한 존댓말 이유",
+      "display_sentence": "메인 화면에 그대로 보여줄 한 문장 존댓말 설명"
+    }}
   ],
   "confidence_note": "표본/시차/주의사항"
 }}
+
+[사용 가능한 영웅명]
+{", ".join(sorted(VALID_HERO_NAMES))}
 
 [패치노트]
 제목: {patch_note.get("title")}
@@ -942,6 +1196,9 @@ def run_patch_update(stats_result=None):
     except Exception as exc:
         print(f"⚠️  Ollama AI 분석 생성 실패: {exc}")
         return
+    ai_payload = sanitize_patch_ai_payload(ai_payload)
+    if not ai_payload.get("hero_impacts"):
+        ai_payload = build_metrics_fallback_analysis(patch_note, metrics_digest)
 
     now = datetime.now().isoformat(timespec="seconds")
     analysis_row = {

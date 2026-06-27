@@ -83,18 +83,21 @@ def render_patch_intelligence_block():
 
     if analysis:
         hero_impacts = _as_list(analysis.get("hero_impacts"))
-        impact_text = ""
-        if hero_impacts:
-            impact_text = " · ".join(
-                f"{row.get('hero', '-')}: {row.get('direction', '')}"
-                for row in hero_impacts[:5]
-                if isinstance(row, dict)
-            )
+        impact_items = []
+        for row in hero_impacts[:3]:
+            if not isinstance(row, dict):
+                continue
+            sentence = row.get("display_sentence") or row.get("reason") or ""
+            if sentence:
+                impact_items.append(f"<li>{html.escape(str(sentence))}</li>")
+        impact_html = ""
+        if impact_items:
+            impact_html = f"<ul class='patch-ai-list'>{''.join(impact_items)}</ul>"
         ai_panel_html = f"""
 <div class="patch-ai-box">
     <div class="patch-ai-title">AI 패치 영향 분석</div>
     <div class="patch-ai-summary">{html.escape(_clip_text(analysis.get("summary"), 320))}</div>
-    <div class="patch-summary" style="margin-top:6px;">{html.escape(impact_text)}</div>
+    {impact_html}
 </div>
 """
     else:
@@ -190,6 +193,16 @@ def render_patch_intelligence_block():
             font-size: 0.92rem;
             line-height: 1.55;
         }}
+        .patch-ai-list {{
+            color: #cbd5e1;
+            font-size: 0.88rem;
+            line-height: 1.55;
+            margin: 8px 0 0 18px;
+            padding: 0;
+        }}
+        .patch-ai-list li {{
+            margin: 3px 0;
+        }}
         @media (max-width: 760px) {{
             .patch-intel-top {{display: block;}}
             .patch-meta {{text-align: left; margin-top: 8px; white-space: normal;}}
@@ -231,9 +244,8 @@ def render_patch_intelligence_block():
                     if not isinstance(row, dict):
                         continue
                     hero_name = row.get("hero", "-")
-                    direction = row.get("direction", "-")
-                    reason = row.get("reason", "")
-                    st.markdown(f"- **{hero_name}** ({direction}): {reason}")
+                    sentence = row.get("display_sentence") or row.get("reason", "")
+                    st.markdown(f"- **{hero_name}**: {sentence}")
 
 # -------------------------------------------------
 # 2. 데이터 로드
