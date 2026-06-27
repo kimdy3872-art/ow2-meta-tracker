@@ -25,14 +25,39 @@ log() {
   /bin/echo "[$(/bin/date '+%F %T')] $*" | /usr/bin/tee -a "$LOG_FILE"
 }
 
+has_today_ai_analysis() {
+  /usr/bin/python3 - <<'PY'
+import json
+from datetime import date
+from pathlib import Path
+
+path = Path("data/patch_notes/patch_ai_analysis.json")
+today = date.today().isoformat()
+if not path.exists():
+    raise SystemExit(1)
+
+try:
+    rows = json.loads(path.read_text(encoding="utf-8"))
+except json.JSONDecodeError:
+    raise SystemExit(1)
+
+if any(str(row.get("analysis_date")) == today for row in rows if isinstance(row, dict)):
+    raise SystemExit(0)
+raise SystemExit(1)
+PY
+}
+
 if (( 10#$NOW_HOUR < MIN_HOUR )); then
   log "skip: current time ${NOW_HOUR}:${NOW_MINUTE} is before ${MIN_HOUR}:00"
   exit 0
 fi
 
 if [[ -f "$LAST_SUCCESS_FILE" ]] && [[ "$(/bin/cat "$LAST_SUCCESS_FILE")" == "$TODAY" ]]; then
-  log "skip: patch AI analysis already succeeded today ($TODAY)"
-  exit 0
+  if has_today_ai_analysis; then
+    log "skip: patch AI analysis already succeeded today ($TODAY)"
+    exit 0
+  fi
+  log "warn: success marker exists but today's AI analysis is missing; running again"
 fi
 
 if ! /bin/mkdir "$LOCK_DIR" 2>/dev/null; then
@@ -86,25 +111,7 @@ if ! ENABLE_OLLAMA_ANALYSIS=1 \
   exit 1
 fi
 
-if ! /usr/bin/python3 - <<'PY'
-import json
-from datetime import date
-from pathlib import Path
-
-path = Path("data/patch_notes/patch_ai_analysis.json")
-today = date.today().isoformat()
-if not path.exists():
-    raise SystemExit(1)
-
-try:
-    rows = json.loads(path.read_text(encoding="utf-8"))
-except json.JSONDecodeError:
-    raise SystemExit(1)
-
-if not any(str(row.get("analysis_date")) == today for row in rows if isinstance(row, dict)):
-    raise SystemExit(1)
-PY
-then
+if ! has_today_ai_analysis; then
   log "error: today's AI analysis was not created"
   exit 1
 fi
