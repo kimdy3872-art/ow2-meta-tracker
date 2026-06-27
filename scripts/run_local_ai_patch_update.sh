@@ -54,7 +54,6 @@ fi
 
 if [[ -f "$LAST_SUCCESS_FILE" ]] && [[ "$(/bin/cat "$LAST_SUCCESS_FILE")" == "$TODAY" ]]; then
   if has_today_ai_analysis; then
-    log "skip: patch AI analysis already succeeded today ($TODAY)"
     exit 0
   fi
   log "warn: success marker exists but today's AI analysis is missing; running again"
