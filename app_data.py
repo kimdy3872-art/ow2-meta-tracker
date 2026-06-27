@@ -304,6 +304,24 @@ def load_latest_patch_note():
 
 
 @st.cache_data
+def load_latest_balance_patch_note():
+    notes = _load_json_list(PATCH_NOTES_PATH)
+    balance_notes = [
+        row for row in notes
+        if row.get("has_hero_updates") or row.get("affected_heroes")
+    ]
+    if not balance_notes:
+        return None
+    return max(
+        balance_notes,
+        key=lambda row: (
+            str(row.get("patch_date", "")),
+            str(row.get("created_at", "")),
+        ),
+    )
+
+
+@st.cache_data
 def load_latest_patch_ai_analysis(patch_note_id=None):
     analyses = _load_json_list(PATCH_AI_ANALYSIS_PATH)
     if patch_note_id:

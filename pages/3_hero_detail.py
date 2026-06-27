@@ -7,6 +7,8 @@ from app_data import (
     get_hero_image_url,
     get_hero_subrole,
     get_map_image_url,
+    load_latest_balance_patch_note,
+    load_latest_patch_ai_analysis,
     load_latest_stats,
     translate_role_name,
     translate_subrole_name,
@@ -320,6 +322,42 @@ with left_col:
         f'{role_badge}{subrole_badge}</div>'
     )
     st.markdown(badge_row, unsafe_allow_html=True)
+
+    balance_patch_note = load_latest_balance_patch_note()
+    patch_analysis = load_latest_patch_ai_analysis(balance_patch_note.get("id") if balance_patch_note else None)
+    hero_ai_rows = []
+    if patch_analysis:
+        for group_label, rows in [
+            ("직접 변경", patch_analysis.get("direct_hero_impacts") or []),
+            ("간접 영향", patch_analysis.get("indirect_hero_impacts") or []),
+        ]:
+            for row in rows:
+                if isinstance(row, dict) and str(row.get("hero")) == hero_name:
+                    hero_ai_rows.append((group_label, row))
+
+    if patch_analysis and hero_ai_rows:
+        phase = html.escape(str(patch_analysis.get("analysis_phase") or "관찰 단계"))
+        patch_title = html.escape(str((balance_patch_note or {}).get("title") or "최근 밸런스 패치"))
+        sentence = html.escape(str(hero_ai_rows[0][1].get("display_sentence") or hero_ai_rows[0][1].get("reason") or ""))
+        group_label = html.escape(hero_ai_rows[0][0])
+        st.markdown(
+            f"""
+            <div style="
+                margin-top:14px;
+                border:1px solid rgba(96,165,250,0.32);
+                border-radius:8px;
+                background:linear-gradient(180deg,rgba(15,23,42,0.94) 0%,rgba(12,20,34,0.98) 100%);
+                padding:12px 13px;
+                font-family:{GLOBAL_FONT_FAMILY};
+            ">
+                <div style="color:#93c5fd;font-size:0.74rem;font-weight:850;letter-spacing:0.05em;text-transform:uppercase;margin-bottom:5px;">AI Hero Note</div>
+                <div style="color:#f8fafc;font-size:0.9rem;font-weight:850;margin-bottom:5px;">최근 밸런스 패치 요약 · {group_label}</div>
+                <div style="color:#94a3b8;font-size:0.74rem;line-height:1.45;margin-bottom:7px;">{patch_title} · {phase}</div>
+                <div style="color:#dbeafe;font-size:0.86rem;line-height:1.55;">{sentence}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
     perk_rows = get_hero_perk_rows(hero_name)
 

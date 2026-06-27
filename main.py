@@ -6,6 +6,7 @@ from app_data import (
     ROLE_ORDER,
     TIER_ORDER,
     get_hero_image_url,
+    load_latest_balance_patch_note,
     load_latest_patch_ai_analysis,
     load_latest_patch_note,
     load_latest_stats,
@@ -56,7 +57,10 @@ def render_patch_intelligence_block():
     if not patch_note:
         return
 
-    analysis = load_latest_patch_ai_analysis(patch_note.get("id"))
+    balance_patch_note = load_latest_balance_patch_note()
+    analysis = load_latest_patch_ai_analysis(
+        balance_patch_note.get("id") if balance_patch_note else patch_note.get("id")
+    )
     affected_heroes = _as_list(patch_note.get("affected_heroes"))
     summary_items = _as_list(patch_note.get("summary_items"))
     source_url = str(patch_note.get("source_url") or "")
@@ -71,7 +75,7 @@ def render_patch_intelligence_block():
         for hero_name in affected_heroes[:8]
     )
     if not hero_badges:
-        hero_badges = "<span class='patch-hero-badge muted'>영향 영웅 자동 태깅 대기</span>"
+        hero_badges = "<span class='patch-hero-badge muted'>일반 패치</span>"
 
     source_link = ""
     if source_url:
@@ -82,7 +86,9 @@ def render_patch_intelligence_block():
         )
 
     if analysis:
-        hero_impacts = _as_list(analysis.get("hero_impacts"))
+        direct_impacts = _as_list(analysis.get("direct_hero_impacts"))
+        indirect_impacts = _as_list(analysis.get("indirect_hero_impacts"))
+        hero_impacts = direct_impacts or _as_list(analysis.get("hero_impacts"))
         impact_items = []
         for row in hero_impacts[:3]:
             if not isinstance(row, dict):
@@ -93,9 +99,13 @@ def render_patch_intelligence_block():
         impact_html = ""
         if impact_items:
             impact_html = f"<ul class='patch-ai-list'>{''.join(impact_items)}</ul>"
+        balance_title = html.escape(str((balance_patch_note or {}).get("title") or "최근 밸런스 패치"))
+        balance_date = html.escape(str((balance_patch_note or {}).get("patch_date") or "-"))
+        phase = html.escape(str(analysis.get("analysis_phase") or "관찰 단계"))
         ai_panel_html = f"""
 <div class="patch-ai-box">
-    <div class="patch-ai-title">AI 패치 영향 분석</div>
+    <div class="patch-ai-title">최근 밸런스 패치 분석</div>
+    <div class="patch-ai-sub">기준 패치: {balance_title} · {balance_date} · {phase}</div>
     <div class="patch-ai-summary">{html.escape(_clip_text(analysis.get("summary"), 320))}</div>
     {impact_html}
 </div>
@@ -103,8 +113,8 @@ def render_patch_intelligence_block():
     else:
         ai_panel_html = """
 <div class="patch-ai-box">
-    <div class="patch-ai-title">AI 패치 영향 분석</div>
-    <div class="patch-ai-summary">아직 오늘 지표와 연결된 AI 분석이 생성되지 않았습니다.</div>
+    <div class="patch-ai-title">최근 밸런스 패치 분석</div>
+    <div class="patch-ai-summary">아직 영웅 밸런스 패치와 연결된 AI 분석이 생성되지 않았습니다.</div>
 </div>
 """
 
@@ -188,6 +198,12 @@ def render_patch_intelligence_block():
             font-weight: 850;
             margin-bottom: 5px;
         }}
+        .patch-ai-sub {{
+            color: #94a3b8;
+            font-size: 0.78rem;
+            line-height: 1.45;
+            margin-bottom: 6px;
+        }}
         .patch-ai-summary {{
             color: #dbeafe;
             font-size: 0.92rem;
@@ -211,7 +227,7 @@ def render_patch_intelligence_block():
         <section class="patch-intel-wrap">
             <div class="patch-intel-top">
                 <div>
-                    <div class="patch-kicker">Recent Patch Notes</div>
+                    <div class="patch-kicker">Latest Patch Notes</div>
                     <div class="patch-title">{html.escape(title)}</div>
                     <div class="patch-summary">{html.escape(_clip_text(summary_text, 260))}</div>
                 </div>
@@ -237,10 +253,19 @@ def render_patch_intelligence_block():
     if analysis:
         with st.expander("AI 분석 자세히 보기"):
             st.markdown(str(analysis.get("meta_analysis") or analysis.get("summary") or "상세 분석이 없습니다."))
-            hero_impacts = _as_list(analysis.get("hero_impacts"))
-            if hero_impacts:
-                st.markdown("**영웅별 영향**")
-                for row in hero_impacts:
+            direct_impacts = _as_list(analysis.get("direct_hero_impacts"))
+            indirect_impacts = _as_list(analysis.get("indirect_hero_impacts"))
+            if direct_impacts:
+                st.markdown("**직접 변경 영웅**")
+                for row in direct_impacts:
+                    if not isinstance(row, dict):
+                        continue
+                    hero_name = row.get("hero", "-")
+                    sentence = row.get("display_sentence") or row.get("reason", "")
+                    st.markdown(f"- **{hero_name}**: {sentence}")
+            if indirect_impacts:
+                st.markdown("**간접 영향 가능 영웅**")
+                for row in indirect_impacts:
                     if not isinstance(row, dict):
                         continue
                     hero_name = row.get("hero", "-")
