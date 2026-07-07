@@ -462,6 +462,7 @@ def render_rank_table_html(df):
     .overwatch-table .hero-cell {text-align: left; font-weight: 700; color: __GLOBAL_TEXT_COLOR__;}
     .overwatch-table .role-cell {text-align: center; color: __GLOBAL_TEXT_COLOR__;}
     .overwatch-table .rate-cell {text-align: left; min-width: 180px;}
+    .overwatch-table .score-cell {text-align: center; font-weight: 800; min-width: 92px; color: #fbbf24;}
     .overwatch-table .rank-cell {text-align: center; font-weight: 900; font-size: 1.38rem; line-height: 1; letter-spacing: 0.01em; padding: 4px 8px; color: __GLOBAL_TEXT_COLOR__;}
     .artisan-badge {display: inline-block; margin-left: 8px; padding: 2px 7px; border-radius: 999px; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.02em; vertical-align: middle;}
     .artisan-strong {background: rgba(250, 204, 21, 0.14); color: #fde68a; border: 1px solid rgba(250, 204, 21, 0.36);}
@@ -498,6 +499,8 @@ def render_rank_table_html(df):
         win_rate = f"{row['win_rate']:.1f}%"
         pick_rate = f"{row['pick_rate']:.1f}%"
         ban_rate_val = pd.to_numeric(row.get("ban_rate", None), errors="coerce")
+        score_val = pd.to_numeric(row.get("total_score", None), errors="coerce")
+        score = f"{score_val:+.2f}" if pd.notna(score_val) else "-"
         rank = html.escape(str(row["rank"]))
         rank_color = rank_color_map.get(str(row["rank"]), GLOBAL_TEXT_COLOR)
         hero_url = get_hero_image_url(row["hero"])
@@ -520,12 +523,12 @@ def render_rank_table_html(df):
         else:
             ban_html = "<div class='rate-text' style='color:#6b7280;'>-</div>"
         rows.append(
-            f"<tr><td class='portrait-cell'>{img_html}</td><td class='hero-cell'>{hero_cell_html}</td><td class='role-cell'>{role}</td><td class='rate-cell'>{win_html}</td><td class='rate-cell'>{pick_html}</td><td class='rate-cell'>{ban_html}</td><td class='rank-cell' style='color:{rank_color};'>{rank}</td></tr>"
+            f"<tr><td class='portrait-cell'>{img_html}</td><td class='hero-cell'>{hero_cell_html}</td><td class='role-cell'>{role}</td><td class='rate-cell'>{win_html}</td><td class='rate-cell'>{pick_html}</td><td class='rate-cell'>{ban_html}</td><td class='score-cell'>{score}</td><td class='rank-cell' style='color:{rank_color};'>{rank}</td></tr>"
         )
     table_html = (
         styles
         + "<table class='overwatch-table'><thead><tr>"
-        + "<th>Portrait</th><th>영웅</th><th>포지션</th><th>승률</th><th>픽률</th><th>밴률</th><th>랭크</th>"
+        + "<th>Portrait</th><th>영웅</th><th>포지션</th><th>승률</th><th>픽률</th><th>밴률</th><th>종합 점수</th><th>랭크</th>"
         + "</tr></thead><tbody>"
         + "".join(rows)
         + "</tbody></table>"
@@ -663,8 +666,9 @@ st.caption("영웅 이름을 클릭하면 상세 페이지로 이동합니다.")
 with st.expander("랭크는 어떻게 산정되나요?"):
     st.markdown(
         """
-        - 랭크는 티어/포지션/전장(all-maps) 필터 기준의 종합 지표로 산정됩니다.
+        - 랭크는 같은 티어/포지션/전장(all-maps) 안에서 산정됩니다.
         - 기본적으로 승률과 픽률, 밴률 기반 점수를 함께 반영해 `S > A > B > C`로 구간화합니다.
+        - 종합 점수는 같은 비교군 평균 대비 상대 점수라서 0보다 높으면 평균 이상, 낮으면 평균 이하로 해석할 수 있습니다.
         - 표의 정렬 기준(종합 점수/승률/픽률/밴률)을 바꾸면 같은 집합 내 우선순위가 달라집니다.
         - 데이터는 최신 수집일 기준으로만 비교됩니다.
         """
@@ -687,7 +691,7 @@ sort_col = {
 }.get(sort_by, "total_score")
 
 # 밴률 컬럼이 있으면 포함
-display_cols = ["hero", "role", "win_rate", "pick_rate", "ban_rate", "rank", "is_master"] if "ban_rate" in df_filtered.columns else ["hero", "role", "win_rate", "pick_rate", "rank", "is_master"]
+display_cols = ["hero", "role", "win_rate", "pick_rate", "ban_rate", "total_score", "rank", "is_master"] if "ban_rate" in df_filtered.columns else ["hero", "role", "win_rate", "pick_rate", "total_score", "rank", "is_master"]
 display_df = df_filtered.sort_values(
     sort_col,
     ascending=False

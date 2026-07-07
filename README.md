@@ -143,7 +143,7 @@ python update.py --mode all
 
 ### 영웅 랭크 산정 공식
 
-모든 값은 티어·맵별로 표준화(z-score) 후 아래 가중치로 합산합니다.
+모든 값은 티어·맵·포지션별로 표준화(z-score) 후 아래 가중치로 합산합니다.
 
 ```
 total_score = 0.5 * z(win_rate)

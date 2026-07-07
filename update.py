@@ -1873,7 +1873,7 @@ def run_stats_update():
             return pd.Series([0] * len(series), index=series.index)
         return (series - series.mean()) / std
 
-    group_key = ['data_tier', 'map']
+    group_key = ['data_tier', 'map', 'role']
     full_df['win_rate_z']    = full_df.groupby(group_key)['win_rate'].transform(safe_zscore)
     full_df['pick_rate_log'] = np.log1p(full_df['pick_rate'])
     full_df['pick_rate_z']   = full_df.groupby(group_key)['pick_rate_log'].transform(safe_zscore)

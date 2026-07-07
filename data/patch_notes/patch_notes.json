@@ -63,7 +63,11 @@
     "has_hero_updates": true,
     "patch_category": "hero_balance",
     "created_at": "2026-06-28T06:15:43",
+<<<<<<< Updated upstream
     "updated_at": "2026-07-07T01:59:00"
+=======
+    "updated_at": "2026-06-29T09:00:23"
+>>>>>>> Stashed changes
   },
   {
     "id": "patch-2026-06-24",
@@ -85,6 +89,7 @@
     "has_hero_updates": false,
     "patch_category": "general",
     "created_at": "2026-06-26T18:04:04",
+<<<<<<< Updated upstream
     "updated_at": "2026-07-02T00:34:52"
   },
   {
@@ -109,5 +114,8 @@
     "patch_category": "general",
     "created_at": "2026-07-03T02:31:10",
     "updated_at": "2026-07-07T01:59:00"
+=======
+    "updated_at": "2026-06-29T09:00:23"
+>>>>>>> Stashed changes
   }
 ]
