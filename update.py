@@ -101,7 +101,10 @@ map_dict = {
 
 STATS_COLUMNS = [
     'hero', 'role', 'data_tier', 'map', 'map_name', 'update_date',
-    'win_rate', 'pick_rate', 'ban_rate', 'win_rate_z', 'pick_rate_log', 'pick_rate_z', 'total_score', 'rank',
+    'win_rate', 'pick_rate', 'ban_rate',
+    'win_rate_z', 'pick_rate_log', 'pick_rate_z', 'ban_rate_log', 'ban_rate_z',
+    'persistence_score', 'pick_stability_multiplier', 'performance_score',
+    'total_score', 'score_strength', 'pick_rate_warning', 'rank',
 ]
 
 DATA_DIR = "data"
@@ -110,6 +113,7 @@ HISTORY_DIR = os.path.join(DATA_DIR, "history")
 
 LATEST_STATS_PATH = os.path.join(LATEST_DIR, "latest_tier.parquet")
 LATEST_PERKS_PATH = os.path.join(LATEST_DIR, "latest_perks.parquet")
+RANK_DIAGNOSTICS_PATH = os.path.join(LATEST_DIR, "rank_diagnostics.json")
 WEEKLY_HISTORY_ROOT = os.path.join(HISTORY_DIR, "weekly")
 DAILY_HISTORY_ROOT = os.path.join(HISTORY_DIR, "daily")
 PATCH_NOTES_DIR = os.path.join(DATA_DIR, "patch_notes")
@@ -117,10 +121,23 @@ PATCH_NOTES_PATH = os.path.join(PATCH_NOTES_DIR, "patch_notes.json")
 PATCH_AI_ANALYSIS_PATH = os.path.join(PATCH_NOTES_DIR, "patch_ai_analysis.json")
 WEEKLY_SNAPSHOT_WEEKDAY = int(os.getenv("WEEKLY_SNAPSHOT_WEEKDAY", "0"))
 
-WIN_RATE_WEIGHT = 0.5
-PICK_RATE_WEIGHT = 0.3
-BAN_RATE_WEIGHT = 0.2
-RANK_LABELS = ['C', 'B', 'A', 'S']
+PERFORMANCE_WIN_WEIGHT = 0.75
+PERFORMANCE_PERSISTENCE_WEIGHT = 0.25
+PERFORMANCE_BAN_PRESSURE_WEIGHT = 0.05
+PICK_STABILITY_SCALE = 0.08
+PICK_STABILITY_MIN = 0.85
+PICK_STABILITY_MAX = 1.05
+PERSISTENCE_WEEKS = int(os.getenv("PERFORMANCE_PERSISTENCE_WEEKS", "3"))
+PERSISTENCE_EWMA_DECAY = float(os.getenv("PERFORMANCE_PERSISTENCE_EWMA_DECAY", "0.4"))
+LOW_PICK_RATE_WARNING = 1.0
+VERY_LOW_PICK_RATE_WARNING = 0.5
+RANK_LABELS = ['D', 'C', 'B', 'A', 'S']
+RANK_THRESHOLDS = {
+    "S": 1.25,
+    "A": 0.50,
+    "C": -0.50,
+    "D": -1.25,
+}
 
 BASE_URL = "https://owperks.com"
 OFFICIAL_PATCH_NOTES_BASE_URL = "https://overwatch.blizzard.com/ko-kr/news/patch-notes/live"
@@ -483,26 +500,371 @@ def is_degenerate_snapshot(df):
 
 
 def assign_score_rank(scores):
-    if len(scores) < len(RANK_LABELS) or scores.nunique(dropna=True) < 2:
-        return pd.Series(['A'] * len(scores), index=scores.index)
+    numeric_scores = pd.to_numeric(scores, errors='coerce')
+    ranks = pd.Series('B', index=scores.index, dtype=object)
+    ranks[numeric_scores >= RANK_THRESHOLDS['S']] = 'S'
+    ranks[(numeric_scores >= RANK_THRESHOLDS['A']) & (numeric_scores < RANK_THRESHOLDS['S'])] = 'A'
+    ranks[(numeric_scores <= RANK_THRESHOLDS['C']) & (numeric_scores > RANK_THRESHOLDS['D'])] = 'C'
+    ranks[numeric_scores <= RANK_THRESHOLDS['D']] = 'D'
+    ranks[numeric_scores.isna()] = 'B'
+    return ranks
 
-    try:
-        bins = pd.qcut(
-            scores,
-            q=len(RANK_LABELS),
-            labels=False,
-            duplicates='drop',
+
+def safe_zscore(series):
+    std = series.std()
+    if std == 0 or pd.isna(std):
+        return pd.Series([0] * len(series), index=series.index)
+    return (series - series.mean()) / std
+
+
+def add_normalized_metric_columns(df, group_key=None):
+    if group_key is None:
+        group_key = ['data_tier', 'map', 'role']
+
+    df['win_rate_z'] = df.groupby(group_key)['win_rate'].transform(safe_zscore)
+    df['pick_rate_log'] = np.log1p(df['pick_rate'])
+    df['pick_rate_z'] = df.groupby(group_key)['pick_rate_log'].transform(safe_zscore)
+    df['ban_rate_log'] = np.log1p(df['ban_rate'])
+    df['ban_rate_z'] = df.groupby(group_key)['ban_rate_log'].transform(safe_zscore)
+    return df
+
+
+def add_scoring_columns(df, group_key=None, persistence_df=None):
+    if group_key is None:
+        group_key = ['data_tier', 'map', 'role']
+
+    derived_cols = [
+        'persistence_score',
+        'pick_stability_multiplier',
+        'performance_score',
+        'total_score',
+        'score_strength',
+        'pick_rate_warning',
+    ]
+    df = df.drop(columns=[col for col in derived_cols if col in df.columns])
+    df = add_normalized_metric_columns(df, group_key=group_key)
+    if persistence_df is None:
+        persistence_df = build_recent_persistence_frame()
+
+    entity_key = ['hero', 'role', 'data_tier', 'map']
+    if persistence_df is not None and not persistence_df.empty:
+        df = df.merge(persistence_df, on=entity_key, how='left')
+    if 'persistence_score' not in df.columns:
+        df['persistence_score'] = np.nan
+
+    df['persistence_score'] = pd.to_numeric(df['persistence_score'], errors='coerce')
+    df['persistence_score'] = df['persistence_score'].fillna(df['win_rate_z'])
+    df['pick_stability_multiplier'] = (
+        1 + PICK_STABILITY_SCALE * df['pick_rate_z']
+    ).clip(PICK_STABILITY_MIN, PICK_STABILITY_MAX)
+    base_score = (
+        PERFORMANCE_WIN_WEIGHT * df['win_rate_z']
+        + PERFORMANCE_PERSISTENCE_WEIGHT * df['persistence_score']
+    )
+    df['performance_score'] = (
+        base_score * df['pick_stability_multiplier']
+        + PERFORMANCE_BAN_PRESSURE_WEIGHT * df['ban_rate_z']
+    )
+    df['total_score'] = df['performance_score']
+    df['score_strength'] = np.select(
+        [
+            df['total_score'] >= 1.5,
+            df['total_score'] >= 1.0,
+            df['total_score'] >= 0.5,
+            df['total_score'] <= -1.0,
+        ],
+        ['압도적', '강함', '우세', '약세'],
+        default='보통',
+    )
+    df['pick_rate_warning'] = np.select(
+        [
+            df['pick_rate'] < VERY_LOW_PICK_RATE_WARNING,
+            df['pick_rate'] < LOW_PICK_RATE_WARNING,
+        ],
+        ['저픽률 주의', '픽률 낮음'],
+        default='',
+    )
+    return df
+
+
+def weekly_snapshot_paths():
+    paths = []
+    if not os.path.isdir(WEEKLY_HISTORY_ROOT):
+        return paths
+
+    for dirpath, _dirnames, filenames in os.walk(WEEKLY_HISTORY_ROOT):
+        if "tier_snapshot.parquet" not in filenames:
+            continue
+        path = os.path.join(dirpath, "tier_snapshot.parquet")
+        match = re.search(r"year=(\d+)/week=(\d+)/tier_snapshot\.parquet$", path)
+        if match:
+            sort_key = (int(match.group(1)), int(match.group(2)))
+        else:
+            sort_key = (0, len(paths))
+        paths.append((sort_key, path))
+
+    return [path for _sort_key, path in sorted(paths)]
+
+
+def load_weekly_history_for_persistence():
+    frames = []
+    for snapshot_order, path in enumerate(weekly_snapshot_paths()):
+        try:
+            frame = pd.read_parquet(path)
+        except Exception as exc:
+            print(f"⚠️  지속성 계산용 스냅샷 로드 실패: {path} -> {exc}")
+            continue
+
+        required_cols = {'hero', 'role', 'data_tier', 'map', 'win_rate', 'pick_rate', 'ban_rate'}
+        if not required_cols.issubset(frame.columns):
+            continue
+
+        frame = frame.copy()
+        frame['snapshot_order'] = snapshot_order
+        frames.append(frame)
+
+    if not frames:
+        return pd.DataFrame()
+    return pd.concat(frames, ignore_index=True, sort=False)
+
+
+def build_recent_persistence_frame(max_weeks=None, history_df=None):
+    if max_weeks is None:
+        max_weeks = PERSISTENCE_WEEKS
+    if history_df is None:
+        history_df = load_weekly_history_for_persistence()
+
+    if history_df.empty:
+        return pd.DataFrame()
+
+    required_cols = {'snapshot_order', 'hero', 'role', 'data_tier', 'map', 'win_rate', 'pick_rate', 'ban_rate'}
+    if not required_cols.issubset(history_df.columns):
+        return pd.DataFrame()
+
+    df = history_df.copy()
+    for col in ['win_rate', 'pick_rate', 'ban_rate']:
+        df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0.0)
+
+    df = add_normalized_metric_columns(df, group_key=['snapshot_order', 'data_tier', 'map', 'role'])
+    entity_key = ['hero', 'role', 'data_tier', 'map']
+    df = df.sort_values(entity_key + ['snapshot_order'])
+    recent = df.groupby(entity_key, group_keys=False).tail(max_weeks).copy()
+    recent['reverse_age'] = recent.groupby(entity_key).cumcount(ascending=False)
+    recent['persistence_weight'] = PERSISTENCE_EWMA_DECAY ** recent['reverse_age']
+    weighted = (
+        recent.assign(weighted_win_rate_z=recent['win_rate_z'] * recent['persistence_weight'])
+        .groupby(entity_key, as_index=False)
+        .agg(
+            weighted_sum=('weighted_win_rate_z', 'sum'),
+            weight_sum=('persistence_weight', 'sum'),
         )
+    )
+    weighted['persistence_score'] = weighted['weighted_sum'] / weighted['weight_sum']
+    return weighted[entity_key + ['persistence_score']]
+
+
+def rank_index_value(rank_value):
+    try:
+        return RANK_LABELS.index(str(rank_value))
     except ValueError:
-        return pd.Series(['A'] * len(scores), index=scores.index)
+        return -1
 
-    bin_count = int(bins.max()) + 1 if not bins.isna().all() else 0
-    if bin_count < 2:
-        return pd.Series(['A'] * len(scores), index=scores.index)
 
-    label_indexes = np.linspace(0, len(RANK_LABELS) - 1, bin_count).round().astype(int)
-    dynamic_labels = [RANK_LABELS[index] for index in label_indexes]
-    return bins.map(lambda bin_index: dynamic_labels[int(bin_index)] if pd.notna(bin_index) else 'A')
+def calculate_candidate_scores(df):
+    base_score = (
+        PERFORMANCE_WIN_WEIGHT * df['win_rate_z']
+        + PERFORMANCE_PERSISTENCE_WEIGHT * df['persistence_score']
+    )
+    return {
+        "current_total_score": df['total_score'],
+        "win_rate_only": df['win_rate_z'],
+        "persistence_only": df['persistence_score'],
+        "win_persistence_no_pick_ban": base_score,
+        "current_without_ban": base_score * df['pick_stability_multiplier'],
+        "current_without_pick_stability": base_score + PERFORMANCE_BAN_PRESSURE_WEIGHT * df['ban_rate_z'],
+        "balanced_win_persistence_ban": (
+            0.70 * df['win_rate_z']
+            + 0.25 * df['persistence_score']
+            + 0.05 * df['ban_rate_z']
+        ),
+    }
+
+
+def top_quartile_precision(group, score_col, target_col):
+    if group.empty or group[target_col].nunique(dropna=True) < 2:
+        return np.nan
+    top_n = max(1, len(group) // 4)
+    target_cutoff = group[target_col].quantile(0.75)
+    selected = group.sort_values(score_col, ascending=False).head(top_n)
+    return float((selected[target_col] >= target_cutoff).mean())
+
+
+def build_walk_forward_diagnostics(history_df):
+    if history_df.empty:
+        return {"available": False, "reason": "no_weekly_history"}
+
+    required_cols = {
+        'snapshot_order', 'hero', 'role', 'data_tier', 'map',
+        'win_rate_z', 'persistence_score', 'pick_rate_z', 'ban_rate_z',
+        'pick_stability_multiplier', 'total_score',
+    }
+    if not required_cols.issubset(history_df.columns):
+        return {
+            "available": False,
+            "reason": "missing_columns",
+            "missing_columns": sorted(required_cols - set(history_df.columns)),
+        }
+
+    entity_key = ['hero', 'role', 'data_tier', 'map']
+    df = history_df.copy().sort_values(entity_key + ['snapshot_order'])
+    df['next_win_rate_z'] = df.groupby(entity_key)['win_rate_z'].shift(-1)
+    df = df.dropna(subset=['next_win_rate_z']).copy()
+    if df.empty:
+        return {"available": False, "reason": "no_next_week_pairs"}
+
+    for name, score in calculate_candidate_scores(df).items():
+        df[name] = score
+
+    score_cols = list(calculate_candidate_scores(df).keys())
+    correlations = {
+        col: float(df[[col, 'next_win_rate_z']].corr().iloc[0, 1])
+        for col in score_cols
+        if df[col].nunique(dropna=True) > 1
+    }
+    grouped = df.groupby(['snapshot_order', 'data_tier', 'map', 'role'], group_keys=False)
+    top_quartile_precision_by_score = {
+        col: float(grouped.apply(
+            lambda group: top_quartile_precision(group, col, 'next_win_rate_z'),
+            include_groups=False,
+        ).mean())
+        for col in score_cols
+    }
+
+    return {
+        "available": True,
+        "target": "next_week_win_rate_z",
+        "rows": int(len(df)),
+        "weekly_snapshots": int(history_df['snapshot_order'].nunique()),
+        "correlation_to_target": correlations,
+        "top_quartile_precision": top_quartile_precision_by_score,
+    }
+
+
+def score_variant_for_sensitivity(df, win_weight, ban_weight, pick_scale):
+    persistence_weight = 1.0 - win_weight
+    pick_multiplier = (
+        1 + pick_scale * df['pick_rate_z']
+    ).clip(PICK_STABILITY_MIN, PICK_STABILITY_MAX)
+    base_score = (
+        win_weight * df['win_rate_z']
+        + persistence_weight * df['persistence_score']
+    )
+    return base_score * pick_multiplier + ban_weight * df['ban_rate_z']
+
+
+def build_sensitivity_diagnostics(latest_df):
+    required_cols = {
+        'hero', 'role', 'data_tier', 'map', 'rank',
+        'win_rate_z', 'persistence_score', 'pick_rate_z', 'ban_rate_z',
+    }
+    if latest_df.empty or not required_cols.issubset(latest_df.columns):
+        return {"available": False, "reason": "missing_latest_columns"}
+
+    group_key = ['data_tier', 'map', 'role']
+    baseline = latest_df.copy()
+    baseline['baseline_rank_index'] = baseline['rank'].map(rank_index_value)
+    variants = []
+    for win_weight in [0.65, 0.75, 0.85]:
+        for ban_weight in [0.00, 0.05, 0.10]:
+            for pick_scale in [0.04, 0.08, 0.12]:
+                variant = baseline.copy()
+                variant['variant_score'] = score_variant_for_sensitivity(
+                    variant,
+                    win_weight=win_weight,
+                    ban_weight=ban_weight,
+                    pick_scale=pick_scale,
+                )
+                variant['variant_rank'] = variant.groupby(group_key)['variant_score'].transform(assign_score_rank)
+                variant['variant_rank_index'] = variant['variant_rank'].map(rank_index_value)
+                rank_delta = (variant['variant_rank_index'] - variant['baseline_rank_index']).abs()
+                baseline_s = variant['rank'].astype(str) == 'S'
+                variant_s = variant['variant_rank'].astype(str) == 'S'
+                variants.append(
+                    {
+                        "win_weight": win_weight,
+                        "persistence_weight": round(1.0 - win_weight, 4),
+                        "ban_weight": ban_weight,
+                        "pick_stability_scale": pick_scale,
+                        "rank_change_rate": float((rank_delta > 0).mean()),
+                        "avg_abs_rank_delta": float(rank_delta.mean()),
+                        "s_membership_change_rate": float((baseline_s != variant_s).mean()),
+                    }
+                )
+
+    return {
+        "available": True,
+        "variants": variants,
+        "summary": {
+            "variant_count": len(variants),
+            "avg_rank_change_rate": float(np.mean([row["rank_change_rate"] for row in variants])),
+            "max_rank_change_rate": float(np.max([row["rank_change_rate"] for row in variants])),
+            "avg_s_membership_change_rate": float(np.mean([row["s_membership_change_rate"] for row in variants])),
+            "max_s_membership_change_rate": float(np.max([row["s_membership_change_rate"] for row in variants])),
+        },
+    }
+
+
+def build_rank_diagnostics(latest_df=None):
+    history_df = load_weekly_history_for_persistence()
+    if latest_df is None and os.path.exists(LATEST_STATS_PATH):
+        latest_df = pd.read_parquet(LATEST_STATS_PATH)
+    if latest_df is None:
+        latest_df = pd.DataFrame()
+
+    metric_cols = ['win_rate_z', 'persistence_score', 'pick_rate_z', 'ban_rate_z', 'total_score']
+    diagnostics = {
+        "generated_at": datetime.now().isoformat(timespec="seconds"),
+        "method_note": (
+            "Diagnostics are used to audit the hand-designed performance formula; "
+            "they do not automatically optimize production weights."
+        ),
+        "long_term_plan": "patch_buff_nerf_history_based_regression",
+        "data_summary": {
+            "latest_rows": int(len(latest_df)),
+            "weekly_rows": int(len(history_df)),
+            "weekly_snapshots": int(history_df['snapshot_order'].nunique()) if 'snapshot_order' in history_df.columns else 0,
+        },
+        "correlation_matrix": {},
+        "variance": {},
+        "walk_forward": build_walk_forward_diagnostics(history_df),
+        "sensitivity": build_sensitivity_diagnostics(latest_df),
+    }
+
+    if not history_df.empty and set(metric_cols).issubset(history_df.columns):
+        metrics = history_df[metric_cols].apply(pd.to_numeric, errors='coerce')
+        diagnostics["correlation_matrix"] = {
+            col: {
+                nested_col: (
+                    None if pd.isna(value) else float(value)
+                )
+                for nested_col, value in metrics.corr().loc[col].items()
+            }
+            for col in metric_cols
+        }
+        diagnostics["variance"] = {
+            col: float(metrics[col].var())
+            for col in metric_cols
+        }
+
+    return diagnostics
+
+
+def save_rank_diagnostics(latest_df=None):
+    os.makedirs(os.path.dirname(RANK_DIAGNOSTICS_PATH), exist_ok=True)
+    diagnostics = build_rank_diagnostics(latest_df)
+    with open(RANK_DIAGNOSTICS_PATH, "w", encoding="utf-8") as f:
+        json.dump(diagnostics, f, ensure_ascii=False, indent=2)
+    return diagnostics
 
 
 def build_snapshot_compare_frame(df):
@@ -1867,23 +2229,17 @@ def run_stats_update():
         full_df['ban_rate'] = 0.0
 
     # 랭크 계산
-    def safe_zscore(series):
-        std = series.std()
-        if std == 0 or pd.isna(std):
-            return pd.Series([0] * len(series), index=series.index)
-        return (series - series.mean()) / std
-
     group_key = ['data_tier', 'map', 'role']
-    full_df['win_rate_z']    = full_df.groupby(group_key)['win_rate'].transform(safe_zscore)
-    full_df['pick_rate_log'] = np.log1p(full_df['pick_rate'])
-    full_df['pick_rate_z']   = full_df.groupby(group_key)['pick_rate_log'].transform(safe_zscore)
-    full_df['ban_rate_log']  = np.log1p(full_df['ban_rate'])
-    full_df['ban_rate_z']    = full_df.groupby(group_key)['ban_rate_log'].transform(safe_zscore)
-    full_df['total_score']   = (
-        full_df['win_rate_z'] * WIN_RATE_WEIGHT
-        + full_df['pick_rate_z'] * PICK_RATE_WEIGHT
-        + full_df['ban_rate_z'] * BAN_RATE_WEIGHT
+    persistence_df = build_recent_persistence_frame()
+    print(
+        "📐 성능 점수 공식: "
+        f"승률={PERFORMANCE_WIN_WEIGHT:.2f}, "
+        f"EWMA 지속성={PERFORMANCE_PERSISTENCE_WEIGHT:.2f}, "
+        f"픽률 안정성={PICK_STABILITY_MIN:.2f}~{PICK_STABILITY_MAX:.2f}, "
+        f"밴률 압박={PERFORMANCE_BAN_PRESSURE_WEIGHT:.2f}, "
+        f"최근 {PERSISTENCE_WEEKS}주 지속성 rows={len(persistence_df)}"
     )
+    full_df = add_scoring_columns(full_df, group_key=group_key, persistence_df=persistence_df)
 
     full_df['rank'] = full_df.groupby(group_key)['total_score'].transform(assign_score_rank)
     full_df = normalize_dataset_for_scoring(full_df)
@@ -1917,6 +2273,7 @@ def run_stats_update():
     save_parquet(snapshot_df, LATEST_STATS_PATH)
     daily_saved_as = save_daily_snapshot(snapshot_df, today_obj)
     weekly_saved_as = save_weekly_snapshot_if_due(snapshot_df, today_obj)
+    rank_diagnostics = save_rank_diagnostics(latest_df)
 
     elapsed = format_elapsed(perf_counter() - started_at)
     if data_changed:
@@ -1929,12 +2286,14 @@ def run_stats_update():
         print(f"⏭️  데이터 변동 없음. latest 덮어쓰기 완료. (소요 시간: {elapsed})")
     print(f"📁 일별 스냅샷: {daily_saved_as}")
     print(f"📁 주간 스냅샷: {weekly_saved_as}")
+    print(f"📁 랭크 진단 리포트: {RANK_DIAGNOSTICS_PATH}")
     return {
         "latest_df": latest_df,
         "previous_latest_df": previous_latest_df,
         "data_changed": data_changed,
         "daily_snapshot_path": daily_saved_as,
         "weekly_snapshot_path": weekly_saved_as,
+        "rank_diagnostics": rank_diagnostics,
     }
 
 

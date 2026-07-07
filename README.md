@@ -8,7 +8,7 @@
 
 | 페이지 | 설명 |
 |---|---|
-| **메인** | 티어·포지션·영웅 필터, 승률/픽률/밴률 기반 S/A/B/C 랭크 테이블, 장인챔프 표시 |
+| **메인** | 티어·포지션·영웅 필터, 승률/픽률/밴률 기반 S/A/B/C/D 랭크 테이블, 장인챔프 표시 |
 | **픽률/승률 분포** | 선택 티어·포지션 기준 분포 시각화 |
 | **영웅 시계열** | 영웅별 승률·픽률·밴률 변화 추이 확인 |
 | **영웅 상세** | 특정 영웅의 세부 지표 및 퍼크 정보 확인 |
@@ -138,20 +138,48 @@ python update.py --mode all
 | map, map_name, update_date | 맵 정보, 수집일 |
 | win_rate, pick_rate, ban_rate | 승률, 픽률, 밴률 |
 | win_rate_z, pick_rate_log, pick_rate_z, ban_rate_log, ban_rate_z | 정규화 지표 |
-| total_score, rank | 종합 점수, 랭크 (밴률 반영) |
+| persistence_score, pick_stability_multiplier, performance_score | EWMA 지속성, 픽률 안정성 보정, 성능 점수 |
+| total_score, score_strength, pick_rate_warning, rank | 종합 점수, 절대 점수 강도, 저픽률 경고, 랭크 |
 
 
 ### 영웅 랭크 산정 공식
 
-모든 값은 티어·맵·포지션별로 표준화(z-score) 후 아래 가중치로 합산합니다.
+랭크는 "메타에서 성능이 좋은 영웅"을 찾기 위해 지표별 역할을 분리해 계산합니다.
+승률은 성능의 핵심 지표, 최근 주간 승률 흐름은 EWMA 지속성, 픽률은 안정성 보정, 밴률은 약한 메타 압박 신호로 사용합니다.
 
 ```
-total_score = 0.5 * z(win_rate)
-            + 0.3 * z(log(1 + pick_rate))
-            + 0.2 * z(log(1 + ban_rate))
+base_score = 0.75 * z(win_rate)
+           + 0.25 * persistence_score
+
+pick_stability_multiplier = clip(1 + 0.08 * z(log(1 + pick_rate)), 0.85, 1.05)
+
+total_score = base_score * pick_stability_multiplier
+            + 0.05 * z(log(1 + ban_rate))
 ```
 
-랭크는 S/A/B/C 4분위로 자동 분할됩니다.
+랭크는 분위수로 강제 배분하지 않고 절대 점수 기준으로 산정합니다.
+
+```
+S: total_score >= 1.25
+A: 0.50 <= total_score < 1.25
+B: -0.50 < total_score < 0.50
+C: -1.25 < total_score <= -0.50
+D: total_score <= -1.25
+```
+
+따라서 비교군이 평평하면 S나 D가 없을 수 있고, 정말 강하거나 약한 영웅만 양끝 랭크로 분리됩니다. `score_strength`에는 절대 점수 구간(압도적/강함/우세/보통/약세)을 함께 저장합니다.
+실제 게임 수가 없으므로 표본 크기 필터 대신 `pick_rate`가 1.0% 미만이면 저픽률 경고를 표시합니다.
+
+### 랭크 진단 리포트
+
+업데이트 시 `data/latest/rank_diagnostics.json`에 랭크 산식 진단 결과를 저장합니다.
+이 리포트는 메인 가중치를 자동 변경하지 않고, 현재 산식의 안정성을 점검하는 용도입니다.
+
+- `correlation_matrix`: 승률, 지속성, 픽률, 밴률, 종합 점수 간 중복성 확인
+- `walk_forward`: 이번 주 점수가 다음 주 승률 성과를 얼마나 설명하는지 후보 산식별 비교
+- `sensitivity`: 가중치를 일부 흔들었을 때 S/A/B/C/D 배정이 얼마나 바뀌는지 확인
+
+장기적으로는 패치 노트의 버프/너프 이력을 영웅별 라벨로 구조화해, 패치 이력 기반 회귀/분류 모델로 산식을 검증할 계획입니다.
 
 ### `data/latest/latest_perks.parquet`
 

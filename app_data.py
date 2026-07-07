@@ -44,6 +44,11 @@ NUMERIC_STATS_COLUMNS = [
     "win_rate_z",
     "pick_rate_log",
     "pick_rate_z",
+    "ban_rate_log",
+    "ban_rate_z",
+    "persistence_score",
+    "pick_stability_multiplier",
+    "performance_score",
     "total_score",
 ]
 PATCH_NOTES_PATH = os.path.join("data", "patch_notes", "patch_notes.json")

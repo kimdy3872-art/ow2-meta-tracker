@@ -1,0 +1,333 @@
+{
+  "generated_at": "2026-07-08T07:34:19",
+  "method_note": "Diagnostics are used to audit the hand-designed performance formula; they do not automatically optimize production weights.",
+  "long_term_plan": "patch_buff_nerf_history_based_regression",
+  "data_summary": {
+    "latest_rows": 12480,
+    "weekly_rows": 73920,
+    "weekly_snapshots": 6
+  },
+  "correlation_matrix": {
+    "win_rate_z": {
+      "win_rate_z": 1.0,
+      "persistence_score": 0.8497872167136472,
+      "pick_rate_z": 0.25948835711620194,
+      "ban_rate_z": 0.20598661343382033,
+      "total_score": 0.9874049884597548
+    },
+    "persistence_score": {
+      "win_rate_z": 0.8497872167136472,
+      "persistence_score": 1.0,
+      "pick_rate_z": 0.2465630825060721,
+      "ban_rate_z": 0.1903723163911531,
+      "total_score": 0.90944480905302
+    },
+    "pick_rate_z": {
+      "win_rate_z": 0.25948835711620194,
+      "persistence_score": 0.2465630825060721,
+      "pick_rate_z": 1.0,
+      "ban_rate_z": 0.27181653372288933,
+      "total_score": 0.2739770121903135
+    },
+    "ban_rate_z": {
+      "win_rate_z": 0.20598661343382033,
+      "persistence_score": 0.1903723163911531,
+      "pick_rate_z": 0.27181653372288933,
+      "ban_rate_z": 1.0,
+      "total_score": 0.2633318922353918
+    },
+    "total_score": {
+      "win_rate_z": 0.9874049884597548,
+      "persistence_score": 0.90944480905302,
+      "pick_rate_z": 0.2739770121903135,
+      "ban_rate_z": 0.2633318922353918,
+      "total_score": 1.0
+    }
+  },
+  "variance": {
+    "win_rate_z": 0.9415711792637887,
+    "persistence_score": 0.8880429336904768,
+    "pick_rate_z": 0.9415711792637887,
+    "ban_rate_z": 0.9415711792637887,
+    "total_score": 0.8552678980441486
+  },
+  "walk_forward": {
+    "available": true,
+    "target": "next_week_win_rate_z",
+    "rows": 61440,
+    "weekly_snapshots": 6,
+    "correlation_to_target": {
+      "current_total_score": 0.823569403272231,
+      "win_rate_only": 0.8282857941703894,
+      "persistence_only": 0.7007373173116228,
+      "win_persistence_no_pick_ban": 0.8220485322034418,
+      "current_without_ban": 0.8229571161858342,
+      "current_without_pick_stability": 0.8229108800827869,
+      "balanced_win_persistence_ban": 0.8221098399583324
+    },
+    "top_quartile_precision": {
+      "current_total_score": 0.7972592592592593,
+      "win_rate_only": 0.7994537037037038,
+      "persistence_only": 0.6759351851851852,
+      "win_persistence_no_pick_ban": 0.7943796296296297,
+      "current_without_ban": 0.7972777777777778,
+      "current_without_pick_stability": 0.7956851851851852,
+      "balanced_win_persistence_ban": 0.7945000000000001
+    }
+  },
+  "sensitivity": {
+    "available": true,
+    "variants": [
+      {
+        "win_weight": 0.65,
+        "persistence_weight": 0.35,
+        "ban_weight": 0.0,
+        "pick_stability_scale": 0.04,
+        "rank_change_rate": 0.05024038461538462,
+        "avg_abs_rank_delta": 0.05024038461538462,
+        "s_membership_change_rate": 0.013461538461538462
+      },
+      {
+        "win_weight": 0.65,
+        "persistence_weight": 0.35,
+        "ban_weight": 0.0,
+        "pick_stability_scale": 0.08,
+        "rank_change_rate": 0.04959935897435897,
+        "avg_abs_rank_delta": 0.04959935897435897,
+        "s_membership_change_rate": 0.011698717948717949
+      },
+      {
+        "win_weight": 0.65,
+        "persistence_weight": 0.35,
+        "ban_weight": 0.0,
+        "pick_stability_scale": 0.12,
+        "rank_change_rate": 0.05328525641025641,
+        "avg_abs_rank_delta": 0.05328525641025641,
+        "s_membership_change_rate": 0.011298076923076923
+      },
+      {
+        "win_weight": 0.65,
+        "persistence_weight": 0.35,
+        "ban_weight": 0.05,
+        "pick_stability_scale": 0.04,
+        "rank_change_rate": 0.026041666666666668,
+        "avg_abs_rank_delta": 0.026041666666666668,
+        "s_membership_change_rate": 0.00641025641025641
+      },
+      {
+        "win_weight": 0.65,
+        "persistence_weight": 0.35,
+        "ban_weight": 0.05,
+        "pick_stability_scale": 0.08,
+        "rank_change_rate": 0.01987179487179487,
+        "avg_abs_rank_delta": 0.01987179487179487,
+        "s_membership_change_rate": 0.0042467948717948715
+      },
+      {
+        "win_weight": 0.65,
+        "persistence_weight": 0.35,
+        "ban_weight": 0.05,
+        "pick_stability_scale": 0.12,
+        "rank_change_rate": 0.026282051282051282,
+        "avg_abs_rank_delta": 0.026282051282051282,
+        "s_membership_change_rate": 0.005528846153846154
+      },
+      {
+        "win_weight": 0.65,
+        "persistence_weight": 0.35,
+        "ban_weight": 0.1,
+        "pick_stability_scale": 0.04,
+        "rank_change_rate": 0.05112179487179487,
+        "avg_abs_rank_delta": 0.05112179487179487,
+        "s_membership_change_rate": 0.011538461538461539
+      },
+      {
+        "win_weight": 0.65,
+        "persistence_weight": 0.35,
+        "ban_weight": 0.1,
+        "pick_stability_scale": 0.08,
+        "rank_change_rate": 0.04639423076923077,
+        "avg_abs_rank_delta": 0.04639423076923077,
+        "s_membership_change_rate": 0.010977564102564102
+      },
+      {
+        "win_weight": 0.65,
+        "persistence_weight": 0.35,
+        "ban_weight": 0.1,
+        "pick_stability_scale": 0.12,
+        "rank_change_rate": 0.04959935897435897,
+        "avg_abs_rank_delta": 0.04959935897435897,
+        "s_membership_change_rate": 0.011458333333333333
+      },
+      {
+        "win_weight": 0.75,
+        "persistence_weight": 0.25,
+        "ban_weight": 0.0,
+        "pick_stability_scale": 0.04,
+        "rank_change_rate": 0.045753205128205125,
+        "avg_abs_rank_delta": 0.045753205128205125,
+        "s_membership_change_rate": 0.01217948717948718
+      },
+      {
+        "win_weight": 0.75,
+        "persistence_weight": 0.25,
+        "ban_weight": 0.0,
+        "pick_stability_scale": 0.08,
+        "rank_change_rate": 0.04479166666666667,
+        "avg_abs_rank_delta": 0.04479166666666667,
+        "s_membership_change_rate": 0.011057692307692308
+      },
+      {
+        "win_weight": 0.75,
+        "persistence_weight": 0.25,
+        "ban_weight": 0.0,
+        "pick_stability_scale": 0.12,
+        "rank_change_rate": 0.04751602564102564,
+        "avg_abs_rank_delta": 0.04751602564102564,
+        "s_membership_change_rate": 0.010096153846153847
+      },
+      {
+        "win_weight": 0.75,
+        "persistence_weight": 0.25,
+        "ban_weight": 0.05,
+        "pick_stability_scale": 0.04,
+        "rank_change_rate": 0.017628205128205128,
+        "avg_abs_rank_delta": 0.017628205128205128,
+        "s_membership_change_rate": 0.004807692307692308
+      },
+      {
+        "win_weight": 0.75,
+        "persistence_weight": 0.25,
+        "ban_weight": 0.05,
+        "pick_stability_scale": 0.08,
+        "rank_change_rate": 0.0,
+        "avg_abs_rank_delta": 0.0,
+        "s_membership_change_rate": 0.0
+      },
+      {
+        "win_weight": 0.75,
+        "persistence_weight": 0.25,
+        "ban_weight": 0.05,
+        "pick_stability_scale": 0.12,
+        "rank_change_rate": 0.013461538461538462,
+        "avg_abs_rank_delta": 0.013461538461538462,
+        "s_membership_change_rate": 0.0028846153846153848
+      },
+      {
+        "win_weight": 0.75,
+        "persistence_weight": 0.25,
+        "ban_weight": 0.1,
+        "pick_stability_scale": 0.04,
+        "rank_change_rate": 0.048477564102564104,
+        "avg_abs_rank_delta": 0.048477564102564104,
+        "s_membership_change_rate": 0.011538461538461539
+      },
+      {
+        "win_weight": 0.75,
+        "persistence_weight": 0.25,
+        "ban_weight": 0.1,
+        "pick_stability_scale": 0.08,
+        "rank_change_rate": 0.04567307692307692,
+        "avg_abs_rank_delta": 0.04567307692307692,
+        "s_membership_change_rate": 0.010977564102564102
+      },
+      {
+        "win_weight": 0.75,
+        "persistence_weight": 0.25,
+        "ban_weight": 0.1,
+        "pick_stability_scale": 0.12,
+        "rank_change_rate": 0.04655448717948718,
+        "avg_abs_rank_delta": 0.04655448717948718,
+        "s_membership_change_rate": 0.011217948717948718
+      },
+      {
+        "win_weight": 0.85,
+        "persistence_weight": 0.15,
+        "ban_weight": 0.0,
+        "pick_stability_scale": 0.04,
+        "rank_change_rate": 0.05184294871794872,
+        "avg_abs_rank_delta": 0.05184294871794872,
+        "s_membership_change_rate": 0.01217948717948718
+      },
+      {
+        "win_weight": 0.85,
+        "persistence_weight": 0.15,
+        "ban_weight": 0.0,
+        "pick_stability_scale": 0.08,
+        "rank_change_rate": 0.04871794871794872,
+        "avg_abs_rank_delta": 0.04871794871794872,
+        "s_membership_change_rate": 0.010897435897435897
+      },
+      {
+        "win_weight": 0.85,
+        "persistence_weight": 0.15,
+        "ban_weight": 0.0,
+        "pick_stability_scale": 0.12,
+        "rank_change_rate": 0.05128205128205128,
+        "avg_abs_rank_delta": 0.05128205128205128,
+        "s_membership_change_rate": 0.010176282051282052
+      },
+      {
+        "win_weight": 0.85,
+        "persistence_weight": 0.15,
+        "ban_weight": 0.05,
+        "pick_stability_scale": 0.04,
+        "rank_change_rate": 0.02980769230769231,
+        "avg_abs_rank_delta": 0.02980769230769231,
+        "s_membership_change_rate": 0.00608974358974359
+      },
+      {
+        "win_weight": 0.85,
+        "persistence_weight": 0.15,
+        "ban_weight": 0.05,
+        "pick_stability_scale": 0.08,
+        "rank_change_rate": 0.020993589743589742,
+        "avg_abs_rank_delta": 0.020993589743589742,
+        "s_membership_change_rate": 0.004647435897435897
+      },
+      {
+        "win_weight": 0.85,
+        "persistence_weight": 0.15,
+        "ban_weight": 0.05,
+        "pick_stability_scale": 0.12,
+        "rank_change_rate": 0.024919871794871797,
+        "avg_abs_rank_delta": 0.024919871794871797,
+        "s_membership_change_rate": 0.004647435897435897
+      },
+      {
+        "win_weight": 0.85,
+        "persistence_weight": 0.15,
+        "ban_weight": 0.1,
+        "pick_stability_scale": 0.04,
+        "rank_change_rate": 0.053926282051282054,
+        "avg_abs_rank_delta": 0.053926282051282054,
+        "s_membership_change_rate": 0.01266025641025641
+      },
+      {
+        "win_weight": 0.85,
+        "persistence_weight": 0.15,
+        "ban_weight": 0.1,
+        "pick_stability_scale": 0.08,
+        "rank_change_rate": 0.05080128205128205,
+        "avg_abs_rank_delta": 0.05080128205128205,
+        "s_membership_change_rate": 0.01201923076923077
+      },
+      {
+        "win_weight": 0.85,
+        "persistence_weight": 0.15,
+        "ban_weight": 0.1,
+        "pick_stability_scale": 0.12,
+        "rank_change_rate": 0.05064102564102564,
+        "avg_abs_rank_delta": 0.05064102564102564,
+        "s_membership_change_rate": 0.01233974358974359
+      }
+    ],
+    "summary": {
+      "variant_count": 27,
+      "avg_rank_change_rate": 0.03945275403608736,
+      "max_rank_change_rate": 0.053926282051282054,
+      "avg_s_membership_change_rate": 0.009149453941120609,
+      "max_s_membership_change_rate": 0.013461538461538462
+    }
+  }
+}

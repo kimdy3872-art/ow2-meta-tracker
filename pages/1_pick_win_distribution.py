@@ -124,12 +124,13 @@ fig = px.scatter_3d(
     hover_name="hero",
     text="hero_label",
     custom_data=["hero", "role_display", "rank", "master_label", "is_master", "ban_rate"],
-    category_orders={"rank": ["S", "A", "B", "C"]},
+    category_orders={"rank": ["S", "A", "B", "C", "D"]},
     color_discrete_map={
         "S": "#FF4B4B",
         "A": "#FFA500",
         "B": "#2ECC71",
         "C": "#3498DB",
+        "D": "#94A3B8",
     },
     labels={
         "pick_rate": "픽률 (%)",

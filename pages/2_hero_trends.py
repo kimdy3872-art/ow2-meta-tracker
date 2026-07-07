@@ -61,6 +61,7 @@ def rank_color(rank):
         "A": "#f59e0b",
         "B": "#22c55e",
         "C": "#60a5fa",
+        "D": "#94a3b8",
     }.get(str(rank), GLOBAL_TEXT_COLOR)
 
 

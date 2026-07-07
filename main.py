@@ -428,7 +428,7 @@ else:
 if not df_filtered.empty:
     df_filtered["rank"] = pd.Categorical(
         df_filtered["rank"],
-        categories=["C", "B", "A", "S"],
+        categories=["D", "C", "B", "A", "S"],
         ordered=True
     )
 
@@ -448,6 +448,7 @@ def render_rank_table_html(df):
         "A": "#f59e0b",
         "B": "#22c55e",
         "C": "#60a5fa",
+        "D": "#94a3b8",
     }
 
     styles = """
@@ -463,9 +464,11 @@ def render_rank_table_html(df):
     .overwatch-table .role-cell {text-align: center; color: __GLOBAL_TEXT_COLOR__;}
     .overwatch-table .rate-cell {text-align: left; min-width: 180px;}
     .overwatch-table .score-cell {text-align: center; font-weight: 800; min-width: 92px; color: #fbbf24;}
+    .overwatch-table .score-label {display: block; margin-top: 4px; color: #cbd5e1; font-size: 0.72rem; font-weight: 800;}
     .overwatch-table .rank-cell {text-align: center; font-weight: 900; font-size: 1.38rem; line-height: 1; letter-spacing: 0.01em; padding: 4px 8px; color: __GLOBAL_TEXT_COLOR__;}
     .artisan-badge {display: inline-block; margin-left: 8px; padding: 2px 7px; border-radius: 999px; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.02em; vertical-align: middle;}
     .artisan-strong {background: rgba(250, 204, 21, 0.14); color: #fde68a; border: 1px solid rgba(250, 204, 21, 0.36);}
+    .low-pick-badge {display: inline-block; margin-left: 6px; padding: 2px 7px; border-radius: 999px; font-size: 0.68rem; font-weight: 800; vertical-align: middle; color: #fed7aa; background: rgba(249, 115, 22, 0.12); border: 1px solid rgba(251, 146, 60, 0.35);}
     .rate-bar {background: #1f2937; border-radius: 999px; height: 10px; overflow: hidden; margin-top: 6px;}
     .rate-fill {height: 100%; border-radius: 999px;}
     .rate-fill.pick {background: #60a5fa;}
@@ -494,13 +497,19 @@ def render_rank_table_html(df):
         badge_html = ""
         if is_master:
             badge_html = "<span class='artisan-badge artisan-strong'>장인</span>"
-        hero_cell_html = f"{hero_link}{badge_html}"
+        low_pick_warning = str(row.get("pick_rate_warning", "") or "").strip()
+        low_pick_html = ""
+        if low_pick_warning:
+            low_pick_html = f"<span class='low-pick-badge'>{html.escape(low_pick_warning)}</span>"
+        hero_cell_html = f"{hero_link}{badge_html}{low_pick_html}"
         role = html.escape(translate_role_name(str(row["role"])))
         win_rate = f"{row['win_rate']:.1f}%"
         pick_rate = f"{row['pick_rate']:.1f}%"
         ban_rate_val = pd.to_numeric(row.get("ban_rate", None), errors="coerce")
         score_val = pd.to_numeric(row.get("total_score", None), errors="coerce")
         score = f"{score_val:+.2f}" if pd.notna(score_val) else "-"
+        score_strength = html.escape(str(row.get("score_strength", "") or "보통"))
+        score_html = f"{score}<span class='score-label'>{score_strength}</span>"
         rank = html.escape(str(row["rank"]))
         rank_color = rank_color_map.get(str(row["rank"]), GLOBAL_TEXT_COLOR)
         hero_url = get_hero_image_url(row["hero"])
@@ -523,7 +532,7 @@ def render_rank_table_html(df):
         else:
             ban_html = "<div class='rate-text' style='color:#6b7280;'>-</div>"
         rows.append(
-            f"<tr><td class='portrait-cell'>{img_html}</td><td class='hero-cell'>{hero_cell_html}</td><td class='role-cell'>{role}</td><td class='rate-cell'>{win_html}</td><td class='rate-cell'>{pick_html}</td><td class='rate-cell'>{ban_html}</td><td class='score-cell'>{score}</td><td class='rank-cell' style='color:{rank_color};'>{rank}</td></tr>"
+            f"<tr><td class='portrait-cell'>{img_html}</td><td class='hero-cell'>{hero_cell_html}</td><td class='role-cell'>{role}</td><td class='rate-cell'>{win_html}</td><td class='rate-cell'>{pick_html}</td><td class='rate-cell'>{ban_html}</td><td class='score-cell'>{score_html}</td><td class='rank-cell' style='color:{rank_color};'>{rank}</td></tr>"
         )
     table_html = (
         styles
@@ -667,7 +676,12 @@ with st.expander("랭크는 어떻게 산정되나요?"):
     st.markdown(
         """
         - 랭크는 같은 티어/포지션/전장(all-maps) 안에서 산정됩니다.
-        - 기본적으로 승률과 픽률, 밴률 기반 점수를 함께 반영해 `S > A > B > C`로 구간화합니다.
+        - 승률은 성능의 핵심 지표로 반영하고, 최근 주간 승률 흐름은 EWMA 지속성으로 반영합니다.
+        - 픽률은 통계적 표본 수가 아니라 픽률 안정성 보정으로 사용해 낮은 픽률 고승률 영웅의 과대평가를 줄입니다.
+        - 밴률은 강함의 직접 증거가 아니라 메타 압박 신호로 약하게만 반영합니다.
+        - 랭크는 분위수 강제 배분이 아니라 절대 점수 기준 `S/A/B/C/D`로 산정됩니다.
+        - 기준은 `S >= 1.25`, `A >= 0.50`, `B -0.50~0.50`, `C <= -0.50`, `D <= -1.25`입니다.
+        - 픽률 1.0% 미만 영웅은 저픽률 경고를 함께 표시합니다.
         - 종합 점수는 같은 비교군 평균 대비 상대 점수라서 0보다 높으면 평균 이상, 낮으면 평균 이하로 해석할 수 있습니다.
         - 표의 정렬 기준(종합 점수/승률/픽률/밴률)을 바꾸면 같은 집합 내 우선순위가 달라집니다.
         - 데이터는 최신 수집일 기준으로만 비교됩니다.
@@ -691,7 +705,7 @@ sort_col = {
 }.get(sort_by, "total_score")
 
 # 밴률 컬럼이 있으면 포함
-display_cols = ["hero", "role", "win_rate", "pick_rate", "ban_rate", "total_score", "rank", "is_master"] if "ban_rate" in df_filtered.columns else ["hero", "role", "win_rate", "pick_rate", "total_score", "rank", "is_master"]
+display_cols = ["hero", "role", "win_rate", "pick_rate", "ban_rate", "total_score", "score_strength", "pick_rate_warning", "rank", "is_master"] if "ban_rate" in df_filtered.columns else ["hero", "role", "win_rate", "pick_rate", "total_score", "score_strength", "pick_rate_warning", "rank", "is_master"]
 display_df = df_filtered.sort_values(
     sort_col,
     ascending=False
