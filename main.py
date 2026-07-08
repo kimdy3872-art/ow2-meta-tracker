@@ -17,6 +17,9 @@ from ui import (
     GLOBAL_BG_COLOR,
     GLOBAL_BORDER_COLOR,
     GLOBAL_FONT_FAMILY,
+    GLOBAL_GOOD_COLOR,
+    GLOBAL_INFO_COLOR,
+    GLOBAL_DANGER_COLOR,
     GLOBAL_SURFACE_COLOR,
     GLOBAL_TEXT_COLOR,
     apply_global_theme,
@@ -298,7 +301,7 @@ def render_metric_card(title, value, accent_color="#0b69ff"):
     <div style="
         background: linear-gradient(180deg, {GLOBAL_SURFACE_COLOR} 0%, #0f1b31 100%);
         border: 1px solid {GLOBAL_BORDER_COLOR};
-        border-radius: 16px;
+        border-radius: 12px;
         padding: 16px 18px;
         min-height: 122px;
         box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
@@ -341,6 +344,18 @@ def reset_filters():
     st.session_state.sort_by = "종합 점수"
     st.session_state.search_hero = ""
 
+st.markdown(
+    f"""
+    <div class="ow-control-band">
+        <div class="ow-control-head">
+            <div class="ow-control-title">분석 조건</div>
+            <div class="ow-control-meta">티어, 포지션, 정렬 기준을 먼저 고르면 아래 랭킹과 요약이 즉시 갱신됩니다.</div>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
 with st.container():
     c1, c2, c3, c4, c5 = st.columns([1.05, 1.0, 0.95, 1.65, 0.55])
 
@@ -378,19 +393,7 @@ with st.container():
         st.button("초기화", width="stretch", on_click=reset_filters)
 
 st.markdown(
-    f"""
-    <style>
-    .ow-top4-divider {{
-        height: 1px;
-        background: rgba(66, 88, 126, 0.55);
-        margin: 8px 0 10px;
-    }}
-    .ow-top4-divider.after {{
-        margin: 8px 0 12px;
-    }}
-    </style>
-    <div class="ow-top4-divider"></div>
-    """,
+    "<div class='ow-soft-divider'></div>",
     unsafe_allow_html=True,
 )
 
@@ -453,29 +456,41 @@ def render_rank_table_html(df):
 
     styles = """
     <style>
-    .overwatch-table {border-collapse: collapse; width: 100%; font-family: __GLOBAL_FONT_FAMILY__;}
-    .overwatch-table th, .overwatch-table td {border: 1px solid __GLOBAL_BORDER_COLOR__; padding: 11px 13px; vertical-align: middle; color: __GLOBAL_TEXT_COLOR__; font-size: 0.92rem;}
-    .overwatch-table {background-color: __GLOBAL_BG_COLOR__;}
+    .overwatch-table {border-collapse: separate; border-spacing: 0; width: 100%; font-family: __GLOBAL_FONT_FAMILY__; overflow: hidden; border: 1px solid __GLOBAL_BORDER_COLOR__; border-radius: 12px; background-color: __GLOBAL_BG_COLOR__;}
+    .overwatch-table th, .overwatch-table td {border-bottom: 1px solid __GLOBAL_BORDER_COLOR__; padding: 9px 12px; vertical-align: middle; color: __GLOBAL_TEXT_COLOR__; font-size: 0.9rem;}
+    .overwatch-table th:not(:last-child), .overwatch-table td:not(:last-child) {border-right: 1px solid rgba(43, 63, 99, 0.72);}
+    .overwatch-table tbody tr:last-child td {border-bottom: 0;}
     .overwatch-table th {background-color: __GLOBAL_SURFACE_COLOR__; color: #f8fafc; font-weight: 700; font-size: 0.9rem; letter-spacing: 0.03em; text-transform: uppercase;}
     .overwatch-table tbody tr:hover {background-color: #111827;}
-    .overwatch-table .portrait-cell {width: 98px; text-align: center;}
-    .overwatch-table .portrait-cell img {border-radius: 16px; width: 68px; height: 68px; object-fit: cover;}
+    .overwatch-table .portrait-cell {width: 76px; text-align: center;}
+    .overwatch-table .portrait-cell img {border-radius: 10px; width: 54px; height: 54px; object-fit: cover;}
     .overwatch-table .hero-cell {text-align: left; font-weight: 700; color: __GLOBAL_TEXT_COLOR__;}
     .overwatch-table .role-cell {text-align: center; color: __GLOBAL_TEXT_COLOR__;}
-    .overwatch-table .rate-cell {text-align: left; min-width: 180px;}
+    .overwatch-table .rate-cell {text-align: left; min-width: 152px;}
     .overwatch-table .score-cell {text-align: center; font-weight: 800; min-width: 92px; color: #fbbf24;}
     .overwatch-table .score-label {display: block; margin-top: 4px; color: #cbd5e1; font-size: 0.72rem; font-weight: 800;}
-    .overwatch-table .rank-cell {text-align: center; font-weight: 900; font-size: 1.38rem; line-height: 1; letter-spacing: 0.01em; padding: 4px 8px; color: __GLOBAL_TEXT_COLOR__;}
+    .overwatch-table .rank-cell {text-align: center; padding: 4px 8px;}
+    .rank-pill {display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:30px;border-radius:999px;font-weight:900;font-size:1.05rem;border:1px solid currentColor;background:rgba(255,255,255,0.05);}
     .artisan-badge {display: inline-block; margin-left: 8px; padding: 2px 7px; border-radius: 999px; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.02em; vertical-align: middle;}
     .artisan-strong {background: rgba(250, 204, 21, 0.14); color: #fde68a; border: 1px solid rgba(250, 204, 21, 0.36);}
     .low-pick-badge {display: inline-block; margin-left: 6px; padding: 2px 7px; border-radius: 999px; font-size: 0.68rem; font-weight: 800; vertical-align: middle; color: #fed7aa; background: rgba(249, 115, 22, 0.12); border: 1px solid rgba(251, 146, 60, 0.35);}
-    .rate-bar {background: #1f2937; border-radius: 999px; height: 10px; overflow: hidden; margin-top: 6px;}
+    .rate-line {display:flex;align-items:center;gap:9px;}
+    .rate-bar {flex:1;background: #1f2937; border-radius: 999px; height: 8px; overflow: hidden;}
     .rate-fill {height: 100%; border-radius: 999px;}
     .rate-fill.pick {background: #60a5fa;}
     .rate-fill.win {background: #34d399;}
     .rate-fill.ban {background: #f87171;}
-    .rate-text {font-size: 0.85rem; color: __GLOBAL_TEXT_COLOR__; margin-top: 6px;}
+    .rate-text {width:48px;text-align:right;font-size: 0.84rem; color: __GLOBAL_TEXT_COLOR__; font-weight:700;}
     .header-note {font-size: 0.9rem; color: #cbd5e1; margin-bottom: 8px;}
+    @media (max-width: 860px) {
+        .overwatch-table {border: 0; background: transparent;}
+        .overwatch-table thead {display:none;}
+        .overwatch-table, .overwatch-table tbody, .overwatch-table tr, .overwatch-table td {display:block;width:100%;}
+        .overwatch-table tr {border:1px solid __GLOBAL_BORDER_COLOR__;border-radius:12px;margin-bottom:10px;background:rgba(15,23,42,0.82);overflow:hidden;}
+        .overwatch-table td {border-right:0!important;padding:8px 12px;}
+        .overwatch-table .portrait-cell {width:100%;text-align:left;}
+        .overwatch-table .role-cell,.overwatch-table .score-cell,.overwatch-table .rank-cell {text-align:left;}
+    }
     </style>
     """
     styles = styles.replace("__GLOBAL_BG_COLOR__", GLOBAL_BG_COLOR)
@@ -516,23 +531,23 @@ def render_rank_table_html(df):
         img_html = f'<img src="{hero_url}"/>' if hero_url else "-"
 
         pick_html = (
-            f"<div class='rate-bar'><div class='rate-fill pick' style='width:{min(max(row['pick_rate'],0),100)}%'></div></div>"
-            f"<div class='rate-text'>{pick_rate}</div>"
+            f"<div class='rate-line'><div class='rate-bar'><div class='rate-fill pick' style='width:{min(max(row['pick_rate'],0),100)}%'></div></div>"
+            f"<div class='rate-text'>{pick_rate}</div></div>"
         )
         win_html = (
-            f"<div class='rate-bar'><div class='rate-fill win' style='width:{min(max(row['win_rate'],0),100)}%'></div></div>"
-            f"<div class='rate-text'>{win_rate}</div>"
+            f"<div class='rate-line'><div class='rate-bar'><div class='rate-fill win' style='width:{min(max(row['win_rate'],0),100)}%'></div></div>"
+            f"<div class='rate-text'>{win_rate}</div></div>"
         )
         if pd.notna(ban_rate_val):
             ban_rate_str = f"{ban_rate_val:.1f}%"
             ban_html = (
-                f"<div class='rate-bar'><div class='rate-fill ban' style='width:{min(max(ban_rate_val,0),100)}%'></div></div>"
-                f"<div class='rate-text'>{ban_rate_str}</div>"
+                f"<div class='rate-line'><div class='rate-bar'><div class='rate-fill ban' style='width:{min(max(ban_rate_val,0),100)}%'></div></div>"
+                f"<div class='rate-text'>{ban_rate_str}</div></div>"
             )
         else:
             ban_html = "<div class='rate-text' style='color:#6b7280;'>-</div>"
         rows.append(
-            f"<tr><td class='portrait-cell'>{img_html}</td><td class='hero-cell'>{hero_cell_html}</td><td class='role-cell'>{role}</td><td class='rate-cell'>{win_html}</td><td class='rate-cell'>{pick_html}</td><td class='rate-cell'>{ban_html}</td><td class='score-cell'>{score_html}</td><td class='rank-cell' style='color:{rank_color};'>{rank}</td></tr>"
+            f"<tr><td class='portrait-cell'>{img_html}</td><td class='hero-cell'>{hero_cell_html}</td><td class='role-cell'>{role}</td><td class='rate-cell'>{win_html}</td><td class='rate-cell'>{pick_html}</td><td class='rate-cell'>{ban_html}</td><td class='score-cell'>{score_html}</td><td class='rank-cell'><span class='rank-pill' style='color:{rank_color};'>{rank}</span></td></tr>"
         )
     table_html = (
         styles
@@ -553,18 +568,12 @@ if df_filtered.empty:
     st.stop()
 
 # -------------------------------------------------
-# 9. 상단 요약 지표 — 밴률/승률/픽률 TOP 4 순환
+# 9. 상단 요약 지표 — 밴률/승률/픽률 TOP 4
 # -------------------------------------------------
-import streamlit.components.v1 as _ow_components
 
 
-def _build_top4_slide(metric_col, label, top4_df):
-    _rank_colors = {1: "#ef4444", 2: "#f59e0b", 3: "#22c55e", 4: "#60a5fa"}
-    is_pick_slide = label == "픽률"
-    title_font_size = "0.82rem" if is_pick_slide else "0.72rem"
-    badge_font_size = "0.72rem" if is_pick_slide else "0.68rem"
-    hero_font_size = "0.98rem" if is_pick_slide else "0.93rem"
-    value_font_size = "1.42rem" if is_pick_slide else "1.3rem"
+def _build_top4_grid(metric_col, label, top4_df, metric_color):
+    _rank_colors = {1: "#ef4444", 2: "#f59e0b", 3: "#22c55e", 4: GLOBAL_INFO_COLOR}
     cards = []
     for i in range(4):
         rank = i + 1
@@ -581,36 +590,25 @@ def _build_top4_slide(metric_col, label, top4_df):
             value_str = "-"
             img_url = None
         img_part = (
-            f'<img src="{html.escape(img_url)}" style="width:48px;height:48px;border-radius:10px;object-fit:cover;flex-shrink:0;">'
+            f'<img src="{html.escape(img_url)}" style="width:46px;height:46px;border-radius:8px;object-fit:cover;flex-shrink:0;">'
             if img_url
-            else '<div style="width:48px;height:48px;border-radius:10px;background:#1f2937;flex-shrink:0;"></div>'
+            else '<div style="width:46px;height:46px;border-radius:8px;background:#1f2937;flex-shrink:0;"></div>'
         )
         safe = html.escape(hero_name)
         cards.append(
-            f'<div style="background:linear-gradient(135deg,{GLOBAL_SURFACE_COLOR} 0%,#0f1b31 100%);'
-            f'border:1px solid {GLOBAL_BORDER_COLOR};border-radius:14px;padding:8px 14px;'
-            f'display:flex;align-items:center;gap:12px;">'
+            f'<div class="top4-card" style="border-left:3px solid {accent};">'
             f'{img_part}'
             f'<div style="flex:1;min-width:0;">'
             f'<div style="display:inline-block;padding:2px 7px;border-radius:999px;'
-            f'background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.3);'
-            f'color:#bfdbfe;font-size:{badge_font_size};font-weight:700;margin-bottom:3px;">{label} {rank}위</div>'
-            f'<div style="color:{GLOBAL_TEXT_COLOR};font-size:{hero_font_size};font-weight:700;'
+            f'background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.28);'
+            f'color:#bfdbfe;font-size:0.68rem;font-weight:760;margin-bottom:3px;">{label} {rank}위</div>'
+            f'<div style="color:{GLOBAL_TEXT_COLOR};font-size:0.95rem;font-weight:760;'
             f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{safe}</div>'
             f'</div>'
-            f'<div style="color:{accent};font-size:{value_font_size};font-weight:800;flex-shrink:0;">{value_str}</div>'
+            f'<div style="color:{metric_color};font-size:1.25rem;font-weight:850;flex-shrink:0;">{value_str}</div>'
             f'</div>'
         )
-    grid = (
-        '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">'
-        + "".join(cards)
-        + "</div>"
-    )
-    return (
-        f'<div style="color:#94a3b8;font-size:{title_font_size};font-weight:700;letter-spacing:0.06em;'
-        f'text-transform:uppercase;margin-bottom:5px;">{label} TOP 4</div>'
-        + grid
-    )
+    return "".join(cards)
 
 
 if "ban_rate" in df_filtered.columns:
@@ -621,53 +619,53 @@ else:
 _win_top4 = df_filtered[df_filtered["win_rate"].notna()].sort_values("win_rate", ascending=False).head(4)
 _pick_top4 = df_filtered[df_filtered["pick_rate"].notna()].sort_values("pick_rate", ascending=False).head(4)
 
-_slides = [
-    _build_top4_slide("ban_rate", "밴률", _ban_top4),
-    _build_top4_slide("win_rate", "승률", _win_top4),
-    _build_top4_slide("pick_rate", "픽률", _pick_top4),
-]
-
-_slides_markup = ""
-for _i, _s in enumerate(_slides):
-    _cls = "ow-slide ow-active" if _i == 0 else "ow-slide"
-    _slides_markup += f'<div class="{_cls}" id="owSlide{_i}">{_s}</div>'
-
-_dots_markup = ""
-for _i in range(3):
-    _cls = "ow-dot ow-dot-active" if _i == 0 else "ow-dot"
-    _dots_markup += f'<div class="{_cls}" onclick="owGoTo({_i})"></div>'
-
-_ow_components.html(f"""
-<style>
-*{{box-sizing:border-box;margin:0;padding:0;font-family:{GLOBAL_FONT_FAMILY};}}
-@keyframes owFade{{from{{opacity:0;transform:translateY(5px)}}to{{opacity:1;transform:translateY(0)}}}}
-@keyframes owProg{{from{{width:0%}}to{{width:100%}}}}
-.ow-slide{{display:none}}.ow-slide.ow-active{{display:block;animation:owFade .55s ease}}
-.ow-dot{{width:8px;height:8px;border-radius:50%;background:#374151;cursor:pointer;display:inline-block;transition:background .3s,transform .2s}}
-.ow-dot:hover{{background:#60a5fa;transform:scale(1.3)}}.ow-dot-active{{background:#60a5fa!important;transform:scale(1.2)}}
-</style>
-<div>
-  {_slides_markup}
-  <div style="height:2px;background:#1f2937;border-radius:1px;overflow:hidden;margin-top:7px;">
-    <div id="owFill" style="height:100%;background:#3b82f6;border-radius:1px;animation:owProg 10s linear infinite;width:0;"></div>
-  </div>
-  <div style="display:flex;justify-content:center;gap:8px;margin-top:7px;">{_dots_markup}</div>
-</div>
-<script>
-var owC=0,owN=3;
-var owS=document.querySelectorAll('.ow-slide');
-var owD=document.querySelectorAll('.ow-dot');
-var owF=document.getElementById('owFill');
-function owGoTo(i){{
-  owS[owC].classList.remove('ow-active');owD[owC].classList.remove('ow-dot-active');
-  owC=i;owS[owC].classList.add('ow-active');owD[owC].classList.add('ow-dot-active');
-  owF.style.animation='none';void owF.offsetWidth;owF.style.animation='owProg 10s linear infinite';
-}}
-setInterval(function(){{owGoTo((owC+1)%owN)}},10000);
-</script>
-""", height=112, scrolling=False)
-
-st.markdown('<div class="ow-top4-divider after"></div>', unsafe_allow_html=True)
+_top4_options = {
+    "밴률": ("ban_rate", _ban_top4, GLOBAL_DANGER_COLOR),
+    "승률": ("win_rate", _win_top4, GLOBAL_GOOD_COLOR),
+    "픽률": ("pick_rate", _pick_top4, GLOBAL_INFO_COLOR),
+}
+selected_top4 = st.radio(
+    "TOP 4 지표",
+    list(_top4_options.keys()),
+    horizontal=True,
+    label_visibility="collapsed",
+    key="main_top4_metric",
+)
+top4_col, top4_df, top4_color = _top4_options[selected_top4]
+st.markdown(
+    f"""
+    <style>
+    .top4-grid {{
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+        margin: 4px 0 12px;
+    }}
+    .top4-card {{
+        background: linear-gradient(135deg, {GLOBAL_SURFACE_COLOR} 0%, #0f1b31 100%);
+        border: 1px solid {GLOBAL_BORDER_COLOR};
+        border-radius: 12px;
+        padding: 8px 12px;
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        min-width: 0;
+    }}
+    @media (max-width: 960px) {{
+        .top4-grid {{grid-template-columns: repeat(2, minmax(0, 1fr));}}
+    }}
+    @media (max-width: 560px) {{
+        .top4-grid {{grid-template-columns: 1fr;}}
+    }}
+    </style>
+    <div style="color:#94a3b8;font-size:0.76rem;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:6px;">
+        {selected_top4} TOP 4
+    </div>
+    <div class="top4-grid">{_build_top4_grid(top4_col, selected_top4, top4_df, top4_color)}</div>
+    <div class="ow-soft-divider"></div>
+    """,
+    unsafe_allow_html=True,
+)
 
 st.subheader("🏆 영웅 랭크 순위표")
 st.caption("영웅 이름을 클릭하면 상세 페이지로 이동합니다.")

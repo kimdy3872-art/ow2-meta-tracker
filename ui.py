@@ -10,6 +10,13 @@ GLOBAL_BORDER_COLOR = "#2b3f63"
 GLOBAL_MUTED_TEXT_COLOR = "#8fa7cc"
 GLOBAL_ACCENT_COLOR = "#37d0ff"
 GLOBAL_FONT_FAMILY = "'SUIT Variable', 'Pretendard Variable', 'Noto Sans KR', 'Apple SD Gothic Neo', 'Segoe UI', sans-serif"
+GLOBAL_RADIUS_SM = "8px"
+GLOBAL_RADIUS_MD = "10px"
+GLOBAL_RADIUS_LG = "12px"
+GLOBAL_GOOD_COLOR = "#34d399"
+GLOBAL_INFO_COLOR = "#60a5fa"
+GLOBAL_DANGER_COLOR = "#f87171"
+GLOBAL_WARN_COLOR = "#fbbf24"
 
 
 def apply_global_theme() -> None:
@@ -30,6 +37,13 @@ def apply_global_theme() -> None:
             --app-muted: {GLOBAL_MUTED_TEXT_COLOR};
             --app-accent: {GLOBAL_ACCENT_COLOR};
             --app-font: {GLOBAL_FONT_FAMILY};
+            --app-radius-sm: {GLOBAL_RADIUS_SM};
+            --app-radius-md: {GLOBAL_RADIUS_MD};
+            --app-radius-lg: {GLOBAL_RADIUS_LG};
+            --app-good: {GLOBAL_GOOD_COLOR};
+            --app-info: {GLOBAL_INFO_COLOR};
+            --app-danger: {GLOBAL_DANGER_COLOR};
+            --app-warn: {GLOBAL_WARN_COLOR};
             --app-menu-bg: #08111f;
             --app-menu-surface: #0d1a2e;
             --app-menu-hover: #172d4d;
@@ -101,7 +115,7 @@ def apply_global_theme() -> None:
 
         [data-testid="stMetric"] {{
             border: 1px solid var(--app-border);
-            border-radius: 16px;
+            border-radius: var(--app-radius-lg);
             padding: 10px 12px;
             background: linear-gradient(180deg, rgba(18,31,54,0.88), rgba(9,15,28,0.92));
             box-shadow: 0 10px 20px rgba(2, 6, 23, 0.25);
@@ -363,9 +377,54 @@ def apply_global_theme() -> None:
             height: 1.52rem;
         }}
 
+        .ow-control-band {{
+            border: 1px solid rgba(66, 88, 126, 0.82);
+            border-radius: var(--app-radius-lg);
+            background:
+                linear-gradient(180deg, rgba(15, 23, 42, 0.84), rgba(8, 14, 26, 0.88));
+            padding: 13px 14px 10px;
+            margin: 0 0 12px;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+        }}
+
+        .ow-control-head {{
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 9px;
+        }}
+
+        .ow-control-title {{
+            color: var(--app-text);
+            font-size: 0.84rem;
+            font-weight: 850;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }}
+
+        .ow-control-meta {{
+            color: var(--app-muted);
+            font-size: 0.78rem;
+            font-weight: 680;
+        }}
+
+        .ow-soft-divider {{
+            height: 1px;
+            background: rgba(66, 88, 126, 0.48);
+            margin: 10px 0 12px;
+        }}
+
+        .ow-panel-card {{
+            border: 1px solid var(--app-border);
+            border-radius: var(--app-radius-lg);
+            background: linear-gradient(180deg, var(--app-surface) 0%, #0f1b31 100%);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+        }}
+
         [data-testid="stExpander"] > details {{
             border: 1px solid var(--app-border) !important;
-            border-radius: 12px !important;
+            border-radius: var(--app-radius-lg) !important;
             background: rgba(8, 14, 26, 0.86) !important;
         }}
 
@@ -390,7 +449,7 @@ def apply_global_theme() -> None:
 
         .ow-hero-wrap {{
             border: 1px solid var(--app-border);
-            border-radius: 18px;
+            border-radius: var(--app-radius-lg);
             padding: 18px 20px;
             background:
                 linear-gradient(120deg, rgba(23, 38, 68, 0.92), rgba(10, 16, 30, 0.94));
@@ -428,6 +487,12 @@ def apply_global_theme() -> None:
         @media (max-width: 900px) {{
             .block-container {{
                 padding-top: 1.2rem !important;
+            }}
+            .ow-control-head {{
+                display: block;
+            }}
+            .ow-control-meta {{
+                margin-top: 3px;
             }}
         }}
         </style>

@@ -159,7 +159,7 @@ st.markdown(
     <style>
     .trend-context {{
         border: 1px solid {GLOBAL_BORDER_COLOR};
-        border-radius: 14px;
+        border-radius: 12px;
         background: linear-gradient(135deg, {GLOBAL_SURFACE_COLOR} 0%, #0f1b31 100%);
         padding: 10px 14px;
         color: {GLOBAL_MUTED_TEXT_COLOR};
@@ -173,7 +173,7 @@ st.markdown(
     .trend-context .portrait-fallback {{
         width: 54px;
         height: 54px;
-        border-radius: 12px;
+        border-radius: 10px;
         object-fit: cover;
         flex-shrink: 0;
         border: 1px solid rgba(148, 163, 184, 0.35);
@@ -234,6 +234,18 @@ st.markdown(
         }}
     }}
     </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+st.markdown(
+    """
+    <div class="ow-control-band">
+        <div class="ow-control-head">
+            <div class="ow-control-title">시계열 조건</div>
+            <div class="ow-control-meta">포지션, 영웅, 티어, 전장을 고른 뒤 기간을 좁혀 추세를 확인합니다.</div>
+        </div>
+    </div>
     """,
     unsafe_allow_html=True,
 )
@@ -379,7 +391,7 @@ for col, metric in zip(metric_cols[:3], ["win_rate", "pick_rate", "ban_rate"]):
 with metric_cols[3]:
     st.markdown(
         f"""
-        <div style="border:1px solid {GLOBAL_BORDER_COLOR};border-radius:16px;padding:10px 12px;
+        <div style="border:1px solid {GLOBAL_BORDER_COLOR};border-radius:12px;padding:10px 12px;
             background:linear-gradient(180deg,rgba(18,31,54,0.88),rgba(9,15,28,0.92));">
             <div style="color:{GLOBAL_MUTED_TEXT_COLOR};font-size:0.86rem;margin-bottom:5px;">현재 랭크</div>
             <div style="color:{rank_color(latest_rank)};font-size:2rem;font-weight:900;line-height:1;">{latest_rank}</div>

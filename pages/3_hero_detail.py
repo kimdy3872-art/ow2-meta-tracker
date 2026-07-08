@@ -15,7 +15,15 @@ from app_data import (
     translate_tier_name,
 )
 from ui import (
+    GLOBAL_BORDER_COLOR,
     GLOBAL_FONT_FAMILY,
+    GLOBAL_GOOD_COLOR,
+    GLOBAL_INFO_COLOR,
+    GLOBAL_DANGER_COLOR,
+    GLOBAL_MUTED_TEXT_COLOR,
+    GLOBAL_SURFACE_COLOR,
+    GLOBAL_TEXT_COLOR,
+    GLOBAL_WARN_COLOR,
     apply_global_theme,
     render_page_hero,
     render_top_navigation,
@@ -222,6 +230,18 @@ query_tier = str(st.query_params.get("tier", "Gold"))
 query_tier = str(st.session_state.get("detail_tier") or query_tier)
 default_tier = query_tier if query_tier in tier_candidates else ("Gold" if "Gold" in tier_candidates else tier_candidates[0])
 
+st.markdown(
+    """
+    <div class="ow-control-band">
+        <div class="ow-control-head">
+            <div class="ow-control-title">상세 조건</div>
+            <div class="ow-control-meta">티어를 바꾸면 요약 지표, 전장 성능, 특전 선호도가 함께 갱신됩니다.</div>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
 tier_col, _ = st.columns([1.25, 3.75])
 with tier_col:
     selected_tier = st.selectbox(
@@ -237,6 +257,92 @@ if hero_tier_df.empty:
     hero_row = hero_summary_df.sort_values("total_score", ascending=False).iloc[0]
 else:
     hero_row = hero_tier_df.sort_values("total_score", ascending=False).iloc[0]
+
+def _fmt_percent(value):
+    numeric_value = pd.to_numeric(value, errors="coerce")
+    return "-" if pd.isna(numeric_value) else f"{numeric_value:.1f}%"
+
+
+def _fmt_score(value):
+    numeric_value = pd.to_numeric(value, errors="coerce")
+    return "-" if pd.isna(numeric_value) else f"{numeric_value:+.2f}"
+
+
+summary_items = [
+    ("승률", _fmt_percent(hero_row.get("win_rate")), GLOBAL_GOOD_COLOR),
+    ("픽률", _fmt_percent(hero_row.get("pick_rate")), GLOBAL_INFO_COLOR),
+    ("밴률", _fmt_percent(hero_row.get("ban_rate")), GLOBAL_DANGER_COLOR),
+    ("종합 점수", _fmt_score(hero_row.get("total_score")), GLOBAL_WARN_COLOR),
+]
+summary_html = "".join(
+    "\n".join(line.lstrip() for line in f"""
+    <div class="hero-summary-item">
+        <div class="hero-summary-label">{html.escape(label)}</div>
+        <div class="hero-summary-value" style="color:{color};">{html.escape(value)}</div>
+    </div>
+    """.splitlines())
+    for label, value, color in summary_items
+)
+rank_value = html.escape(str(hero_row.get("rank", "-")))
+score_strength = html.escape(str(hero_row.get("score_strength", "보통") or "보통"))
+summary_strip_html = "\n".join(line.lstrip() for line in f"""
+    <style>
+    .hero-summary-strip {{
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 10px;
+        margin: 8px 0 16px;
+    }}
+    .hero-summary-item {{
+        border: 1px solid {GLOBAL_BORDER_COLOR};
+        border-radius: 12px;
+        background: linear-gradient(180deg, {GLOBAL_SURFACE_COLOR} 0%, #0f1b31 100%);
+        padding: 11px 13px;
+        min-width: 0;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+    }}
+    .hero-summary-label {{
+        color: {GLOBAL_MUTED_TEXT_COLOR};
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        margin-bottom: 5px;
+    }}
+    .hero-summary-value {{
+        font-size: 1.42rem;
+        font-weight: 900;
+        line-height: 1;
+    }}
+    .hero-summary-rank {{
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+    }}
+    .hero-summary-rank strong {{
+        color: {GLOBAL_TEXT_COLOR};
+        font-size: 1.8rem;
+        line-height: 1;
+    }}
+    @media (max-width: 980px) {{
+        .hero-summary-strip {{grid-template-columns: repeat(2, minmax(0, 1fr));}}
+    }}
+    @media (max-width: 560px) {{
+        .hero-summary-strip {{grid-template-columns: 1fr;}}
+    }}
+    </style>
+    <div class="hero-summary-strip">
+        {summary_html}
+        <div class="hero-summary-item hero-summary-rank">
+            <div>
+                <div class="hero-summary-label">랭크</div>
+                <div style="color:{GLOBAL_MUTED_TEXT_COLOR};font-size:0.78rem;font-weight:760;">{score_strength}</div>
+            </div>
+            <strong>{rank_value}</strong>
+        </div>
+    </div>
+    """.splitlines())
+st.markdown(summary_strip_html, unsafe_allow_html=True)
 
 left_col, right_col = st.columns([1, 2.5], gap="large")
 
@@ -258,9 +364,9 @@ with left_col:
         f"""
         <div style="
             position: relative;
-            width: 182px;
+            width: 172px;
             padding: 10px;
-            border-radius: 18px;
+            border-radius: 12px;
             background:
                 linear-gradient(180deg, rgba(248, 250, 252, 0.08) 0%, rgba(15, 23, 42, 0.92) 18%, rgba(2, 6, 23, 0.98) 100%);
             border: 1px solid #5b6b84;
@@ -282,10 +388,10 @@ with left_col:
                 pointer-events: none;
             "></div>
             <img src="{html.escape(image_url)}" style="
-                width: 162px;
-                height: 162px;
+                width: 152px;
+                height: 152px;
                 object-fit: cover;
-                border-radius: 12px;
+                border-radius: 10px;
                 border: 1px solid rgba(148, 163, 184, 0.45);
                 display: block;
                 box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.85);
@@ -298,7 +404,7 @@ with left_col:
         f"""
         <div style="
             font-family: {GLOBAL_FONT_FAMILY};
-            font-size: 1.48rem;
+            font-size: 1.36rem;
             font-weight: 800;
             color: #e2ecff;
             letter-spacing: 0.02em;
@@ -345,7 +451,7 @@ with left_col:
             <div style="
                 margin-top:14px;
                 border:1px solid rgba(96,165,250,0.32);
-                border-radius:8px;
+                border-radius:12px;
                 background:linear-gradient(180deg,rgba(15,23,42,0.94) 0%,rgba(12,20,34,0.98) 100%);
                 padding:12px 13px;
                 font-family:{GLOBAL_FONT_FAMILY};
@@ -424,7 +530,7 @@ with left_col:
     st.markdown(perk_html, unsafe_allow_html=True)
 
 with right_col:
-    st.subheader("🗺️ 전장별 승률")
+    st.subheader("전장별 승률")
 
     hero_map_df = df_raw[
         (df_raw["hero"].astype(str) == hero_name)
@@ -463,13 +569,13 @@ with right_col:
         top_win_df = hero_map_df.nlargest(2, "win_rate")
         top_pick_df = hero_map_df.nlargest(2, "pick_rate")
 
-        st.markdown("**🏆 Top Winrate**")
+        st.markdown("**Top Winrate**")
         st.markdown(
             "".join(make_map_card(row, "TOP WIN", "#34d399") for _, row in top_win_df.iterrows()),
             unsafe_allow_html=True,
         )
 
-        st.markdown("**📈 Top Pickrate**")
+        st.markdown("**Top Pickrate**")
         st.markdown(
             "".join(make_map_card(row, "TOP PICK", "#60a5fa") for _, row in top_pick_df.iterrows()),
             unsafe_allow_html=True,

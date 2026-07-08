@@ -12,6 +12,9 @@ from app_data import (
 from ui import (
     GLOBAL_BG_COLOR,
     GLOBAL_FONT_FAMILY,
+    GLOBAL_GOOD_COLOR,
+    GLOBAL_INFO_COLOR,
+    GLOBAL_DANGER_COLOR,
     GLOBAL_TEXT_COLOR,
     apply_global_theme,
     render_page_hero,
@@ -79,6 +82,17 @@ st.markdown("<div style='height: 0.25rem;'></div>", unsafe_allow_html=True)
 
 raw_df = load_latest_stats()
 
+st.markdown(
+    """
+    <div class="ow-control-band">
+        <div class="ow-control-head">
+            <div class="ow-control-title">분포 조건</div>
+            <div class="ow-control-meta">2D는 빠른 판단용, 3D는 밴률까지 포함한 탐색용입니다.</div>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 f1, f2 = st.columns([1.0, 1.0])
 with f1:
     selected_tier = get_selected_tier(raw_df)
@@ -114,6 +128,72 @@ if "ban_rate" not in filtered_df.columns:
     filtered_df["ban_rate"] = 0.0
 filtered_df["ban_rate"] = filtered_df["ban_rate"].fillna(0.0)
 
+rank_color_map = {
+    "S": "#ef4444",
+    "A": "#f59e0b",
+    "B": "#22c55e",
+    "C": "#60a5fa",
+    "D": "#94a3b8",
+}
+
+fig_2d = px.scatter(
+    filtered_df,
+    x="pick_rate",
+    y="win_rate",
+    color="rank",
+    size="ban_rate",
+    hover_name="hero",
+    text="hero_label",
+    custom_data=["hero", "role_display", "rank", "master_label", "ban_rate"],
+    category_orders={"rank": ["S", "A", "B", "C", "D"]},
+    color_discrete_map=rank_color_map,
+    labels={
+        "pick_rate": "픽률 (%)",
+        "win_rate": "승률 (%)",
+        "ban_rate": "밴률 (%)",
+        "rank": "영웅 랭크",
+    },
+    size_max=24,
+    opacity=0.86,
+)
+fig_2d.add_hline(y=50, line_dash="dash", line_color="rgba(148,163,184,0.55)")
+fig_2d.update_traces(
+    hovertemplate=(
+        "<b>%{customdata[0]}</b><br>"
+        "포지션: %{customdata[1]}<br>"
+        "랭크: %{customdata[2]}<br>"
+        "분류: %{customdata[3]}<br>"
+        "픽률: %{x:.2f}%<br>"
+        "승률: %{y:.2f}%<br>"
+        "밴률: %{customdata[4]:.2f}%<extra></extra>"
+    ),
+    textposition="top center",
+    textfont=dict(size=10, color="#e2e8f0"),
+    marker=dict(line=dict(width=1, color="rgba(226,232,240,0.55)")),
+)
+fig_2d.update_layout(
+    title=dict(
+        text="판단용 2D 분포: 픽률 x 승률",
+        font=dict(size=18, color=GLOBAL_TEXT_COLOR),
+        x=0,
+        xanchor="left",
+    ),
+    font=dict(family=GLOBAL_FONT_FAMILY, size=13, color=GLOBAL_TEXT_COLOR),
+    paper_bgcolor=GLOBAL_BG_COLOR,
+    plot_bgcolor=GLOBAL_BG_COLOR,
+    margin=dict(l=10, r=10, t=42, b=10),
+    legend=dict(bgcolor="rgba(17,24,39,0.8)", bordercolor="#374151", borderwidth=1),
+    xaxis=dict(gridcolor="#1f2937", zerolinecolor="#374151", showline=True, linecolor="#334155"),
+    yaxis=dict(gridcolor="#1f2937", zerolinecolor="#374151", showline=True, linecolor="#334155"),
+    height=430,
+)
+
+st.caption(
+    f"색상은 랭크, 점 크기는 밴률입니다. 초록({GLOBAL_GOOD_COLOR})은 성능, 파랑({GLOBAL_INFO_COLOR})은 정보, 빨강({GLOBAL_DANGER_COLOR})은 위험/밴 신호로 읽습니다."
+)
+st.plotly_chart(fig_2d, key="pick_win_scatter_2d", config={"displayModeBar": True}, use_container_width=True)
+st.markdown("<div class='ow-soft-divider'></div>", unsafe_allow_html=True)
+
 fig = px.scatter_3d(
     filtered_df,
     x="pick_rate",
@@ -125,13 +205,7 @@ fig = px.scatter_3d(
     text="hero_label",
     custom_data=["hero", "role_display", "rank", "master_label", "is_master", "ban_rate"],
     category_orders={"rank": ["S", "A", "B", "C", "D"]},
-    color_discrete_map={
-        "S": "#FF4B4B",
-        "A": "#FFA500",
-        "B": "#2ECC71",
-        "C": "#3498DB",
-        "D": "#94A3B8",
-    },
+    color_discrete_map=rank_color_map,
     labels={
         "pick_rate": "픽률 (%)",
         "win_rate": "승률 (%)",
@@ -198,7 +272,7 @@ fig.update_layout(
     ),
     clickmode="event+select",
     hovermode="closest",
-    height=640,
+    height=560,
 )
 
 master_count = int(filtered_df["is_master"].sum())
