@@ -1030,9 +1030,14 @@ def save_daily_snapshot(snapshot_df, today_obj):
             existing_df = None
 
     if existing_df is not None and not existing_df.empty:
-        existing_df = existing_df[
-            existing_df.get("snapshot_date", "").astype(str) != today_obj.isoformat()
-        ].copy()
+        if "snapshot_date" in existing_df.columns:
+            existing_dates = existing_df["snapshot_date"].astype(str)
+        elif "update_date" in existing_df.columns:
+            existing_dates = existing_df["update_date"].astype(str)
+        else:
+            existing_dates = pd.Series("", index=existing_df.index, dtype=str)
+
+        existing_df = existing_df[existing_dates != today_obj.isoformat()].copy()
         snapshot_df = pd.concat([existing_df, snapshot_df], ignore_index=True, sort=False)
 
     save_parquet(snapshot_df, daily_parquet_path)

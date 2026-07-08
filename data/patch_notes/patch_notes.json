@@ -63,7 +63,7 @@
     "has_hero_updates": true,
     "patch_category": "hero_balance",
     "created_at": "2026-07-08T09:00:08",
-    "updated_at": "2026-07-08T13:59:33"
+    "updated_at": "2026-07-08T14:29:39"
   },
   {
     "id": "patch-2026-07-01",
@@ -86,6 +86,6 @@
     "has_hero_updates": false,
     "patch_category": "general",
     "created_at": "2026-07-08T09:00:07",
-    "updated_at": "2026-07-08T13:59:33"
+    "updated_at": "2026-07-08T14:29:39"
   }
 ]
