@@ -488,8 +488,14 @@ def render_rank_table_html(df):
         .overwatch-table, .overwatch-table tbody, .overwatch-table tr, .overwatch-table td {display:block;width:100%;}
         .overwatch-table tr {border:1px solid __GLOBAL_BORDER_COLOR__;border-radius:12px;margin-bottom:10px;background:rgba(15,23,42,0.82);overflow:hidden;}
         .overwatch-table td {border-right:0!important;padding:8px 12px;}
+        .overwatch-table td[data-label]::before {content:attr(data-label);display:block;color:#8fa7cc;font-size:0.72rem;font-weight:850;letter-spacing:0.05em;text-transform:uppercase;margin-bottom:5px;}
         .overwatch-table .portrait-cell {width:100%;text-align:left;}
         .overwatch-table .role-cell,.overwatch-table .score-cell,.overwatch-table .rank-cell {text-align:left;}
+        .overwatch-table .rate-cell {min-width:0;}
+        .overwatch-table .rate-cell::before {display:inline-flex!important;align-items:center;gap:6px;margin-bottom:7px;}
+        .overwatch-table .rate-cell.win::before {content:"승률 · 초록";}
+        .overwatch-table .rate-cell.pick::before {content:"픽률 · 파랑";}
+        .overwatch-table .rate-cell.ban::before {content:"밴률 · 빨강";}
     }
     </style>
     """
@@ -547,7 +553,7 @@ def render_rank_table_html(df):
         else:
             ban_html = "<div class='rate-text' style='color:#6b7280;'>-</div>"
         rows.append(
-            f"<tr><td class='portrait-cell'>{img_html}</td><td class='hero-cell'>{hero_cell_html}</td><td class='role-cell'>{role}</td><td class='rate-cell'>{win_html}</td><td class='rate-cell'>{pick_html}</td><td class='rate-cell'>{ban_html}</td><td class='score-cell'>{score_html}</td><td class='rank-cell'><span class='rank-pill' style='color:{rank_color};'>{rank}</span></td></tr>"
+            f"<tr><td class='portrait-cell' data-label='초상화'>{img_html}</td><td class='hero-cell' data-label='영웅'>{hero_cell_html}</td><td class='role-cell' data-label='포지션'>{role}</td><td class='rate-cell win'>{win_html}</td><td class='rate-cell pick'>{pick_html}</td><td class='rate-cell ban'>{ban_html}</td><td class='score-cell' data-label='종합 점수'>{score_html}</td><td class='rank-cell' data-label='랭크'><span class='rank-pill' style='color:{rank_color};'>{rank}</span></td></tr>"
         )
     table_html = (
         styles
