@@ -46,6 +46,8 @@ NUMERIC_STATS_COLUMNS = [
     "pick_rate_z",
     "ban_rate_log",
     "ban_rate_z",
+    "presence_score",
+    "shrunk_win_rate",
     "persistence_score",
     "pick_stability_multiplier",
     "performance_score",

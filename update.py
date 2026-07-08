@@ -103,6 +103,7 @@ STATS_COLUMNS = [
     'hero', 'role', 'data_tier', 'map', 'map_name', 'update_date',
     'win_rate', 'pick_rate', 'ban_rate',
     'win_rate_z', 'pick_rate_log', 'pick_rate_z', 'ban_rate_log', 'ban_rate_z',
+    'presence_score', 'shrunk_win_rate',
     'persistence_score', 'pick_stability_multiplier', 'performance_score',
     'total_score', 'score_strength', 'pick_rate_warning', 'rank',
 ]
@@ -121,6 +122,16 @@ PATCH_NOTES_PATH = os.path.join(PATCH_NOTES_DIR, "patch_notes.json")
 PATCH_AI_ANALYSIS_PATH = os.path.join(PATCH_NOTES_DIR, "patch_ai_analysis.json")
 WEEKLY_SNAPSHOT_WEEKDAY = int(os.getenv("WEEKLY_SNAPSHOT_WEEKDAY", "0"))
 
+# 메타 지배력 산식: 존재감(픽+밴) 주도 + 수축 승률 검증
+META_PRESENCE_WEIGHT = float(os.getenv("META_PRESENCE_WEIGHT", "0.65"))
+META_PERFORMANCE_WEIGHT = round(1.0 - META_PRESENCE_WEIGHT, 4)
+PRESENCE_BAN_WEIGHT = float(os.getenv("PRESENCE_BAN_WEIGHT", "1.0"))
+SHRINK_MIN_PICK_RATE = 0.1
+QUADRANT_PRESENCE_HIGH_Z = 0.5
+QUADRANT_PERFORMANCE_HIGH_Z = 0.5
+OVERHEAT_REVIEW_THRESHOLD = 0.15
+
+# 레거시 승률 중심 산식 상수: 진단 리포트의 비교 후보 계산에만 사용
 PERFORMANCE_WIN_WEIGHT = 0.75
 PERFORMANCE_PERSISTENCE_WEIGHT = 0.25
 PERFORMANCE_BAN_PRESSURE_WEIGHT = 0.05
@@ -132,11 +143,12 @@ PERSISTENCE_EWMA_DECAY = float(os.getenv("PERFORMANCE_PERSISTENCE_EWMA_DECAY", "
 LOW_PICK_RATE_WARNING = 1.0
 VERY_LOW_PICK_RATE_WARNING = 0.5
 RANK_LABELS = ['D', 'C', 'B', 'A', 'S']
+# 존재감 축은 하한이 눌린 분포라 D 임계만 -1.25에서 -1.00으로 보정
 RANK_THRESHOLDS = {
     "S": 1.25,
     "A": 0.50,
     "C": -0.50,
-    "D": -1.25,
+    "D": -1.00,
 }
 
 BASE_URL = "https://owperks.com"
@@ -529,11 +541,36 @@ def add_normalized_metric_columns(df, group_key=None):
     return df
 
 
+def add_meta_axis_columns(df, group_key=None):
+    if group_key is None:
+        group_key = ['data_tier', 'map', 'role']
+
+    df['presence_log'] = np.log1p(
+        df['pick_rate'] + PRESENCE_BAN_WEIGHT * df['ban_rate']
+    )
+    df['presence_score'] = df.groupby(group_key)['presence_log'].transform(safe_zscore)
+
+    group_mean_win = df.groupby(group_key)['win_rate'].transform('mean')
+    shrink_k = (
+        df.groupby(group_key)['pick_rate'].transform('median')
+        .clip(lower=SHRINK_MIN_PICK_RATE)
+    )
+    df['shrunk_win_rate'] = (
+        (df['pick_rate'] * df['win_rate'] + shrink_k * group_mean_win)
+        / (df['pick_rate'] + shrink_k)
+    )
+    df['performance_score'] = df.groupby(group_key)['shrunk_win_rate'].transform(safe_zscore)
+    return df
+
+
 def add_scoring_columns(df, group_key=None, persistence_df=None):
     if group_key is None:
         group_key = ['data_tier', 'map', 'role']
 
     derived_cols = [
+        'presence_log',
+        'presence_score',
+        'shrunk_win_rate',
         'persistence_score',
         'pick_stability_multiplier',
         'performance_score',
@@ -543,6 +580,7 @@ def add_scoring_columns(df, group_key=None, persistence_df=None):
     ]
     df = df.drop(columns=[col for col in derived_cols if col in df.columns])
     df = add_normalized_metric_columns(df, group_key=group_key)
+    df = add_meta_axis_columns(df, group_key=group_key)
     if persistence_df is None:
         persistence_df = build_recent_persistence_frame()
 
@@ -552,28 +590,30 @@ def add_scoring_columns(df, group_key=None, persistence_df=None):
     if 'persistence_score' not in df.columns:
         df['persistence_score'] = np.nan
 
+    # persistence/pick_stability는 점수에 직접 쓰지 않지만
+    # 레거시 후보 산식 진단과 추세 확인용으로 계속 계산해 저장
     df['persistence_score'] = pd.to_numeric(df['persistence_score'], errors='coerce')
     df['persistence_score'] = df['persistence_score'].fillna(df['win_rate_z'])
     df['pick_stability_multiplier'] = (
         1 + PICK_STABILITY_SCALE * df['pick_rate_z']
     ).clip(PICK_STABILITY_MIN, PICK_STABILITY_MAX)
-    base_score = (
-        PERFORMANCE_WIN_WEIGHT * df['win_rate_z']
-        + PERFORMANCE_PERSISTENCE_WEIGHT * df['persistence_score']
+
+    df['total_score'] = (
+        META_PRESENCE_WEIGHT * df['presence_score']
+        + META_PERFORMANCE_WEIGHT * df['performance_score']
     )
-    df['performance_score'] = (
-        base_score * df['pick_stability_multiplier']
-        + PERFORMANCE_BAN_PRESSURE_WEIGHT * df['ban_rate_z']
-    )
-    df['total_score'] = df['performance_score']
     df['score_strength'] = np.select(
         [
-            df['total_score'] >= 1.5,
-            df['total_score'] >= 1.0,
-            df['total_score'] >= 0.5,
-            df['total_score'] <= -1.0,
+            (df['presence_score'] >= QUADRANT_PRESENCE_HIGH_Z)
+            & (df['performance_score'] >= 0),
+            (df['presence_score'] >= QUADRANT_PRESENCE_HIGH_Z)
+            & (df['performance_score'] < 0),
+            (df['presence_score'] < QUADRANT_PRESENCE_HIGH_Z)
+            & (df['performance_score'] >= QUADRANT_PERFORMANCE_HIGH_Z),
+            (df['presence_score'] <= -QUADRANT_PRESENCE_HIGH_Z)
+            & (df['performance_score'] < QUADRANT_PERFORMANCE_HIGH_Z),
         ],
-        ['압도적', '강함', '우세', '약세'],
+        ['메타 지배', '과열 주의', '저평가 픽', '비주류'],
         default='보통',
     )
     df['pick_rate_warning'] = np.select(
@@ -671,21 +711,22 @@ def rank_index_value(rank_value):
 
 
 def calculate_candidate_scores(df):
-    base_score = (
+    legacy_base_score = (
         PERFORMANCE_WIN_WEIGHT * df['win_rate_z']
         + PERFORMANCE_PERSISTENCE_WEIGHT * df['persistence_score']
     )
     return {
-        "current_total_score": df['total_score'],
+        "presence_led_meta_score": (
+            META_PRESENCE_WEIGHT * df['presence_score']
+            + META_PERFORMANCE_WEIGHT * df['performance_score']
+        ),
+        "presence_only": df['presence_score'],
+        "shrunk_win_only": df['performance_score'],
         "win_rate_only": df['win_rate_z'],
         "persistence_only": df['persistence_score'],
-        "win_persistence_no_pick_ban": base_score,
-        "current_without_ban": base_score * df['pick_stability_multiplier'],
-        "current_without_pick_stability": base_score + PERFORMANCE_BAN_PRESSURE_WEIGHT * df['ban_rate_z'],
-        "balanced_win_persistence_ban": (
-            0.70 * df['win_rate_z']
-            + 0.25 * df['persistence_score']
-            + 0.05 * df['ban_rate_z']
+        "legacy_win_centric_score": (
+            legacy_base_score * df['pick_stability_multiplier']
+            + PERFORMANCE_BAN_PRESSURE_WEIGHT * df['ban_rate_z']
         ),
     }
 
@@ -706,7 +747,7 @@ def build_walk_forward_diagnostics(history_df):
     required_cols = {
         'snapshot_order', 'hero', 'role', 'data_tier', 'map',
         'win_rate_z', 'persistence_score', 'pick_rate_z', 'ban_rate_z',
-        'pick_stability_multiplier', 'total_score',
+        'pick_stability_multiplier', 'presence_score', 'performance_score',
     }
     if not required_cols.issubset(history_df.columns):
         return {
@@ -717,8 +758,10 @@ def build_walk_forward_diagnostics(history_df):
 
     entity_key = ['hero', 'role', 'data_tier', 'map']
     df = history_df.copy().sort_values(entity_key + ['snapshot_order'])
+    # 목표를 두 개로 나눠 평가: 성능(다음 주 승률)과 지배력(다음 주 존재감)
     df['next_win_rate_z'] = df.groupby(entity_key)['win_rate_z'].shift(-1)
-    df = df.dropna(subset=['next_win_rate_z']).copy()
+    df['next_presence_z'] = df.groupby(entity_key)['presence_score'].shift(-1)
+    df = df.dropna(subset=['next_win_rate_z', 'next_presence_z']).copy()
     if df.empty:
         return {"available": False, "reason": "no_next_week_pairs"}
 
@@ -726,46 +769,55 @@ def build_walk_forward_diagnostics(history_df):
         df[name] = score
 
     score_cols = list(calculate_candidate_scores(df).keys())
-    correlations = {
-        col: float(df[[col, 'next_win_rate_z']].corr().iloc[0, 1])
-        for col in score_cols
-        if df[col].nunique(dropna=True) > 1
+    grouped_key = ['snapshot_order', 'data_tier', 'map', 'role']
+    targets = {
+        "next_week_win_rate_z": "next_win_rate_z",
+        "next_week_presence_z": "next_presence_z",
     }
-    grouped = df.groupby(['snapshot_order', 'data_tier', 'map', 'role'], group_keys=False)
-    top_quartile_precision_by_score = {
-        col: float(grouped.apply(
-            lambda group: top_quartile_precision(group, col, 'next_win_rate_z'),
-            include_groups=False,
-        ).mean())
-        for col in score_cols
-    }
+    target_reports = {}
+    for target_name, target_col in targets.items():
+        correlations = {
+            col: float(df[[col, target_col]].corr().iloc[0, 1])
+            for col in score_cols
+            if df[col].nunique(dropna=True) > 1
+        }
+        grouped = df.groupby(grouped_key, group_keys=False)
+        top_quartile_precision_by_score = {
+            col: float(grouped.apply(
+                lambda group: top_quartile_precision(group, col, target_col),
+                include_groups=False,
+            ).mean())
+            for col in score_cols
+        }
+        target_reports[target_name] = {
+            "correlation_to_target": correlations,
+            "top_quartile_precision": top_quartile_precision_by_score,
+        }
 
     return {
         "available": True,
-        "target": "next_week_win_rate_z",
         "rows": int(len(df)),
         "weekly_snapshots": int(history_df['snapshot_order'].nunique()),
-        "correlation_to_target": correlations,
-        "top_quartile_precision": top_quartile_precision_by_score,
+        "targets": target_reports,
     }
 
 
-def score_variant_for_sensitivity(df, win_weight, ban_weight, pick_scale):
-    persistence_weight = 1.0 - win_weight
-    pick_multiplier = (
-        1 + pick_scale * df['pick_rate_z']
-    ).clip(PICK_STABILITY_MIN, PICK_STABILITY_MAX)
-    base_score = (
-        win_weight * df['win_rate_z']
-        + persistence_weight * df['persistence_score']
+def score_variant_for_sensitivity(df, presence_weight, presence_ban_weight, group_key):
+    presence_log = np.log1p(
+        df['pick_rate'] + presence_ban_weight * df['ban_rate']
     )
-    return base_score * pick_multiplier + ban_weight * df['ban_rate_z']
+    presence_z = (
+        df.assign(_variant_presence_log=presence_log)
+        .groupby(group_key)['_variant_presence_log']
+        .transform(safe_zscore)
+    )
+    return presence_weight * presence_z + (1.0 - presence_weight) * df['performance_score']
 
 
 def build_sensitivity_diagnostics(latest_df):
     required_cols = {
         'hero', 'role', 'data_tier', 'map', 'rank',
-        'win_rate_z', 'persistence_score', 'pick_rate_z', 'ban_rate_z',
+        'pick_rate', 'ban_rate', 'performance_score',
     }
     if latest_df.empty or not required_cols.issubset(latest_df.columns):
         return {"available": False, "reason": "missing_latest_columns"}
@@ -774,32 +826,30 @@ def build_sensitivity_diagnostics(latest_df):
     baseline = latest_df.copy()
     baseline['baseline_rank_index'] = baseline['rank'].map(rank_index_value)
     variants = []
-    for win_weight in [0.65, 0.75, 0.85]:
-        for ban_weight in [0.00, 0.05, 0.10]:
-            for pick_scale in [0.04, 0.08, 0.12]:
-                variant = baseline.copy()
-                variant['variant_score'] = score_variant_for_sensitivity(
-                    variant,
-                    win_weight=win_weight,
-                    ban_weight=ban_weight,
-                    pick_scale=pick_scale,
-                )
-                variant['variant_rank'] = variant.groupby(group_key)['variant_score'].transform(assign_score_rank)
-                variant['variant_rank_index'] = variant['variant_rank'].map(rank_index_value)
-                rank_delta = (variant['variant_rank_index'] - variant['baseline_rank_index']).abs()
-                baseline_s = variant['rank'].astype(str) == 'S'
-                variant_s = variant['variant_rank'].astype(str) == 'S'
-                variants.append(
-                    {
-                        "win_weight": win_weight,
-                        "persistence_weight": round(1.0 - win_weight, 4),
-                        "ban_weight": ban_weight,
-                        "pick_stability_scale": pick_scale,
-                        "rank_change_rate": float((rank_delta > 0).mean()),
-                        "avg_abs_rank_delta": float(rank_delta.mean()),
-                        "s_membership_change_rate": float((baseline_s != variant_s).mean()),
-                    }
-                )
+    for presence_weight in [0.55, 0.65, 0.75]:
+        for presence_ban_weight in [0.50, 0.75, 1.00]:
+            variant = baseline.copy()
+            variant['variant_score'] = score_variant_for_sensitivity(
+                variant,
+                presence_weight=presence_weight,
+                presence_ban_weight=presence_ban_weight,
+                group_key=group_key,
+            )
+            variant['variant_rank'] = variant.groupby(group_key)['variant_score'].transform(assign_score_rank)
+            variant['variant_rank_index'] = variant['variant_rank'].map(rank_index_value)
+            rank_delta = (variant['variant_rank_index'] - variant['baseline_rank_index']).abs()
+            baseline_s = variant['rank'].astype(str) == 'S'
+            variant_s = variant['variant_rank'].astype(str) == 'S'
+            variants.append(
+                {
+                    "presence_weight": presence_weight,
+                    "performance_weight": round(1.0 - presence_weight, 4),
+                    "presence_ban_weight": presence_ban_weight,
+                    "rank_change_rate": float((rank_delta > 0).mean()),
+                    "avg_abs_rank_delta": float(rank_delta.mean()),
+                    "s_membership_change_rate": float((baseline_s != variant_s).mean()),
+                }
+            )
 
     return {
         "available": True,
@@ -814,6 +864,29 @@ def build_sensitivity_diagnostics(latest_df):
     }
 
 
+def build_overheat_monitor(latest_df):
+    required_cols = {'rank', 'performance_score'}
+    if latest_df.empty or not required_cols.issubset(latest_df.columns):
+        return {"available": False, "reason": "missing_latest_columns"}
+
+    top_ranks = latest_df[latest_df['rank'].astype(str).isin(['S', 'A'])]
+    if top_ranks.empty:
+        return {"available": False, "reason": "no_s_or_a_rows"}
+
+    perf = pd.to_numeric(top_ranks['performance_score'], errors='coerce')
+    return {
+        "available": True,
+        "s_a_rows": int(len(top_ranks)),
+        "s_a_perf_negative_share": float((perf < 0).mean()),
+        "review_threshold": OVERHEAT_REVIEW_THRESHOLD,
+        "note": (
+            "S/A 랭크 중 성능 z<0(존재감만으로 상위) 비율. "
+            "이 값이 지속적으로 review_threshold를 넘으면 "
+            "PRESENCE_BAN_WEIGHT 하향(예: 0.5)을 검토합니다."
+        ),
+    }
+
+
 def build_rank_diagnostics(latest_df=None):
     history_df = load_weekly_history_for_persistence()
     if latest_df is None and os.path.exists(LATEST_STATS_PATH):
@@ -821,14 +894,31 @@ def build_rank_diagnostics(latest_df=None):
     if latest_df is None:
         latest_df = pd.DataFrame()
 
-    metric_cols = ['win_rate_z', 'persistence_score', 'pick_rate_z', 'ban_rate_z', 'total_score']
+    # 과거 스냅샷에는 존재감/수축 승률 컬럼이 없거나 구식이므로
+    # 현재 산식 기준으로 스냅샷 그룹 내에서 재계산해 비교 일관성을 확보
+    history_required = {'pick_rate', 'ban_rate', 'win_rate', 'snapshot_order'}
+    if not history_df.empty and history_required.issubset(history_df.columns):
+        history_df = add_meta_axis_columns(
+            history_df.copy(),
+            group_key=['snapshot_order', 'data_tier', 'map', 'role'],
+        )
+
+    metric_cols = [
+        'win_rate_z', 'persistence_score', 'presence_score', 'performance_score',
+        'pick_rate_z', 'ban_rate_z', 'total_score',
+    ]
     diagnostics = {
         "generated_at": datetime.now().isoformat(timespec="seconds"),
         "method_note": (
-            "Diagnostics are used to audit the hand-designed performance formula; "
+            "Diagnostics are used to audit the hand-designed presence-led meta formula; "
             "they do not automatically optimize production weights."
         ),
         "long_term_plan": "patch_buff_nerf_history_based_regression",
+        "formula": {
+            "presence_weight": META_PRESENCE_WEIGHT,
+            "performance_weight": META_PERFORMANCE_WEIGHT,
+            "presence_ban_weight": PRESENCE_BAN_WEIGHT,
+        },
         "data_summary": {
             "latest_rows": int(len(latest_df)),
             "weekly_rows": int(len(history_df)),
@@ -836,6 +926,7 @@ def build_rank_diagnostics(latest_df=None):
         },
         "correlation_matrix": {},
         "variance": {},
+        "overheat_monitor": build_overheat_monitor(latest_df),
         "walk_forward": build_walk_forward_diagnostics(history_df),
         "sensitivity": build_sensitivity_diagnostics(latest_df),
     }
@@ -2232,12 +2323,10 @@ def run_stats_update():
     group_key = ['data_tier', 'map', 'role']
     persistence_df = build_recent_persistence_frame()
     print(
-        "📐 성능 점수 공식: "
-        f"승률={PERFORMANCE_WIN_WEIGHT:.2f}, "
-        f"EWMA 지속성={PERFORMANCE_PERSISTENCE_WEIGHT:.2f}, "
-        f"픽률 안정성={PICK_STABILITY_MIN:.2f}~{PICK_STABILITY_MAX:.2f}, "
-        f"밴률 압박={PERFORMANCE_BAN_PRESSURE_WEIGHT:.2f}, "
-        f"최근 {PERSISTENCE_WEEKS}주 지속성 rows={len(persistence_df)}"
+        "📐 메타 지배력 공식: "
+        f"존재감={META_PRESENCE_WEIGHT:.2f} × z(log1p(픽률 + {PRESENCE_BAN_WEIGHT:.2f}×밴률)) "
+        f"+ 성능={META_PERFORMANCE_WEIGHT:.2f} × z(수축 승률), "
+        f"최근 {PERSISTENCE_WEEKS}주 지속성 rows={len(persistence_df)} (진단용)"
     )
     full_df = add_scoring_columns(full_df, group_key=group_key, persistence_df=persistence_df)
 
