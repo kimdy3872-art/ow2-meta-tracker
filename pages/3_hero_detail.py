@@ -284,7 +284,25 @@ summary_html = "".join(
     for label, value, color in summary_items
 )
 rank_value = html.escape(str(hero_row.get("rank", "-")))
-score_strength = html.escape(str(hero_row.get("score_strength", "보통") or "보통"))
+score_strength_raw = str(hero_row.get("score_strength", "보통") or "보통")
+score_strength = html.escape(score_strength_raw)
+score_strength_class = {
+    "메타 지배": "hero-score-dominant",
+    "과열 주의": "hero-score-overheated",
+    "과열주의": "hero-score-overheated",
+    "밴 압박": "hero-score-ban-pressure",
+    "밴압박": "hero-score-ban-pressure",
+    "저평가 픽": "hero-score-underrated",
+    "저평가픽": "hero-score-underrated",
+    "전문가 픽": "hero-score-expert",
+    "전문가픽": "hero-score-expert",
+    "비주류": "hero-score-niche",
+}.get(score_strength_raw)
+score_strength_html = (
+    f'<div class="hero-score-pill {score_strength_class}">{score_strength}</div>'
+    if score_strength_class
+    else ""
+)
 summary_strip_html = "\n".join(line.lstrip() for line in f"""
     <style>
     .hero-summary-strip {{
@@ -324,6 +342,44 @@ summary_strip_html = "\n".join(line.lstrip() for line in f"""
         font-size: 1.8rem;
         line-height: 1;
     }}
+    .hero-score-pill {{
+        display: inline-block;
+        padding: 2px 7px;
+        border-radius: 999px;
+        font-size: 0.68rem;
+        font-weight: 850;
+        letter-spacing: 0.02em;
+    }}
+    .hero-score-dominant {{
+        color: #fde68a;
+        background: rgba(250, 204, 21, 0.14);
+        border: 1px solid rgba(250, 204, 21, 0.36);
+    }}
+    .hero-score-overheated {{
+        color: #fdba74;
+        background: rgba(249, 115, 22, 0.14);
+        border: 1px solid rgba(251, 146, 60, 0.42);
+    }}
+    .hero-score-ban-pressure {{
+        color: #fecaca;
+        background: rgba(248, 113, 113, 0.14);
+        border: 1px solid rgba(248, 113, 113, 0.42);
+    }}
+    .hero-score-underrated {{
+        color: #86efac;
+        background: rgba(16, 185, 129, 0.14);
+        border: 1px solid rgba(52, 211, 153, 0.42);
+    }}
+    .hero-score-expert {{
+        color: #99f6e4;
+        background: rgba(20, 184, 166, 0.13);
+        border: 1px solid rgba(45, 212, 191, 0.38);
+    }}
+    .hero-score-niche {{
+        color: #cbd5e1;
+        background: rgba(148, 163, 184, 0.10);
+        border: 1px solid rgba(148, 163, 184, 0.28);
+    }}
     @media (max-width: 980px) {{
         .hero-summary-strip {{grid-template-columns: repeat(2, minmax(0, 1fr));}}
     }}
@@ -336,7 +392,7 @@ summary_strip_html = "\n".join(line.lstrip() for line in f"""
         <div class="hero-summary-item hero-summary-rank">
             <div>
                 <div class="hero-summary-label">랭크</div>
-                <div style="color:{GLOBAL_MUTED_TEXT_COLOR};font-size:0.78rem;font-weight:760;">{score_strength}</div>
+                {score_strength_html}
             </div>
             <strong>{rank_value}</strong>
         </div>

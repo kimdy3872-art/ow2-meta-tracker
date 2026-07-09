@@ -2,6 +2,7 @@ import json
 import os
 import urllib.request
 
+import numpy as np
 import pandas as pd
 import streamlit as st
 
@@ -55,6 +56,25 @@ NUMERIC_STATS_COLUMNS = [
 ]
 PATCH_NOTES_PATH = os.path.join("data", "patch_notes", "patch_notes.json")
 PATCH_AI_ANALYSIS_PATH = os.path.join("data", "patch_notes", "patch_ai_analysis.json")
+META_TYPE_PRESENCE_HIGH_Z = 1.25
+META_TYPE_PERFORMANCE_POSITIVE_Z = 0.75
+META_TYPE_PICK_HIGH_Z = 1.25
+META_TYPE_BAN_HIGH_Z = 1.5
+META_TYPE_UNDERRATED_PERFORMANCE_Z = 1.25
+META_TYPE_EXPERT_LOW_PICK_Z = -1.0
+META_TYPE_EXPERT_HIGH_WIN_Z = 1.0
+META_TYPE_NICHE_LOW_PRESENCE_Z = -1.25
+META_TYPE_NICHE_MAX_PERFORMANCE_Z = -0.25
+META_PRESENCE_WEIGHT = 0.65
+META_PERFORMANCE_WEIGHT = 0.35
+PRESENCE_BAN_WEIGHT = 1.0
+SHRINK_MIN_PICK_RATE = 0.1
+RANK_THRESHOLDS = {
+    "S": 1.25,
+    "A": 0.50,
+    "C": -0.50,
+    "D": -1.00,
+}
 
 HERO_NAME_TO_API_NAME = {
     "D.VA": "D.Va",
@@ -263,6 +283,102 @@ def is_degenerate_snapshot(snapshot_df):
     return no_win_variance_ratio >= 0.98 and no_pick_variance_ratio >= 0.98
 
 
+def safe_zscore(series):
+    std = series.std()
+    if std == 0 or pd.isna(std):
+        return pd.Series([0] * len(series), index=series.index)
+    return (series - series.mean()) / std
+
+
+def assign_score_rank(scores):
+    numeric_scores = pd.to_numeric(scores, errors="coerce")
+    ranks = pd.Series("B", index=scores.index, dtype=object)
+    ranks[numeric_scores >= RANK_THRESHOLDS["S"]] = "S"
+    ranks[
+        (numeric_scores >= RANK_THRESHOLDS["A"])
+        & (numeric_scores < RANK_THRESHOLDS["S"])
+    ] = "A"
+    ranks[
+        (numeric_scores <= RANK_THRESHOLDS["C"])
+        & (numeric_scores > RANK_THRESHOLDS["D"])
+    ] = "C"
+    ranks[numeric_scores <= RANK_THRESHOLDS["D"]] = "D"
+    ranks[numeric_scores.isna()] = "B"
+    return ranks
+
+
+def add_current_scoring_columns(df, group_key=None):
+    if df.empty:
+        return df
+    if group_key is None:
+        group_key = ["data_tier", "map", "role"]
+    required_cols = {"win_rate", "pick_rate", "ban_rate", *group_key}
+    if not required_cols.issubset(df.columns):
+        return df
+
+    df = df.copy()
+    for col in ["win_rate", "pick_rate", "ban_rate"]:
+        df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0.0)
+
+    df["win_rate_z"] = df.groupby(group_key)["win_rate"].transform(safe_zscore)
+    df["pick_rate_log"] = np.log1p(df["pick_rate"])
+    df["pick_rate_z"] = df.groupby(group_key)["pick_rate_log"].transform(safe_zscore)
+    df["ban_rate_log"] = np.log1p(df["ban_rate"])
+    df["ban_rate_z"] = df.groupby(group_key)["ban_rate_log"].transform(safe_zscore)
+    df["presence_log"] = np.log1p(
+        df["pick_rate"] + PRESENCE_BAN_WEIGHT * df["ban_rate"]
+    )
+    df["presence_score"] = df.groupby(group_key)["presence_log"].transform(safe_zscore)
+
+    group_mean_win = df.groupby(group_key)["win_rate"].transform("mean")
+    shrink_k = (
+        df.groupby(group_key)["pick_rate"].transform("median")
+        .clip(lower=SHRINK_MIN_PICK_RATE)
+    )
+    df["shrunk_win_rate"] = (
+        (df["pick_rate"] * df["win_rate"] + shrink_k * group_mean_win)
+        / (df["pick_rate"] + shrink_k)
+    )
+    df["performance_score"] = df.groupby(group_key)["shrunk_win_rate"].transform(safe_zscore)
+    df["total_score"] = (
+        META_PRESENCE_WEIGHT * df["presence_score"]
+        + META_PERFORMANCE_WEIGHT * df["performance_score"]
+    )
+    df["rank"] = assign_score_rank(df["total_score"])
+    return df
+
+
+def add_meta_type_label(df):
+    required_cols = {"presence_score", "performance_score", "pick_rate_z", "win_rate_z"}
+    if df.empty or not required_cols.issubset(df.columns):
+        return df
+
+    df = df.copy()
+    for col in required_cols:
+        df[col] = pd.to_numeric(df[col], errors="coerce")
+
+    df["score_strength"] = np.select(
+        [
+            (df["presence_score"] >= META_TYPE_PRESENCE_HIGH_Z)
+            & (df["performance_score"] >= META_TYPE_PERFORMANCE_POSITIVE_Z),
+            (df["pick_rate_z"] >= META_TYPE_PICK_HIGH_Z)
+            & (df["performance_score"] <= META_TYPE_NICHE_MAX_PERFORMANCE_Z),
+            (df["ban_rate_z"] >= META_TYPE_BAN_HIGH_Z)
+            & (df["pick_rate_z"] < 0),
+            (df["presence_score"] < 0.5)
+            & (df["performance_score"] >= META_TYPE_UNDERRATED_PERFORMANCE_Z),
+            (df["pick_rate_z"] <= META_TYPE_EXPERT_LOW_PICK_Z)
+            & (df["win_rate_z"] >= META_TYPE_EXPERT_HIGH_WIN_Z)
+            & (df["performance_score"] < META_TYPE_UNDERRATED_PERFORMANCE_Z),
+            (df["presence_score"] <= META_TYPE_NICHE_LOW_PRESENCE_Z)
+            & (df["performance_score"] <= META_TYPE_NICHE_MAX_PERFORMANCE_Z),
+        ],
+        ["메타 지배", "과열 주의", "밴 압박", "저평가 픽", "전문가 픽", "비주류"],
+        default="보통",
+    )
+    return df
+
+
 @st.cache_data
 def load_latest_stats():
     stats_path = os.path.join("data", "latest", "latest_tier.parquet")
@@ -293,6 +409,8 @@ def load_latest_stats():
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce")
 
+    df = add_current_scoring_columns(df)
+    df = add_meta_type_label(df)
     return df
 
 

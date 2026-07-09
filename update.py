@@ -127,8 +127,15 @@ META_PRESENCE_WEIGHT = float(os.getenv("META_PRESENCE_WEIGHT", "0.65"))
 META_PERFORMANCE_WEIGHT = round(1.0 - META_PRESENCE_WEIGHT, 4)
 PRESENCE_BAN_WEIGHT = float(os.getenv("PRESENCE_BAN_WEIGHT", "1.0"))
 SHRINK_MIN_PICK_RATE = 0.1
-QUADRANT_PRESENCE_HIGH_Z = 0.5
-QUADRANT_PERFORMANCE_HIGH_Z = 0.5
+META_TYPE_PRESENCE_HIGH_Z = 1.25
+META_TYPE_PERFORMANCE_POSITIVE_Z = 0.75
+META_TYPE_PICK_HIGH_Z = 1.25
+META_TYPE_BAN_HIGH_Z = 1.5
+META_TYPE_UNDERRATED_PERFORMANCE_Z = 1.25
+META_TYPE_EXPERT_LOW_PICK_Z = -1.0
+META_TYPE_EXPERT_HIGH_WIN_Z = 1.0
+META_TYPE_NICHE_LOW_PRESENCE_Z = -1.25
+META_TYPE_NICHE_MAX_PERFORMANCE_Z = -0.25
 OVERHEAT_REVIEW_THRESHOLD = 0.15
 
 # 레거시 승률 중심 산식 상수: 진단 리포트의 비교 후보 계산에만 사용
@@ -604,16 +611,21 @@ def add_scoring_columns(df, group_key=None, persistence_df=None):
     )
     df['score_strength'] = np.select(
         [
-            (df['presence_score'] >= QUADRANT_PRESENCE_HIGH_Z)
-            & (df['performance_score'] >= 0),
-            (df['presence_score'] >= QUADRANT_PRESENCE_HIGH_Z)
-            & (df['performance_score'] < 0),
-            (df['presence_score'] < QUADRANT_PRESENCE_HIGH_Z)
-            & (df['performance_score'] >= QUADRANT_PERFORMANCE_HIGH_Z),
-            (df['presence_score'] <= -QUADRANT_PRESENCE_HIGH_Z)
-            & (df['performance_score'] < QUADRANT_PERFORMANCE_HIGH_Z),
+            (df['presence_score'] >= META_TYPE_PRESENCE_HIGH_Z)
+            & (df['performance_score'] >= META_TYPE_PERFORMANCE_POSITIVE_Z),
+            (df['pick_rate_z'] >= META_TYPE_PICK_HIGH_Z)
+            & (df['performance_score'] <= META_TYPE_NICHE_MAX_PERFORMANCE_Z),
+            (df['ban_rate_z'] >= META_TYPE_BAN_HIGH_Z)
+            & (df['pick_rate_z'] < 0),
+            (df['presence_score'] < 0.5)
+            & (df['performance_score'] >= META_TYPE_UNDERRATED_PERFORMANCE_Z),
+            (df['pick_rate_z'] <= META_TYPE_EXPERT_LOW_PICK_Z)
+            & (df['win_rate_z'] >= META_TYPE_EXPERT_HIGH_WIN_Z)
+            & (df['performance_score'] < META_TYPE_UNDERRATED_PERFORMANCE_Z),
+            (df['presence_score'] <= META_TYPE_NICHE_LOW_PRESENCE_Z)
+            & (df['performance_score'] <= META_TYPE_NICHE_MAX_PERFORMANCE_Z),
         ],
-        ['메타 지배', '과열 주의', '저평가 픽', '비주류'],
+        ['메타 지배', '과열 주의', '밴 압박', '저평가 픽', '전문가 픽', '비주류'],
         default='보통',
     )
     df['pick_rate_warning'] = np.select(

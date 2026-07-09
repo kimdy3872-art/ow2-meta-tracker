@@ -108,18 +108,11 @@ if filtered_df.empty:
     st.warning("선택한 조건에 해당하는 데이터가 없습니다.")
     st.stop()
 
-if "pick_rate_z" in filtered_df.columns and "win_rate_z" in filtered_df.columns:
-    pick_z = pd.to_numeric(filtered_df["pick_rate_z"], errors="coerce")
-    win_z = pd.to_numeric(filtered_df["win_rate_z"], errors="coerce")
-    filtered_df["is_master"] = (pick_z <= -0.5) & (win_z >= 0.5)
-else:
-    filtered_df["is_master"] = False
-
 filtered_df["display_size"] = (filtered_df["total_score"] - filtered_df["total_score"].min() + 1) * 6
 filtered_df["role_display"] = filtered_df["role"].map(translate_role_name)
-filtered_df["master_label"] = filtered_df["is_master"].map(lambda x: "장인" if x else "일반")
+filtered_df["meta_type"] = filtered_df.get("score_strength", "보통")
 filtered_df["hero_label"] = filtered_df.apply(
-    lambda r: f"★ {r['hero']}" if r["is_master"] else str(r["hero"]),
+    lambda r: f"{r['hero']} · {r['meta_type']}" if str(r.get("meta_type", "보통")) != "보통" else str(r["hero"]),
     axis=1,
 )
 
@@ -144,7 +137,7 @@ fig_2d = px.scatter(
     size="ban_rate",
     hover_name="hero",
     text="hero_label",
-    custom_data=["hero", "role_display", "rank", "master_label", "ban_rate"],
+    custom_data=["hero", "role_display", "rank", "meta_type", "ban_rate"],
     category_orders={"rank": ["S", "A", "B", "C", "D"]},
     color_discrete_map=rank_color_map,
     labels={
@@ -162,7 +155,7 @@ fig_2d.update_traces(
         "<b>%{customdata[0]}</b><br>"
         "포지션: %{customdata[1]}<br>"
         "랭크: %{customdata[2]}<br>"
-        "분류: %{customdata[3]}<br>"
+        "유형: %{customdata[3]}<br>"
         "픽률: %{x:.2f}%<br>"
         "승률: %{y:.2f}%<br>"
         "밴률: %{customdata[4]:.2f}%<extra></extra>"
@@ -203,7 +196,7 @@ fig = px.scatter_3d(
     size="display_size",
     hover_name="hero",
     text="hero_label",
-    custom_data=["hero", "role_display", "rank", "master_label", "is_master", "ban_rate"],
+    custom_data=["hero", "role_display", "rank", "meta_type", "ban_rate"],
     category_orders={"rank": ["S", "A", "B", "C", "D"]},
     color_discrete_map=rank_color_map,
     labels={
@@ -221,10 +214,10 @@ fig.update_traces(
         "<b>%{customdata[0]}</b><br>"
         "포지션: %{customdata[1]}<br>"
         "랭크: %{customdata[2]}<br>"
-        "분류: %{customdata[3]}<br>"
+        "유형: %{customdata[3]}<br>"
         "픽률: %{x:.2f}%<br>"
         "승률: %{y:.2f}%<br>"
-        "밴률: %{customdata[5]:.2f}%<extra></extra>"
+        "밴률: %{customdata[4]:.2f}%<extra></extra>"
     ),
     textfont=dict(size=10, color="#e2e8f0"),
 )
@@ -233,8 +226,8 @@ for trace in fig.data:
     customdata = trace.customdata if hasattr(trace, "customdata") else []
     line_colors = []
     for cd in customdata:
-        is_master = bool(cd[4]) if len(cd) > 4 else False
-        line_colors.append("#f8fafc" if is_master else "rgba(148,163,184,0.25)")
+        meta_type = str(cd[3]) if len(cd) > 3 else "보통"
+        line_colors.append("#f8fafc" if meta_type != "보통" else "rgba(148,163,184,0.25)")
     trace.marker.line = dict(width=1, color=line_colors)
 
 fig.update_layout(
@@ -275,10 +268,8 @@ fig.update_layout(
     height=560,
 )
 
-master_count = int(filtered_df["is_master"].sum())
-st.caption(
-    f"장인 기준: 픽률 Z <= -0.5 and 승률 Z >= 0.5 | 현재 {master_count}명"
-)
+typed_count = int((filtered_df["meta_type"].astype(str) != "보통").sum())
+st.caption(f"메타 유형 라벨: 메타 지배 · 과열 주의 · 밴 압박 · 저평가 픽 · 전문가 픽 · 비주류 | 현재 {typed_count}명")
 st.caption("드래그로 회전, 스크롤로 줌. 점을 클릭하면 영웅 상세 페이지로 이동합니다.")
 
 event = st.plotly_chart(

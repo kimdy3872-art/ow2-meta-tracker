@@ -418,13 +418,6 @@ if search_hero:
         df_filtered["hero"].str.contains(search_hero, case=False, na=False)
     ].copy()
 
-if "pick_rate_z" in df_filtered.columns and "win_rate_z" in df_filtered.columns:
-    pick_z = pd.to_numeric(df_filtered["pick_rate_z"], errors="coerce")
-    win_z = pd.to_numeric(df_filtered["win_rate_z"], errors="coerce")
-    df_filtered["is_master"] = (pick_z <= -0.5) & (win_z >= 0.5)
-else:
-    df_filtered["is_master"] = False
-
 # -------------------------------------------------
 # 5. 데이터 준비
 # -------------------------------------------------
@@ -468,11 +461,15 @@ def render_rank_table_html(df):
     .overwatch-table .role-cell {text-align: center; color: __GLOBAL_TEXT_COLOR__;}
     .overwatch-table .rate-cell {text-align: left; min-width: 152px;}
     .overwatch-table .score-cell {text-align: center; font-weight: 800; min-width: 92px; color: #fbbf24;}
-    .overwatch-table .score-label {display: block; margin-top: 4px; color: #cbd5e1; font-size: 0.72rem; font-weight: 800;}
     .overwatch-table .rank-cell {text-align: center; padding: 4px 8px;}
     .rank-pill {display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:30px;border-radius:999px;font-weight:900;font-size:1.05rem;border:1px solid currentColor;background:rgba(255,255,255,0.05);}
-    .artisan-badge {display: inline-block; margin-left: 8px; padding: 2px 7px; border-radius: 999px; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.02em; vertical-align: middle;}
-    .artisan-strong {background: rgba(250, 204, 21, 0.14); color: #fde68a; border: 1px solid rgba(250, 204, 21, 0.36);}
+    .meta-type-badge {display: inline-block; margin-left: 8px; padding: 2px 7px; border-radius: 999px; font-size: 0.68rem; font-weight: 850; letter-spacing: 0.02em; vertical-align: middle;}
+    .meta-dominant {background: rgba(250, 204, 21, 0.14); color: #fde68a; border: 1px solid rgba(250, 204, 21, 0.36);}
+    .meta-overheated {background: rgba(249, 115, 22, 0.14); color: #fdba74; border: 1px solid rgba(251, 146, 60, 0.42);}
+    .meta-ban-pressure {background: rgba(248, 113, 113, 0.14); color: #fecaca; border: 1px solid rgba(248, 113, 113, 0.42);}
+    .meta-underrated {background: rgba(16, 185, 129, 0.14); color: #86efac; border: 1px solid rgba(52, 211, 153, 0.42);}
+    .meta-expert {background: rgba(20, 184, 166, 0.13); color: #99f6e4; border: 1px solid rgba(45, 212, 191, 0.38);}
+    .meta-niche {background: rgba(148, 163, 184, 0.10); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.28);}
     .low-pick-badge {display: inline-block; margin-left: 6px; padding: 2px 7px; border-radius: 999px; font-size: 0.68rem; font-weight: 800; vertical-align: middle; color: #fed7aa; background: rgba(249, 115, 22, 0.12); border: 1px solid rgba(251, 146, 60, 0.35);}
     .rate-line {display:flex;align-items:center;gap:9px;}
     .rate-bar {flex:1;background: #1f2937; border-radius: 999px; height: 8px; overflow: hidden;}
@@ -493,9 +490,9 @@ def render_rank_table_html(df):
         .overwatch-table .role-cell,.overwatch-table .score-cell,.overwatch-table .rank-cell {text-align:left;}
         .overwatch-table .rate-cell {min-width:0;}
         .overwatch-table .rate-cell::before {display:inline-flex!important;align-items:center;gap:6px;margin-bottom:7px;}
-        .overwatch-table .rate-cell.win::before {content:"승률 · 초록";}
-        .overwatch-table .rate-cell.pick::before {content:"픽률 · 파랑";}
-        .overwatch-table .rate-cell.ban::before {content:"밴률 · 빨강";}
+        .overwatch-table .rate-cell.win::before {content:"승률";}
+        .overwatch-table .rate-cell.pick::before {content:"픽률";}
+        .overwatch-table .rate-cell.ban::before {content:"밴률";}
     }
     </style>
     """
@@ -514,10 +511,25 @@ def render_rank_table_html(df):
             f"style='color:{GLOBAL_TEXT_COLOR}; text-decoration: underline; text-underline-offset: 3px;'>"
             f"{hero}</a>"
         )
-        is_master = bool(row.get("is_master", False))
-        badge_html = ""
-        if is_master:
-            badge_html = "<span class='artisan-badge artisan-strong'>장인</span>"
+        meta_type_raw = str(row.get("score_strength", "") or "보통")
+        meta_type = html.escape(meta_type_raw)
+        meta_type_class = {
+            "메타 지배": "meta-dominant",
+            "과열 주의": "meta-overheated",
+            "과열주의": "meta-overheated",
+            "밴 압박": "meta-ban-pressure",
+            "밴압박": "meta-ban-pressure",
+            "저평가 픽": "meta-underrated",
+            "저평가픽": "meta-underrated",
+            "전문가 픽": "meta-expert",
+            "전문가픽": "meta-expert",
+            "비주류": "meta-niche",
+        }.get(meta_type_raw)
+        badge_html = (
+            f"<span class='meta-type-badge {meta_type_class}'>{meta_type}</span>"
+            if meta_type_class
+            else ""
+        )
         low_pick_warning = str(row.get("pick_rate_warning", "") or "").strip()
         low_pick_html = ""
         if low_pick_warning:
@@ -529,8 +541,7 @@ def render_rank_table_html(df):
         ban_rate_val = pd.to_numeric(row.get("ban_rate", None), errors="coerce")
         score_val = pd.to_numeric(row.get("total_score", None), errors="coerce")
         score = f"{score_val:+.2f}" if pd.notna(score_val) else "-"
-        score_strength = html.escape(str(row.get("score_strength", "") or "보통"))
-        score_html = f"{score}<span class='score-label'>{score_strength}</span>"
+        score_html = score
         rank = html.escape(str(row["rank"]))
         rank_color = rank_color_map.get(str(row["rank"]), GLOBAL_TEXT_COLOR)
         hero_url = get_hero_image_url(row["hero"])
@@ -683,7 +694,7 @@ with st.expander("랭크는 어떻게 산정되나요?"):
         - 랭크는 "메타 지배력"을 측정합니다: 존재감(픽률+밴률) 65% + 성능 검증(수축 승률) 35%.
         - 존재감은 픽률과 밴률의 합으로 계산합니다. 밴률이 높은 영웅은 픽이 눌려 있으므로, 둘의 합이 드래프트에서 차지하는 실제 지분을 나타냅니다.
         - 성능은 픽률로 가중 수축한 승률입니다. 픽률이 낮을수록 승률을 비교군 평균 쪽으로 끌어당겨, 저픽률 고승률 영웅의 과대평가를 줄입니다.
-        - 점수 옆 라벨은 두 축의 조합입니다: `메타 지배`(존재감·성능 모두 높음), `과열 주의`(존재감은 높지만 승률이 평균 이하 — 함정 픽 가능성), `저평가 픽`(덜 쓰이지만 잘 이김), `비주류`, `보통`.
+        - 영웅 이름 옆 메타 유형 라벨은 두 축의 조합입니다: `메타 지배`, `과열 주의`, `저평가 픽`, `전문가 픽`, `비주류`.
         - 랭크는 분위수 강제 배분이 아니라 절대 점수 기준 `S/A/B/C/D`로 산정됩니다.
         - 기준은 `S >= 1.25`, `A >= 0.50`, `B -0.50~0.50`, `C <= -0.50`, `D <= -1.00`입니다.
         - 픽률 1.0% 미만 영웅은 저픽률 경고를 함께 표시합니다.
@@ -693,12 +704,16 @@ with st.expander("랭크는 어떻게 산정되나요?"):
         """
     )
 
-with st.expander("장인챔프는 뭔가요?"):
+with st.expander("메타 유형 라벨은 뭔가요?"):
     st.markdown(
         """
-        - 장인챔프는 **낮은 픽률 대비 높은 승률**을 보이는 영웅입니다.
-        - 현재 기준: `pick_rate_z <= -0.5` and `win_rate_z >= 0.5`
-        - 즉, 평균보다 덜 선택되지만 성과가 높은 영웅을 뜻합니다.
+        - `메타 지배`: 존재감이 높고 성능도 평균 이상인 핵심 메타 영웅입니다.
+        - `과열 주의`: 픽률이 매우 높지만 성능 검증은 낮은 영웅입니다.
+        - `밴 압박`: 픽률은 낮지만 밴률이 매우 높아 강하게 의식되는 영웅입니다.
+        - `저평가 픽`: 존재감은 아직 낮지만 수축 승률 기준 성능이 매우 뚜렷한 영웅입니다.
+        - `전문가 픽`: 낮은 픽률 대비 승률이 매우 좋은 숙련자형 후보입니다.
+        - `비주류`: 존재감이 매우 낮고 성능 신호도 약한 영웅입니다.
+        - 라벨이 없으면 뚜렷한 유형 신호가 없는 `보통` 구간입니다.
         """
     )
 
@@ -710,7 +725,7 @@ sort_col = {
 }.get(sort_by, "total_score")
 
 # 밴률 컬럼이 있으면 포함
-display_cols = ["hero", "role", "win_rate", "pick_rate", "ban_rate", "total_score", "score_strength", "pick_rate_warning", "rank", "is_master"] if "ban_rate" in df_filtered.columns else ["hero", "role", "win_rate", "pick_rate", "total_score", "score_strength", "pick_rate_warning", "rank", "is_master"]
+display_cols = ["hero", "role", "win_rate", "pick_rate", "ban_rate", "total_score", "score_strength", "pick_rate_warning", "rank"] if "ban_rate" in df_filtered.columns else ["hero", "role", "win_rate", "pick_rate", "total_score", "score_strength", "pick_rate_warning", "rank"]
 display_df = df_filtered.sort_values(
     sort_col,
     ascending=False
