@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import urllib.request
 
 import numpy as np
@@ -56,6 +57,15 @@ NUMERIC_STATS_COLUMNS = [
 ]
 PATCH_NOTES_PATH = os.path.join("data", "patch_notes", "patch_notes.json")
 PATCH_AI_ANALYSIS_PATH = os.path.join("data", "patch_notes", "patch_ai_analysis.json")
+PATCH_CONTENT_STOP_MARKERS = (
+    "\nconst analyticsFormat",
+    "\npatchNotesDates =",
+    "\nlocale = ",
+    "\n패치 노트에서는 현재 서비스 중인 오버워치",
+    "\n일반 토론장",
+    "\n기술 지원 토론장",
+)
+PATCH_NAV_LINE_RE = re.compile(r"^(\d{1,2}월 패치 노트|\d{1,2}월|패치 노트)$")
 META_TYPE_PRESENCE_HIGH_Z = 1.25
 META_TYPE_PERFORMANCE_POSITIVE_Z = 0.75
 META_TYPE_PICK_HIGH_Z = 1.25
@@ -458,6 +468,23 @@ def get_hero_image_url(hero_name):
     )
 
 
+def clean_patch_note_content(value):
+    text = str(value or "")
+    if not text:
+        return ""
+
+    stop_at = len(text)
+    for marker in PATCH_CONTENT_STOP_MARKERS:
+        marker_index = text.find(marker)
+        if marker_index != -1:
+            stop_at = min(stop_at, marker_index)
+
+    lines = [line.rstrip() for line in text[:stop_at].splitlines()]
+    while lines and (not lines[-1].strip() or PATCH_NAV_LINE_RE.match(lines[-1].strip())):
+        lines.pop()
+    return "\n".join(lines).strip()
+
+
 def _load_json_list(path):
     if not os.path.exists(path):
         return []
@@ -466,6 +493,13 @@ def _load_json_list(path):
             payload = json.load(f)
     except (OSError, json.JSONDecodeError):
         return []
+    if path == PATCH_NOTES_PATH and isinstance(payload, list):
+        for row in payload:
+            if not isinstance(row, dict):
+                continue
+            for key in ("raw_content", "parsed_content"):
+                if key in row:
+                    row[key] = clean_patch_note_content(row.get(key))
     return payload if isinstance(payload, list) else []
 
 

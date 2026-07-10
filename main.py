@@ -10,6 +10,7 @@ from app_data import (
     load_latest_patch_ai_analysis,
     load_latest_patch_note,
     load_latest_stats,
+    clean_patch_note_content,
     translate_role_name,
     translate_tier_name,
 )
@@ -251,7 +252,10 @@ def render_patch_intelligence_block():
             for item in summary_items[:8]:
                 st.markdown(f"- {item}")
         st.markdown("**상세 내용**")
-        st.markdown(str(patch_note.get("parsed_content") or patch_note.get("raw_content") or "상세 내용이 없습니다."))
+        detail_content = clean_patch_note_content(
+            patch_note.get("parsed_content") or patch_note.get("raw_content")
+        )
+        st.markdown(detail_content or "상세 내용이 없습니다.")
 
     if analysis:
         with st.expander("AI 분석 자세히 보기"):

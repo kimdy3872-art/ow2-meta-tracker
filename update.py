@@ -120,6 +120,15 @@ DAILY_HISTORY_ROOT = os.path.join(HISTORY_DIR, "daily")
 PATCH_NOTES_DIR = os.path.join(DATA_DIR, "patch_notes")
 PATCH_NOTES_PATH = os.path.join(PATCH_NOTES_DIR, "patch_notes.json")
 PATCH_AI_ANALYSIS_PATH = os.path.join(PATCH_NOTES_DIR, "patch_ai_analysis.json")
+PATCH_CONTENT_STOP_MARKERS = (
+    "\nconst analyticsFormat",
+    "\npatchNotesDates =",
+    "\nlocale = ",
+    "\n패치 노트에서는 현재 서비스 중인 오버워치",
+    "\n일반 토론장",
+    "\n기술 지원 토론장",
+)
+PATCH_NAV_LINE_RE = re.compile(r"^(\d{1,2}월 패치 노트|\d{1,2}월|패치 노트)$")
 WEEKLY_SNAPSHOT_WEEKDAY = int(os.getenv("WEEKLY_SNAPSHOT_WEEKDAY", "0"))
 
 # 메타 지배력 산식: 존재감(픽+밴) 주도 + 수축 승률 검증
@@ -1090,6 +1099,23 @@ def html_to_text(html_text):
     return parser.get_text()
 
 
+def clean_patch_note_content(value):
+    text = str(value or "")
+    if not text:
+        return ""
+
+    stop_at = len(text)
+    for marker in PATCH_CONTENT_STOP_MARKERS:
+        marker_index = text.find(marker)
+        if marker_index != -1:
+            stop_at = min(stop_at, marker_index)
+
+    lines = [line.rstrip() for line in text[:stop_at].splitlines()]
+    while lines and (not lines[-1].strip() or PATCH_NAV_LINE_RE.match(lines[-1].strip())):
+        lines.pop()
+    return "\n".join(lines).strip()
+
+
 def load_json_list(path):
     if not os.path.exists(path):
         return []
@@ -1146,12 +1172,12 @@ def parse_patch_blocks(page_html, page_url):
         if not parsed_date:
             continue
 
-        raw_content = html_to_text(block)
+        raw_content = clean_patch_note_content(html_to_text(block))
         content_lines = [
             line for line in raw_content.splitlines()
             if line not in {raw_date, title, "위로 이동"}
         ]
-        parsed_content = "\n".join(content_lines).strip()
+        parsed_content = clean_patch_note_content("\n".join(content_lines).strip())
         affected_heroes = sorted(set(re.findall(r'class="PatchNotesHeroUpdate-icon"[^>]*alt="([^"]+)"', block)))
         has_hero_updates = bool(affected_heroes) or "PatchNotes-section-hero_update" in block
         summary_items = build_patch_summary_items(parsed_content, affected_heroes)
