@@ -138,7 +138,7 @@
     "has_hero_updates": true,
     "patch_category": "hero_balance",
     "created_at": "2026-07-09T13:52:17",
-    "updated_at": "2026-07-09T15:55:12"
+    "updated_at": "2026-07-10T01:41:07"
   },
   {
     "id": "patch-2026-06-30",
@@ -236,6 +236,6 @@
     "has_hero_updates": false,
     "patch_category": "general",
     "created_at": "2026-07-08T09:00:07",
-    "updated_at": "2026-07-09T15:55:12"
+    "updated_at": "2026-07-10T01:41:07"
   }
 ]
