@@ -169,5 +169,34 @@
     "patch_category": "hero_balance",
     "created_at": "2026-07-29T01:30:17",
     "updated_at": "2026-07-30T01:25:04"
+  },
+  {
+    "id": "patch-2026-07-30",
+    "patch_version": "2026-07-30",
+    "title": "Overwatch Retail Patch Notes – July 30, 2026",
+    "patch_date": "2026-07-30",
+    "source_url": "https://overwatch.blizzard.com/ko-kr/news/patch-notes/live/2026/7/#patch-2026-07-30",
+    "raw_content": "2026년 7월 30일\nOverwatch Retail Patch Notes – July 30, 2026\nLimited-Time Mode Specific Updates\nThe following patch notes are applicable only to a specific, limited-time game mode. The documented changes do not apply to pre-existing queues, unless otherwise noted.\nHero Updates\nFor the upcoming Quick Play Hacked, we're making several balance changes to test elements of 6v6 gameplay. The In-Combat Healing reduction has been lowered for all heroes to evaluate the impact of increased healing across the board while reducing the effectiveness of several self-sustaining sub-roles.\nWe're also reducing several Tank defensive cooldowns to improve gameplay flow for these heroes. To offset the increased availability of these abilities, their durations have been shortened where appropriate to avoid creating too many defensive cooldowns with two tanks available.\nThese changes will also be active within Open Queue throughout the Quick Play Hacked weekend.\nGeneral Changes\nIn-Combat Healing Reduction reduced from 30% to 15% for all heroes.\nTank Role Passive\nUltimate charge reduction when damaging or healing tank targets increased from 20% to 40%.\nSubrole Passives\nBruiser\nMovement speed buff reduced from 20% to 15%.\nInitiator\nHealing reduced from 50 to 40.\nCooldown reduced from 5 to 4 seconds.\nFlanker\nAdditional health from Health Packs reduced from 75 to 50.\nMedic\nHealing conversion reduced from 40% to 30%.\nTank\nDomina\nBarrier Array\nBarrier Cooldown reduced from 17 to 15 seconds.\nBarrier Duration reduced from 8 to 7 seconds.\nDoomfist\nThe Best Defense\nShield gain increased from 25 to 30.\nHazard\nJagged Wall\nCooldown reduced from 15 to 13 seconds.\nMauga\nOverrun\nCooldown reduced from 7 to 6 seconds.\nRamattra\nVoid Barrier\nCooldown reduced from 16 to 13 seconds.\nDuration reduced from 4 to 3 seconds.",
+    "parsed_content": "Limited-Time Mode Specific Updates\nThe following patch notes are applicable only to a specific, limited-time game mode. The documented changes do not apply to pre-existing queues, unless otherwise noted.\nHero Updates\nFor the upcoming Quick Play Hacked, we're making several balance changes to test elements of 6v6 gameplay. The In-Combat Healing reduction has been lowered for all heroes to evaluate the impact of increased healing across the board while reducing the effectiveness of several self-sustaining sub-roles.\nWe're also reducing several Tank defensive cooldowns to improve gameplay flow for these heroes. To offset the increased availability of these abilities, their durations have been shortened where appropriate to avoid creating too many defensive cooldowns with two tanks available.\nThese changes will also be active within Open Queue throughout the Quick Play Hacked weekend.\nGeneral Changes\nIn-Combat Healing Reduction reduced from 30% to 15% for all heroes.\nTank Role Passive\nUltimate charge reduction when damaging or healing tank targets increased from 20% to 40%.\nSubrole Passives\nBruiser\nMovement speed buff reduced from 20% to 15%.\nInitiator\nHealing reduced from 50 to 40.\nCooldown reduced from 5 to 4 seconds.\nFlanker\nAdditional health from Health Packs reduced from 75 to 50.\nMedic\nHealing conversion reduced from 40% to 30%.\nTank\nDomina\nBarrier Array\nBarrier Cooldown reduced from 17 to 15 seconds.\nBarrier Duration reduced from 8 to 7 seconds.\nDoomfist\nThe Best Defense\nShield gain increased from 25 to 30.\nHazard\nJagged Wall\nCooldown reduced from 15 to 13 seconds.\nMauga\nOverrun\nCooldown reduced from 7 to 6 seconds.\nRamattra\nVoid Barrier\nCooldown reduced from 16 to 13 seconds.\nDuration reduced from 4 to 3 seconds.",
+    "summary": "영향 영웅: Domina, Doomfist, Hazard, Mauga, Ramattra · Limited-Time Mode Specific Updates · The following patch notes are applicable only to a specific, limited-time game mode. The documented changes do not apply to pre-existing queues, unless otherwise noted.",
+    "summary_items": [
+      "영향 영웅: Domina, Doomfist, Hazard, Mauga, Ramattra",
+      "Limited-Time Mode Specific Updates",
+      "The following patch notes are applicable only to a specific, limited-time game mode. The documented changes do not apply to pre-existing queues, unless otherwise noted.",
+      "Hero Updates",
+      "For the upcoming Quick Play Hacked, we're making several balance changes to test elements of 6v6 gameplay. The In-Combat Healing reduction has been lowered for all heroes to evaluate the impact of increased healing across the board while reducing the effectiveness of several self-sustaining sub-roles.",
+      "We're also reducing several Tank defensive cooldowns to improve gameplay flow for these heroes. To offset the increased availability of these abilities, their durations have been shortened where appropriate to avoid creating too many defensive cooldowns with two tanks available."
+    ],
+    "affected_heroes": [
+      "Domina",
+      "Doomfist",
+      "Hazard",
+      "Mauga",
+      "Ramattra"
+    ],
+    "has_hero_updates": true,
+    "patch_category": "hero_balance",
+    "created_at": "2026-07-31T01:37:40",
+    "updated_at": "2026-07-31T01:37:40"
   }
 ]
