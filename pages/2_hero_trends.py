@@ -1,4 +1,3 @@
-import glob
 import html
 import os
 
@@ -7,10 +6,13 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from app_data import (
+    DATA_CACHE_TTL,
     get_hero_image_url,
     get_initial_index,
     get_ordered_roles,
     get_ordered_tiers,
+    list_data_files,
+    read_data_parquet,
     translate_role_name,
     translate_tier_name,
 )
@@ -65,33 +67,26 @@ def rank_color(rank):
     }.get(str(rank), GLOBAL_TEXT_COLOR)
 
 
-@st.cache_data
+@st.cache_data(ttl=DATA_CACHE_TTL)
 def load_history_data():
     frames = []
-    sources = [
-        (os.path.join("data", "history", "weekly", "**", "*.parquet"), 1),
-        (os.path.join("data", "latest", "latest_tier.parquet"), 2),
-    ]
+    weekly_paths = list_data_files(os.path.join("data", "history", "weekly"), suffix=".parquet")
+    sources = [(path, 1) for path in weekly_paths]
+    sources.append((os.path.join("data", "latest", "latest_tier.parquet"), 2))
     seen_paths = set()
 
-    for pattern, priority in sources:
-        paths = sorted(glob.glob(pattern, recursive=True)) if any(ch in pattern for ch in "*?[") else [pattern]
-        for path in paths:
-            if path in seen_paths or not os.path.exists(path):
-                continue
+    for path, priority in sources:
+        if path in seen_paths:
+            continue
 
-            seen_paths.add(path)
-            try:
-                frame = pd.read_parquet(path)
-            except Exception:
-                continue
+        seen_paths.add(path)
+        frame = read_data_parquet(path)
+        if frame is None or frame.empty:
+            continue
 
-            if frame.empty:
-                continue
-
-            frame = frame.copy()
-            frame["_source_priority"] = priority
-            frames.append(frame)
+        frame = frame.copy()
+        frame["_source_priority"] = priority
+        frames.append(frame)
 
     if not frames:
         return pd.DataFrame()

@@ -1,3 +1,5 @@
+import glob
+import io
 import json
 import os
 import re
@@ -6,6 +8,85 @@ import urllib.request
 import numpy as np
 import pandas as pd
 import streamlit as st
+
+
+# --- 데이터 소스 -----------------------------------------------------------
+# 배포(Streamlit Community Cloud)에서는 keep-alive로 앱 프로세스가 계속 warm 상태라
+# 예전처럼 슬립→콜드스타트로 새 커밋을 pull 하지 않는다. 그 결과 로컬 파일이 배포 시점에
+# 고정돼 데이터가 멈춘다. 이를 피하려고 데이터를 GitHub raw에서 직접 읽고(항상 최신),
+# 짧은 TTL 캐시로 감싼다. 로컬 개발은 OW2_LOCAL_DATA=1 로 로컬 파일을 쓴다.
+DATA_REPO = os.environ.get("OW2_DATA_REPO", "kimdy3872-art/ow2-meta-tracker")
+DATA_BRANCH = os.environ.get("OW2_DATA_BRANCH", "main")
+DATA_RAW_BASE = f"https://raw.githubusercontent.com/{DATA_REPO}/{DATA_BRANCH}"
+USE_LOCAL_DATA = os.environ.get("OW2_LOCAL_DATA", "").strip().lower() in {"1", "true", "yes", "on"}
+DATA_HTTP_TIMEOUT = int(os.environ.get("OW2_DATA_HTTP_TIMEOUT", "20"))
+# 데이터 캐시 TTL(초). 데이터는 매일 갱신되므로 30분이면 충분히 최신.
+DATA_CACHE_TTL = int(os.environ.get("OW2_DATA_CACHE_TTL", "1800"))
+
+
+def _remote_url(relpath):
+    return f"{DATA_RAW_BASE}/{relpath.replace(os.sep, '/')}"
+
+
+def _fetch_bytes(relpath):
+    req = urllib.request.Request(_remote_url(relpath), headers={"User-Agent": "ow2meta-app"})
+    with urllib.request.urlopen(req, timeout=DATA_HTTP_TIMEOUT) as resp:
+        return resp.read()
+
+
+def read_data_parquet(relpath):
+    """data/ 하위 parquet을 읽는다. 기본은 GitHub raw(항상 최신), 실패 시 로컬 폴백."""
+    if USE_LOCAL_DATA:
+        return pd.read_parquet(relpath) if os.path.exists(relpath) else pd.DataFrame()
+    try:
+        return pd.read_parquet(io.BytesIO(_fetch_bytes(relpath)))
+    except Exception:
+        if os.path.exists(relpath):
+            try:
+                return pd.read_parquet(relpath)
+            except Exception:
+                return pd.DataFrame()
+        return pd.DataFrame()
+
+
+def read_data_json(relpath):
+    """data/ 하위 JSON을 읽는다. 기본은 GitHub raw(항상 최신), 실패 시 로컬 폴백."""
+    if not USE_LOCAL_DATA:
+        try:
+            return json.loads(_fetch_bytes(relpath).decode("utf-8"))
+        except Exception:
+            pass
+    if os.path.exists(relpath):
+        try:
+            with open(relpath, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except (OSError, json.JSONDecodeError):
+            return None
+    return None
+
+
+def list_data_files(prefix, suffix=".parquet"):
+    """data/ 하위에서 prefix로 시작하고 suffix로 끝나는 파일 경로 목록(정렬)."""
+    prefix = prefix.replace(os.sep, "/")
+    if not USE_LOCAL_DATA:
+        api = f"https://api.github.com/repos/{DATA_REPO}/git/trees/{DATA_BRANCH}?recursive=1"
+        try:
+            req = urllib.request.Request(
+                api,
+                headers={"User-Agent": "ow2meta-app", "Accept": "application/vnd.github+json"},
+            )
+            with urllib.request.urlopen(req, timeout=DATA_HTTP_TIMEOUT) as resp:
+                tree = json.load(resp).get("tree", [])
+            return sorted(
+                node["path"]
+                for node in tree
+                if node.get("type") == "blob"
+                and node["path"].startswith(prefix)
+                and node["path"].endswith(suffix)
+            )
+        except Exception:
+            pass  # 원격 실패 시 로컬 glob 폴백
+    return sorted(glob.glob(os.path.join(prefix, "**", "*" + suffix), recursive=True))
 
 
 ROLE_LABELS = {
@@ -389,10 +470,9 @@ def add_meta_type_label(df):
     return df
 
 
-@st.cache_data
+@st.cache_data(ttl=DATA_CACHE_TTL)
 def load_latest_stats():
-    stats_path = os.path.join("data", "latest", "latest_tier.parquet")
-    df = pd.read_parquet(stats_path)
+    df = read_data_parquet(os.path.join("data", "latest", "latest_tier.parquet"))
 
     if "update_date" in df.columns and not df.empty:
         df["update_date"] = df["update_date"].astype(str)
@@ -486,12 +566,8 @@ def clean_patch_note_content(value):
 
 
 def _load_json_list(path):
-    if not os.path.exists(path):
-        return []
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            payload = json.load(f)
-    except (OSError, json.JSONDecodeError):
+    payload = read_data_json(path)
+    if payload is None:
         return []
     if path == PATCH_NOTES_PATH and isinstance(payload, list):
         for row in payload:
@@ -503,7 +579,7 @@ def _load_json_list(path):
     return payload if isinstance(payload, list) else []
 
 
-@st.cache_data
+@st.cache_data(ttl=DATA_CACHE_TTL)
 def load_latest_patch_note():
     notes = _load_json_list(PATCH_NOTES_PATH)
     if not notes:
@@ -517,7 +593,7 @@ def load_latest_patch_note():
     )
 
 
-@st.cache_data
+@st.cache_data(ttl=DATA_CACHE_TTL)
 def load_latest_balance_patch_note():
     notes = _load_json_list(PATCH_NOTES_PATH)
     balance_notes = [
@@ -535,7 +611,7 @@ def load_latest_balance_patch_note():
     )
 
 
-@st.cache_data
+@st.cache_data(ttl=DATA_CACHE_TTL)
 def load_latest_patch_ai_analysis(patch_note_id=None):
     analyses = _load_json_list(PATCH_AI_ANALYSIS_PATH)
     if patch_note_id:

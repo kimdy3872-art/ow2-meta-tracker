@@ -4,12 +4,14 @@ import html
 import os
 import re
 from app_data import (
+    DATA_CACHE_TTL,
     get_hero_image_url,
     get_hero_subrole,
     get_map_image_url,
     load_latest_balance_patch_note,
     load_latest_patch_ai_analysis,
     load_latest_stats,
+    read_data_parquet,
     translate_role_name,
     translate_subrole_name,
     translate_tier_name,
@@ -151,14 +153,10 @@ def normalize_hero_key(hero_name):
     return re.sub(r"[^0-9a-z가-힣]+", "", text)
 
 
-@st.cache_data
+@st.cache_data(ttl=DATA_CACHE_TTL)
 def load_hero_perk_data():
-    if not os.path.exists(PERK_DATA_PATH):
-        return pd.DataFrame()
-
-    try:
-        df = pd.read_parquet(PERK_DATA_PATH)
-    except Exception:
+    df = read_data_parquet(PERK_DATA_PATH)
+    if df is None or df.empty:
         return pd.DataFrame()
 
     required_cols = {"hero", "perk_type", "perk_name", "pick_rate"}
