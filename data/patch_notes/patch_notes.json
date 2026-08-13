@@ -270,5 +270,30 @@
     "patch_category": "hero_balance",
     "created_at": "2026-08-12T01:04:05",
     "updated_at": "2026-08-12T01:04:05"
+  },
+  {
+    "id": "patch-2026-08-12",
+    "patch_version": "2026-08-12",
+    "title": "Overwatch Retail Patch Notes – August 12, 2026",
+    "patch_date": "2026-08-12",
+    "source_url": "https://overwatch.blizzard.com/ko-kr/news/patch-notes/live/2026/8/#patch-2026-08-12",
+    "raw_content": "2026년 8월 12일\nOverwatch Retail Patch Notes – August 12, 2026\nHotfix Update\nThis is a hotfix update. Replay codes from the August 11 patch are still available.\nHero Updates\nD.Mon\nPlasma Saber\nDamage increased from 60 to 65.\nPropulsors\nFuel drain rate reduced from 40 to 25.\nFuel regen rate increased from 15 to 22.5.\nFusion Repeater\nDamage increased from 15 to 16.\nCooldown reduced from 6 to 4 seconds.\nBug Fixes\nFixed a bug where Nano Boost was removed from Moira when she used Fade.\nFixed an issue preventing D.Mon's Power Barrier from fully protecting D.Mon if deployed while Fusion Repeater was active.\nFixed a bug where the second attacker spawn extended into playable areas on Paraíso.\nFixed a bug where D.Mon could become invulnerable temporarily.",
+    "parsed_content": "Hotfix Update\nThis is a hotfix update. Replay codes from the August 11 patch are still available.\nHero Updates\nD.Mon\nPlasma Saber\nDamage increased from 60 to 65.\nPropulsors\nFuel drain rate reduced from 40 to 25.\nFuel regen rate increased from 15 to 22.5.\nFusion Repeater\nDamage increased from 15 to 16.\nCooldown reduced from 6 to 4 seconds.\nBug Fixes\nFixed a bug where Nano Boost was removed from Moira when she used Fade.\nFixed an issue preventing D.Mon's Power Barrier from fully protecting D.Mon if deployed while Fusion Repeater was active.\nFixed a bug where the second attacker spawn extended into playable areas on Paraíso.\nFixed a bug where D.Mon could become invulnerable temporarily.",
+    "summary": "영향 영웅: D.Mon · Hotfix Update · This is a hotfix update. Replay codes from the August 11 patch are still available.",
+    "summary_items": [
+      "영향 영웅: D.Mon",
+      "Hotfix Update",
+      "This is a hotfix update. Replay codes from the August 11 patch are still available.",
+      "Hero Updates",
+      "Plasma Saber",
+      "Damage increased from 60 to 65."
+    ],
+    "affected_heroes": [
+      "D.Mon"
+    ],
+    "has_hero_updates": true,
+    "patch_category": "hero_balance",
+    "created_at": "2026-08-13T02:16:45",
+    "updated_at": "2026-08-13T02:16:45"
   }
 ]
