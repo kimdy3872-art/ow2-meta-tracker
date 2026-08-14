@@ -274,19 +274,19 @@
   {
     "id": "patch-2026-08-12",
     "patch_version": "2026-08-12",
-    "title": "Overwatch Retail Patch Notes – August 12, 2026",
+    "title": "오버워치 2 패치 노트 - 2026년 8월 13일",
     "patch_date": "2026-08-12",
     "source_url": "https://overwatch.blizzard.com/ko-kr/news/patch-notes/live/2026/8/#patch-2026-08-12",
-    "raw_content": "2026년 8월 12일\nOverwatch Retail Patch Notes – August 12, 2026\nHotfix Update\nThis is a hotfix update. Replay codes from the August 11 patch are still available.\nHero Updates\nD.Mon\nPlasma Saber\nDamage increased from 60 to 65.\nPropulsors\nFuel drain rate reduced from 40 to 25.\nFuel regen rate increased from 15 to 22.5.\nFusion Repeater\nDamage increased from 15 to 16.\nCooldown reduced from 6 to 4 seconds.\nBug Fixes\nFixed a bug where Nano Boost was removed from Moira when she used Fade.\nFixed an issue preventing D.Mon's Power Barrier from fully protecting D.Mon if deployed while Fusion Repeater was active.\nFixed a bug where the second attacker spawn extended into playable areas on Paraíso.\nFixed a bug where D.Mon could become invulnerable temporarily.",
-    "parsed_content": "Hotfix Update\nThis is a hotfix update. Replay codes from the August 11 patch are still available.\nHero Updates\nD.Mon\nPlasma Saber\nDamage increased from 60 to 65.\nPropulsors\nFuel drain rate reduced from 40 to 25.\nFuel regen rate increased from 15 to 22.5.\nFusion Repeater\nDamage increased from 15 to 16.\nCooldown reduced from 6 to 4 seconds.\nBug Fixes\nFixed a bug where Nano Boost was removed from Moira when she used Fade.\nFixed an issue preventing D.Mon's Power Barrier from fully protecting D.Mon if deployed while Fusion Repeater was active.\nFixed a bug where the second attacker spawn extended into playable areas on Paraíso.\nFixed a bug where D.Mon could become invulnerable temporarily.",
-    "summary": "영향 영웅: D.Mon · Hotfix Update · This is a hotfix update. Replay codes from the August 11 patch are still available.",
+    "raw_content": "2026년 8월 12일\n오버워치 2 패치 노트 - 2026년 8월 13일\n핫픽스 업데이트\n핫픽스 업데이트입니다. 8월 12일부터 생성된 리플레이 코드는 계속 이용할 수 있습니다.\n영웅 업데이트\nD.Mon\n플라스마 세이버\n피해가 60에서 65으로 증가했습니다.\n추진기\n연료 소모율이 40에서 25로 감소했습니다.\n연료 재생률이 15에서 22.5로 증가했습니다.\n융합 연발총\n피해가 15에서 16으로 증가했습니다.\n재사용 대기시간이 6초에서 4초로 감소했습니다.\n버그 수정\n모이라가 소멸을 사용했을 때 나노 강화제가 제거되던 문제를 수정했습니다.\n융합 연발총이 활성화된 동안 D.Mon이 파워 배리어를 전개할 경우, 파워 배리어가 D.Mon을 온전히 보호하지 못하던 문제를 수정했습니다.\n파라이수에서 두 번째 공격팀 생성 지점이 플레이 가능 지역까지 확장되던 문제를 수정했습니다.\nD.Mon이 일시적으로 무적이 될 수 있었던 문제를 수정했습니다.",
+    "parsed_content": "핫픽스 업데이트\n핫픽스 업데이트입니다. 8월 12일부터 생성된 리플레이 코드는 계속 이용할 수 있습니다.\n영웅 업데이트\nD.Mon\n플라스마 세이버\n피해가 60에서 65으로 증가했습니다.\n추진기\n연료 소모율이 40에서 25로 감소했습니다.\n연료 재생률이 15에서 22.5로 증가했습니다.\n융합 연발총\n피해가 15에서 16으로 증가했습니다.\n재사용 대기시간이 6초에서 4초로 감소했습니다.\n버그 수정\n모이라가 소멸을 사용했을 때 나노 강화제가 제거되던 문제를 수정했습니다.\n융합 연발총이 활성화된 동안 D.Mon이 파워 배리어를 전개할 경우, 파워 배리어가 D.Mon을 온전히 보호하지 못하던 문제를 수정했습니다.\n파라이수에서 두 번째 공격팀 생성 지점이 플레이 가능 지역까지 확장되던 문제를 수정했습니다.\nD.Mon이 일시적으로 무적이 될 수 있었던 문제를 수정했습니다.",
+    "summary": "영향 영웅: D.Mon · 핫픽스 업데이트 · 핫픽스 업데이트입니다. 8월 12일부터 생성된 리플레이 코드는 계속 이용할 수 있습니다.",
     "summary_items": [
       "영향 영웅: D.Mon",
-      "Hotfix Update",
-      "This is a hotfix update. Replay codes from the August 11 patch are still available.",
-      "Hero Updates",
-      "Plasma Saber",
-      "Damage increased from 60 to 65."
+      "핫픽스 업데이트",
+      "핫픽스 업데이트입니다. 8월 12일부터 생성된 리플레이 코드는 계속 이용할 수 있습니다.",
+      "플라스마 세이버",
+      "피해가 60에서 65으로 증가했습니다.",
+      "연료 소모율이 40에서 25로 감소했습니다."
     ],
     "affected_heroes": [
       "D.Mon"
@@ -294,6 +294,6 @@
     "has_hero_updates": true,
     "patch_category": "hero_balance",
     "created_at": "2026-08-13T02:16:45",
-    "updated_at": "2026-08-13T02:16:45"
+    "updated_at": "2026-08-14T01:48:36"
   }
 ]
