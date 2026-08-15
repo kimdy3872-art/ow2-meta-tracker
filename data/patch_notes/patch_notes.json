@@ -295,5 +295,31 @@
     "patch_category": "hero_balance",
     "created_at": "2026-08-13T02:16:45",
     "updated_at": "2026-08-14T01:48:36"
+  },
+  {
+    "id": "patch-2026-08-14",
+    "patch_version": "2026-08-14",
+    "title": "Overwatch Retail Patch Notes – August 14, 2026",
+    "patch_date": "2026-08-14",
+    "source_url": "https://overwatch.blizzard.com/ko-kr/news/patch-notes/live/2026/8/#patch-2026-08-14",
+    "raw_content": "2026년 8월 14일\nOverwatch Retail Patch Notes – August 14, 2026\nHotfix Update\nThis is a hotfix update. Replay codes from the August 11 patch are still available.\nHero Updates\nD.Mon\nFixed a bug with Portable Fusion Repeater that could result in hits failing to register.\nFixed a bug with Limit Break not correctly granting Overhealth for targets hit.\nFixed in a previous update - Resolved an issue that prevented Overhealth from being applied when Limit Break was activated.\nFixed a bug where Toggle Propulsors did not work on console platforms.\nHitbox Changes\nFixed an issue with being damaged from the front with while Power Barrier was deployed.\nAdjusted the height of the mech head hitbox to be more flush with the model.\nSurging Strike\nCast Time reduced from 0.15 to 0.05 seconds.\nRecovery reduced from 0.25 to 0.15 seconds.\nFusion Repeater\nCast Time reduced from 0.3 to 0.2 seconds.\nRecovery Time reduced from 0.5 to 0.2 seconds.\nJetpack Cat\nBase movement speed reduced from 6 to 5.5 meters per second.\nPurr\nSelf healing penalty increased from 25% to 40%.",
+    "parsed_content": "Hotfix Update\nThis is a hotfix update. Replay codes from the August 11 patch are still available.\nHero Updates\nD.Mon\nFixed a bug with Portable Fusion Repeater that could result in hits failing to register.\nFixed a bug with Limit Break not correctly granting Overhealth for targets hit.\nFixed in a previous update - Resolved an issue that prevented Overhealth from being applied when Limit Break was activated.\nFixed a bug where Toggle Propulsors did not work on console platforms.\nHitbox Changes\nFixed an issue with being damaged from the front with while Power Barrier was deployed.\nAdjusted the height of the mech head hitbox to be more flush with the model.\nSurging Strike\nCast Time reduced from 0.15 to 0.05 seconds.\nRecovery reduced from 0.25 to 0.15 seconds.\nFusion Repeater\nCast Time reduced from 0.3 to 0.2 seconds.\nRecovery Time reduced from 0.5 to 0.2 seconds.\nJetpack Cat\nBase movement speed reduced from 6 to 5.5 meters per second.\nPurr\nSelf healing penalty increased from 25% to 40%.",
+    "summary": "영향 영웅: D.Mon, Jetpack Cat · Hotfix Update · This is a hotfix update. Replay codes from the August 11 patch are still available.",
+    "summary_items": [
+      "영향 영웅: D.Mon, Jetpack Cat",
+      "Hotfix Update",
+      "This is a hotfix update. Replay codes from the August 11 patch are still available.",
+      "Hero Updates",
+      "Fixed a bug with Portable Fusion Repeater that could result in hits failing to register.",
+      "Fixed a bug with Limit Break not correctly granting Overhealth for targets hit."
+    ],
+    "affected_heroes": [
+      "D.Mon",
+      "Jetpack Cat"
+    ],
+    "has_hero_updates": true,
+    "patch_category": "hero_balance",
+    "created_at": "2026-08-15T01:09:33",
+    "updated_at": "2026-08-15T01:09:33"
   }
 ]
