@@ -1122,8 +1122,12 @@ def render_hero_banner(
 
     cutout_html = ""
     if cutout_url:
+        # 컷아웃은 Streamlit 정적 서빙(/app/static/...)에서 온다. 배포 환경이 base URL
+        # 경로를 붙이면 이 절대 경로가 어긋날 수 있어, 실패 시 깨진 이미지 아이콘 대신
+        # 조용히 사라지게 한다(배경 아트만 남아 배너는 그대로 성립).
         cutout_html = (
             f"<img class='ow-hero-cutout' alt='' aria-hidden='true' "
+            f"onerror=\"this.style.display='none'\" "
             f"src='{html.escape(cutout_url, quote=True)}'>"
         )
 
