@@ -2,7 +2,8 @@
 
 set -u
 
-PROJECT_DIR="/Users/dykim/Documents/DAProj/(Clone) DA_Overwatch analysis"
+# 스크립트 위치 기준으로 프로젝트 경로를 계산한다 (폴더명을 바꿔도 깨지지 않음)
+PROJECT_DIR="${0:A:h:h}"
 STATE_DIR="$PROJECT_DIR/data/local_run_state"
 LOG_DIR="$PROJECT_DIR/logs"
 LAST_SUCCESS_FILE="$STATE_DIR/patch_ai_last_success.txt"

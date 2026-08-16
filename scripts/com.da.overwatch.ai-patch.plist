@@ -8,11 +8,11 @@
 
   <key>ProgramArguments</key>
   <array>
-    <string>/Users/dykim/Documents/DAProj/(Clone) DA_Overwatch analysis/scripts/run_local_ai_patch_update.sh</string>
+    <string>/Users/dykim/Documents/DAProj/ow2meta/scripts/run_local_ai_patch_update.sh</string>
   </array>
 
   <key>WorkingDirectory</key>
-  <string>/Users/dykim/Documents/DAProj/(Clone) DA_Overwatch analysis</string>
+  <string>/Users/dykim/Documents/DAProj/ow2meta</string>
 
   <key>RunAtLoad</key>
   <true/>
@@ -29,9 +29,9 @@
   <integer>900</integer>
 
   <key>StandardOutPath</key>
-  <string>/Users/dykim/Documents/DAProj/(Clone) DA_Overwatch analysis/logs/launchd_ai_patch.out.log</string>
+  <string>/Users/dykim/Documents/DAProj/ow2meta/logs/launchd_ai_patch.out.log</string>
 
   <key>StandardErrorPath</key>
-  <string>/Users/dykim/Documents/DAProj/(Clone) DA_Overwatch analysis/logs/launchd_ai_patch.err.log</string>
+  <string>/Users/dykim/Documents/DAProj/ow2meta/logs/launchd_ai_patch.err.log</string>
 </dict>
 </plist>

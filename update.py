@@ -222,6 +222,9 @@ MAX_WORKERS = int(os.getenv("MAX_WORKERS", str(DEFAULT_MAX_WORKERS)))
 DRIVER_CREATE_RETRIES = 3
 TASK_RETRIES = int(os.getenv("TASK_RETRIES", "3"))
 MIN_HERO_ROWS = 20
+# 일부 (티어, 전장) 조합은 블리자드 서버가 504를 돌려주는 등 장기간 응답하지 않을 수 있다.
+# 전량 폐기 대신 이 비율까지는 부분 수집을 허용하고, 빠진 조합은 직전 latest 값으로 메운다.
+MIN_TASK_SUCCESS_RATIO = float(os.getenv("MIN_TASK_SUCCESS_RATIO", "0.95"))
 DRIVER_PAGE_LOAD_TIMEOUT = int(os.getenv("DRIVER_PAGE_LOAD_TIMEOUT", "75"))
 DRIVER_SCRIPT_TIMEOUT = int(os.getenv("DRIVER_SCRIPT_TIMEOUT", "30"))
 
@@ -2340,16 +2343,32 @@ def run_stats_update():
         print("❌ 수집된 데이터가 없습니다.")
         return
 
-    if failed_tasks or skipped_tasks or len(final_list) != total:
-        print(
-            f"❌ 수집이 완전하지 않아 저장을 중단합니다. 성공 {len(final_list)}/{total}, "
+    incomplete_tasks = [(tier_name, map_id) for tier_name, map_id in failed_tasks]
+    incomplete_tasks += [(tier_name, map_id) for tier_name, map_id, _reason in skipped_tasks]
+
+    if incomplete_tasks or len(final_list) != total:
+        success_ratio = len(final_list) / total if total else 0.0
+        summary = (
+            f"성공 {len(final_list)}/{total} ({success_ratio:.1%}), "
             f"실패 {len(failed_tasks)}, 스킵 {len(skipped_tasks)}"
         )
+
+        if success_ratio < MIN_TASK_SUCCESS_RATIO:
+            print(f"❌ 수집이 완전하지 않아 저장을 중단합니다. {summary}")
+            if failed_tasks:
+                print(f"❌ 실패 목록: {failed_tasks[:20]}{' ...' if len(failed_tasks) > 20 else ''}")
+            if skipped_tasks:
+                print(f"❌ 스킵 목록: {skipped_tasks[:20]}{' ...' if len(skipped_tasks) > 20 else ''}")
+            return
+
+        print(
+            f"⚠️  일부 조합을 수집하지 못했지만 허용 범위({MIN_TASK_SUCCESS_RATIO:.0%}) 안이라 "
+            f"부분 저장을 진행합니다. {summary}"
+        )
         if failed_tasks:
-            print(f"❌ 실패 목록: {failed_tasks[:20]}{' ...' if len(failed_tasks) > 20 else ''}")
+            print(f"⚠️  실패 목록: {failed_tasks[:20]}{' ...' if len(failed_tasks) > 20 else ''}")
         if skipped_tasks:
-            print(f"❌ 스킵 목록: {skipped_tasks[:20]}{' ...' if len(skipped_tasks) > 20 else ''}")
-        return
+            print(f"⚠️  스킵 목록: {skipped_tasks[:20]}{' ...' if len(skipped_tasks) > 20 else ''}")
 
     # 데이터 통합
     full_df = pd.concat(final_list, ignore_index=True)
@@ -2396,13 +2415,35 @@ def run_stats_update():
     snapshot_df = latest_df.copy()
     snapshot_df['snapshot_date'] = today_obj.isoformat()
 
+    # 수집하지 못한 조합은 직전 latest 값을 그대로 이어붙여 latest 의 커버리지를 유지한다.
+    # 이어붙인 행은 예전 snapshot_date 를 그대로 들고 있어 오래된 값임이 드러난다.
+    # 일별/주간 스냅샷에는 실제로 수집한 행만 남겨 이력이 오염되지 않게 한다.
+    latest_save_df = snapshot_df
+    if incomplete_tasks and previous_latest_df is not None and not previous_latest_df.empty:
+        missing_keys = {
+            (normalize_tier_name(tier_name), map_id) for tier_name, map_id in incomplete_tasks
+        }
+        carry_mask = pd.Series(
+            list(zip(previous_latest_df['data_tier'], previous_latest_df['map'])),
+            index=previous_latest_df.index,
+        ).isin(missing_keys)
+        carried_df = previous_latest_df[carry_mask]
+        if not carried_df.empty:
+            latest_save_df = pd.concat(
+                [snapshot_df, carried_df.reindex(columns=snapshot_df.columns)],
+                ignore_index=True,
+            )
+            print(
+                f"↪️  미수집 {len(missing_keys)}개 조합은 직전 latest 값 {len(carried_df)}행으로 유지합니다."
+            )
+
     data_changed = True
     if previous_latest_df is not None and not previous_latest_df.empty:
         old_compare = build_snapshot_compare_frame(previous_latest_df.copy())
-        new_compare = build_snapshot_compare_frame(latest_df.copy())
+        new_compare = build_snapshot_compare_frame(latest_save_df.copy())
         data_changed = not new_compare.equals(old_compare)
 
-    save_parquet(snapshot_df, LATEST_STATS_PATH)
+    save_parquet(latest_save_df, LATEST_STATS_PATH)
     daily_saved_as = save_daily_snapshot(snapshot_df, today_obj)
     weekly_saved_as = save_weekly_snapshot_if_due(snapshot_df, today_obj)
     rank_diagnostics = save_rank_diagnostics(latest_df)
