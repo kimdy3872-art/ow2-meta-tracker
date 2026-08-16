@@ -5,6 +5,7 @@ import html
 from app_data import (
     ROLE_ORDER,
     TIER_ORDER,
+    get_hero_banner_art,
     get_hero_image_url,
     load_latest_balance_patch_note,
     load_latest_patch_ai_analysis,
@@ -24,8 +25,11 @@ from ui import (
     GLOBAL_SURFACE_COLOR,
     GLOBAL_TEXT_COLOR,
     apply_global_theme,
+    render_hero_banner,
+    render_hero_card_grid,
+    render_rank_rail,
     render_page_hero,
-    render_top_navigation,
+    render_sidebar_navigation,
 )
 
 # -------------------------------------------------
@@ -33,7 +37,8 @@ from ui import (
 # -------------------------------------------------
 st.set_page_config(
     page_title="오버워치 2 경쟁전 메타 분석기",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded",
 )
 apply_global_theme()
 render_page_hero(
@@ -41,7 +46,7 @@ render_page_hero(
     "티어와 포지션별 지표를 대시보드 형식으로 확인할 수 있습니다.",
     badge="Live Competitive Meta",
 )
-render_top_navigation("main")
+render_sidebar_navigation("main")
 st.markdown("<div style='height: 0.25rem;'></div>", unsafe_allow_html=True)
 
 
@@ -127,7 +132,7 @@ def render_patch_intelligence_block():
         .patch-intel-wrap {{
             border: 1px solid {GLOBAL_BORDER_COLOR};
             border-radius: 8px;
-            background: linear-gradient(180deg, {GLOBAL_SURFACE_COLOR} 0%, #101a2d 100%);
+            background: linear-gradient(180deg, {GLOBAL_SURFACE_COLOR} 0%, #12111f 100%);
             padding: 16px 18px;
             margin: 4px 0 14px;
         }}
@@ -138,7 +143,7 @@ def render_patch_intelligence_block():
             align-items: flex-start;
         }}
         .patch-kicker {{
-            color: #93c5fd;
+            color: #ff8da0;
             font-size: 0.76rem;
             font-weight: 800;
             letter-spacing: 0.05em;
@@ -166,10 +171,10 @@ def render_patch_intelligence_block():
         .patch-link {{
             display: inline-block;
             margin-top: 8px;
-            color: #bfdbfe;
+            color: #ff9db0;
             font-weight: 800;
             text-decoration: none;
-            border-bottom: 1px solid rgba(191, 219, 254, 0.55);
+            border-bottom: 1px solid rgba(255, 157, 176, 0.5);
         }}
         .patch-hero-row {{
             display: flex;
@@ -178,9 +183,9 @@ def render_patch_intelligence_block():
             margin-top: 12px;
         }}
         .patch-hero-badge {{
-            color: #e0f2fe;
-            background: rgba(14, 165, 233, 0.12);
-            border: 1px solid rgba(125, 211, 252, 0.25);
+            color: #ffd2db;
+            background: rgba(255, 77, 106, 0.13);
+            border: 1px solid rgba(255, 122, 140, 0.28);
             border-radius: 999px;
             padding: 3px 9px;
             font-size: 0.76rem;
@@ -194,7 +199,7 @@ def render_patch_intelligence_block():
         .patch-ai-box {{
             margin-top: 12px;
             padding-top: 12px;
-            border-top: 1px solid rgba(66, 88, 126, 0.6);
+            border-top: 1px solid rgba(90, 84, 128, 0.55);
         }}
         .patch-ai-title {{
             color: #f8fafc;
@@ -209,7 +214,7 @@ def render_patch_intelligence_block():
             margin-bottom: 6px;
         }}
         .patch-ai-summary {{
-            color: #dbeafe;
+            color: #dfe0f0;
             font-size: 0.92rem;
             line-height: 1.55;
         }}
@@ -284,12 +289,7 @@ def render_patch_intelligence_block():
 # -------------------------------------------------
 df_raw = load_latest_stats()
 
-if "update_date" in df_raw.columns and not df_raw.empty:
-    base_date = str(df_raw["update_date"].iloc[0])
-else:
-    base_date = "-"
-
-st.caption(f"데이터 기준일: {base_date}")
+# 데이터 기준일 표시는 사이드바 하단(render_sidebar_navigation)으로 옮겼다.
 
 # -------------------------------------------------
 # 3. 메인 상단 필터
@@ -314,9 +314,9 @@ def render_metric_card(title, value, accent_color="#0b69ff"):
             display: inline-block;
             padding: 6px 10px;
             border-radius: 999px;
-            background: rgba(59, 130, 246, 0.12);
-            border: 1px solid rgba(59, 130, 246, 0.3);
-            color: #bfdbfe;
+            background: rgba(255, 77, 106, 0.13);
+            border: 1px solid rgba(255, 122, 140, 0.3);
+            color: #ffd2db;
             font-size: 0.78rem;
             font-weight: 700;
             letter-spacing: 0.03em;
@@ -593,43 +593,34 @@ if df_filtered.empty:
 # -------------------------------------------------
 
 
-def _build_top4_grid(metric_col, label, top4_df, metric_color):
-    _rank_colors = {1: "#ef4444", 2: "#f59e0b", 3: "#22c55e", 4: GLOBAL_INFO_COLOR}
+def _build_top_cards(metric_col, label, top_df, metric_color):
+    """상위 영웅을 아트 카드로. 배너와 같은 스플래시 아트 + 초점 좌표를 재사용한다."""
+    rank_color_map = {"S": "#ef4444", "A": "#f59e0b", "B": "#22c55e", "C": GLOBAL_INFO_COLOR, "D": "#94a3b8"}
     cards = []
-    for i in range(4):
-        rank = i + 1
-        accent = _rank_colors[rank]
-        if i < len(top4_df):
-            row = top4_df.iloc[i]
-            hero_name = str(row["hero"])
-            val = row[metric_col]
-            val = float(val) if pd.notna(val) else 0.0
-            value_str = f"{val:.1f}%"
-            img_url = get_hero_image_url(hero_name)
-        else:
-            hero_name = "-"
-            value_str = "-"
-            img_url = None
-        img_part = (
-            f'<img src="{html.escape(img_url)}" style="width:46px;height:46px;border-radius:8px;object-fit:cover;flex-shrink:0;">'
-            if img_url
-            else '<div style="width:46px;height:46px;border-radius:8px;background:#1f2937;flex-shrink:0;"></div>'
-        )
-        safe = html.escape(hero_name)
-        cards.append(
-            f'<div class="top4-card" style="border-left:3px solid {accent};">'
-            f'{img_part}'
-            f'<div style="flex:1;min-width:0;">'
-            f'<div style="display:inline-block;padding:2px 7px;border-radius:999px;'
-            f'background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.28);'
-            f'color:#bfdbfe;font-size:0.68rem;font-weight:760;margin-bottom:3px;">{label} {rank}위</div>'
-            f'<div style="color:{GLOBAL_TEXT_COLOR};font-size:0.95rem;font-weight:760;'
-            f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{safe}</div>'
-            f'</div>'
-            f'<div style="color:{metric_color};font-size:1.25rem;font-weight:850;flex-shrink:0;">{value_str}</div>'
-            f'</div>'
-        )
-    return "".join(cards)
+    for i in range(min(4, len(top_df))):
+        row = top_df.iloc[i]
+        hero_name = str(row["hero"])
+        value = row[metric_col]
+        art = get_hero_banner_art(hero_name) or {}
+        cards.append({
+            "name": hero_name,
+            # 카드가 세로형이라 초상화(정사각)보다 스플래시 아트가 덜 늘어난다.
+            "art_url": art.get("splash_url") or get_hero_image_url(hero_name),
+            "focal_x": art.get("focal_x", 0.6),
+            "metric": f"{float(value):.1f}%" if pd.notna(value) else "-",
+            "metric_color": metric_color,
+            "sub": f"{label} {i + 1}위 · {translate_role_name(str(row.get('role', '')))}",
+            "rank": str(row.get("rank", "")),
+            "rank_color": rank_color_map.get(str(row.get("rank", "")), GLOBAL_TEXT_COLOR),
+            "href": f"?hero={urllib.parse.quote(hero_name, safe='')}",
+        })
+    return cards
+
+
+def _rank_distribution_rows(df):
+    rank_color_map = {"S": "#ef4444", "A": "#f59e0b", "B": "#22c55e", "C": GLOBAL_INFO_COLOR, "D": "#94a3b8"}
+    counts = df["rank"].astype(str).value_counts()
+    return [(key, int(counts.get(key, 0)), rank_color_map[key]) for key in ["S", "A", "B", "C", "D"]]
 
 
 if "ban_rate" in df_filtered.columns:
@@ -653,40 +644,23 @@ selected_top4 = st.radio(
     key="main_top4_metric",
 )
 top4_col, top4_df, top4_color = _top4_options[selected_top4]
+
+# 섹션 라벨은 컬럼 바깥에 둔다. 왼쪽 컬럼 안에 넣으면 그만큼 오른쪽 패널이 위로 어긋난다.
 st.markdown(
-    f"""
-    <style>
-    .top4-grid {{
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 10px;
-        margin: 4px 0 12px;
-    }}
-    .top4-card {{
-        background: linear-gradient(135deg, {GLOBAL_SURFACE_COLOR} 0%, #0f1b31 100%);
-        border: 1px solid {GLOBAL_BORDER_COLOR};
-        border-radius: 12px;
-        padding: 8px 12px;
-        display: flex;
-        align-items: center;
-        gap: 11px;
-        min-width: 0;
-    }}
-    @media (max-width: 960px) {{
-        .top4-grid {{grid-template-columns: repeat(2, minmax(0, 1fr));}}
-    }}
-    @media (max-width: 560px) {{
-        .top4-grid {{grid-template-columns: 1fr;}}
-    }}
-    </style>
-    <div style="color:#94a3b8;font-size:0.76rem;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:6px;">
-        {selected_top4} TOP 4
-    </div>
-    <div class="top4-grid">{_build_top4_grid(top4_col, selected_top4, top4_df, top4_color)}</div>
-    <div class="ow-soft-divider"></div>
-    """,
+    f"<div class='ow-rail-title' style='margin-bottom:7px;'>{selected_top4} TOP 4</div>",
     unsafe_allow_html=True,
 )
+_grid_col, _rail_col = st.columns([3.1, 1], gap="small")
+with _grid_col:
+    render_hero_card_grid(_build_top_cards(top4_col, selected_top4, top4_df, top4_color))
+with _rail_col:
+    render_rank_rail(
+        "랭크 분포",
+        _rank_distribution_rows(df_filtered),
+        footnote=f"{translate_tier_name(selected_tier)} · 총 {len(df_filtered)}명",
+    )
+
+st.markdown("<div class='ow-soft-divider'></div>", unsafe_allow_html=True)
 
 st.subheader("🏆 영웅 랭크 순위표")
 st.caption("영웅 이름을 클릭하면 상세 페이지로 이동합니다.")
@@ -735,7 +709,46 @@ display_df = df_filtered.sort_values(
     ascending=False
 )[display_cols]
 
+def render_top_hero_banner(df):
+    """현재 필터에서 1위인 영웅을 배너로 보여준다."""
+    if df.empty:
+        return
+
+    top = df.iloc[0]
+    hero = str(top["hero"])
+
+    def pct(value):
+        return "-" if pd.isna(value) else f"{float(value):.1f}%"
+
+    stats = [
+        ("픽률", pct(top.get("pick_rate"))),
+        ("승률", pct(top.get("win_rate"))),
+        ("밴률", pct(top.get("ban_rate"))),
+        ("종합 점수", "-" if pd.isna(top.get("total_score")) else f"{float(top['total_score']):.1f}"),
+    ]
+
+    # 배경의 거대 숫자는 현재 정렬 기준값을 쓴다. 표에서 왜 1위인지가 바로 보이도록.
+    headline_value = top.get(sort_col)
+    if pd.isna(headline_value):
+        headline = ""
+    elif sort_col == "total_score":
+        headline = f"{float(headline_value):.1f}"
+    else:
+        headline = f"{float(headline_value):.1f}%"
+
+    render_hero_banner(
+        hero_name=hero,
+        art=get_hero_banner_art(hero),
+        stats=stats,
+        headline=headline,
+        kicker=f"{sort_by} 1위",
+        meta=f"{translate_tier_name(selected_tier)} · "
+             f"{translate_role_name(str(top.get('role', '')))} · 랭크 {top.get('rank', '-')}",
+    )
+
+
 if not display_df.empty:
+    render_top_hero_banner(display_df)
     st.markdown(render_rank_table_html(display_df), unsafe_allow_html=True)
 else:
     st.info("선택한 조건에 해당하는 영웅이 없습니다.")

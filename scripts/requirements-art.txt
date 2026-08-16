@@ -1,0 +1,6 @@
+# 히어로 아트 생성 전용 (scripts/fetch_hero_art.py).
+# 빌드 타임에만 필요하므로 루트 requirements.txt 에는 절대 넣지 않는다.
+# Streamlit Cloud 런타임은 결과물(WebP + 매니페스트)만 읽는다.
+rembg[cpu]>=2.0.60
+pillow>=10.0
+numpy>=1.24

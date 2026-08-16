@@ -17,18 +17,17 @@ from app_data import (
     translate_tier_name,
 )
 from ui import (
-    GLOBAL_BG_COLOR,
     GLOBAL_BORDER_COLOR,
-    GLOBAL_FONT_FAMILY,
     GLOBAL_MUTED_TEXT_COLOR,
     GLOBAL_SURFACE_COLOR,
     GLOBAL_TEXT_COLOR,
     apply_global_theme,
     render_page_hero,
-    render_top_navigation,
+    render_sidebar_navigation,
+    style_chart,
 )
 
-st.set_page_config(page_title="영웅 시계열", layout="wide")
+st.set_page_config(page_title="영웅 시계열", layout="wide", initial_sidebar_state="expanded")
 apply_global_theme()
 
 METRIC_CONFIG = {
@@ -140,7 +139,7 @@ render_page_hero(
     "저장된 스냅샷을 따라 승률·픽률·밴률이 어떻게 움직였는지 영웅 단위로 확인합니다.",
     badge="Hero Trend Watch",
 )
-render_top_navigation("hero_trends")
+render_sidebar_navigation("hero_trends")
 st.markdown("<div style='height: 0.25rem;'></div>", unsafe_allow_html=True)
 
 history_df = load_history_data()
@@ -429,34 +428,17 @@ def render_metric_chart(metric, chart_df):
     else:
         y_range = None
 
+    style_chart(fig, title=cfg["label"], height=300)
     fig.update_layout(
-        height=300,
         margin=dict(l=10, r=10, t=34, b=10),
-        font=dict(family=GLOBAL_FONT_FAMILY, color=GLOBAL_TEXT_COLOR, size=13),
-        paper_bgcolor=GLOBAL_BG_COLOR,
-        plot_bgcolor=GLOBAL_BG_COLOR,
         hovermode="x unified",
         showlegend=False,
-        title=dict(
-            text=cfg["label"],
-            font=dict(size=17, color=cfg["color"]),
-            x=0,
-            xanchor="left",
-        ),
-        xaxis=dict(
-            title="스냅샷 날짜",
-            gridcolor="#1f2937",
-            zerolinecolor="#374151",
-            showline=True,
-            linecolor="#334155",
-        ),
+        # 제목 색은 지표별 색을 그대로 쓴다(승률 초록 / 픽률 파랑 / 밴률 빨강).
+        title=dict(font=dict(color=cfg["color"])),
+        xaxis=dict(title="스냅샷 날짜"),
         yaxis=dict(
             title=f"{cfg['label']} ({suffix})" if suffix else cfg["label"],
             range=y_range,
-            gridcolor="#1f2937",
-            zerolinecolor="#374151",
-            showline=True,
-            linecolor="#334155",
         ),
     )
 

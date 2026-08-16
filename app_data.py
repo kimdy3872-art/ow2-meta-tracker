@@ -548,6 +548,46 @@ def get_hero_image_url(hero_name):
     )
 
 
+HERO_ART_MANIFEST_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                      "data", "hero_art_manifest.json")
+
+
+@st.cache_data
+def load_hero_art_manifest():
+    """scripts/fetch_hero_art.py 가 만들어 둔 배너 아트 매니페스트.
+
+    영어 영웅명(OverFast 표기) -> 아트 정보. 런타임에는 네트워크도 ML도 쓰지 않고
+    커밋된 결과물만 읽는다.
+    """
+    try:
+        with open(HERO_ART_MANIFEST_PATH, encoding="utf-8") as fp:
+            manifest = json.load(fp)
+    except Exception:
+        return {}
+    return {entry["name"]: entry for entry in manifest.values() if entry.get("name")}
+
+
+def get_hero_banner_art(hero_name):
+    """히어로 배너에 쓸 아트 정보. 없으면 None.
+
+    반환: {"cutout_url", "splash_url", "focal_x", "use_cutout"}
+    use_cutout 이 False 인 영웅(배경 제거 실패)은 컷아웃 없이 스플래시 아트만 쓴다.
+    """
+    api_name = HERO_NAME_TO_API_NAME.get(hero_name, hero_name)
+    entry = load_hero_art_manifest().get(api_name)
+    if not entry:
+        return None
+
+    splash = entry.get("splash") or {}
+    use_cutout = bool(entry.get("use_cutout")) and bool(entry.get("cutout_url"))
+    return {
+        "cutout_url": entry.get("cutout_url") if use_cutout else None,
+        "splash_url": splash.get("2600") or splash.get("1600") or splash.get("960"),
+        "focal_x": entry.get("focal_x", 0.7),
+        "use_cutout": use_cutout,
+    }
+
+
 def clean_patch_note_content(value):
     text = str(value or "")
     if not text:

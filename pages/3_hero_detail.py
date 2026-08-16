@@ -28,10 +28,10 @@ from ui import (
     GLOBAL_WARN_COLOR,
     apply_global_theme,
     render_page_hero,
-    render_top_navigation,
+    render_sidebar_navigation,
 )
 
-st.set_page_config(page_title="영웅 상세", layout="wide")
+st.set_page_config(page_title="영웅 상세", layout="wide", initial_sidebar_state="expanded")
 apply_global_theme()
 st.markdown(
     """
@@ -69,7 +69,7 @@ st.markdown(
     }
     .perk-card:hover,
     .perk-card:focus-visible {
-        border-color: rgba(34, 211, 238, 0.7);
+        border-color: rgba(255, 122, 140, 0.7);
         background: rgba(30, 41, 59, 0.96);
         transform: translateY(-1px);
     }
@@ -82,9 +82,9 @@ st.markdown(
         padding: 14px;
         color: #e2e8f0;
         background: linear-gradient(145deg, rgba(15, 31, 49, 0.99), rgba(17, 24, 39, 0.99));
-        border: 2px solid #22d3ee;
+        border: 2px solid #ff4d6a;
         border-radius: 10px;
-        box-shadow: 0 18px 45px rgba(2, 6, 23, 0.72), 0 0 18px rgba(34, 211, 238, 0.18);
+        box-shadow: 0 18px 45px rgba(2, 6, 23, 0.72), 0 0 18px rgba(255, 77, 106, 0.22);
         opacity: 0;
         visibility: hidden;
         pointer-events: none;
@@ -116,7 +116,7 @@ st.markdown(
         line-height: 1.25;
     }
     .perk-tooltip-rate {
-        color: #67e8f9;
+        color: #ff9db0;
         font-size: 1.18rem;
         font-weight: 900;
     }
@@ -198,7 +198,7 @@ render_page_hero(
     "선택한 영웅의 티어별 지표, 전장 성능, 특전 선호도를 한 번에 확인합니다.",
     badge="Hero Deep Dive",
 )
-render_top_navigation("detail")
+render_sidebar_navigation("detail")
 st.markdown("<div style='height: 0.25rem;'></div>", unsafe_allow_html=True)
 
 hero_from_query = st.session_state.get("detail_hero") or st.query_params.get("hero")
@@ -472,9 +472,9 @@ with left_col:
     role_label = html.escape(translate_role_name(str(hero_row.get("role", "Unknown"))))
     role_badge = (
         f'<div style="display:inline-block;font-family:{GLOBAL_FONT_FAMILY};font-size:0.9rem;'
-        'font-weight:700;color:#bfdbfe;letter-spacing:0.06em;text-transform:uppercase;'
+        'font-weight:700;color:#ffd2db;letter-spacing:0.06em;text-transform:uppercase;'
         'background:linear-gradient(180deg,rgba(30,41,59,0.95) 0%,rgba(15,23,42,0.95) 100%);'
-        'border:1px solid rgba(96,165,250,0.45);border-radius:999px;padding:4px 10px;'
+        'border:1px solid rgba(255,122,140,0.45);border-radius:999px;padding:4px 10px;'
         f'box-shadow:inset 0 1px 0 rgba(255,255,255,0.16);">{role_label}</div>'
     )
     badge_row = (
@@ -504,7 +504,7 @@ with left_col:
             f"""
             <div style="
                 margin-top:14px;
-                border:1px solid rgba(96,165,250,0.32);
+                border:1px solid rgba(255,122,140,0.30);
                 border-radius:12px;
                 background:linear-gradient(180deg,rgba(15,23,42,0.94) 0%,rgba(12,20,34,0.98) 100%);
                 padding:12px 13px;
@@ -577,7 +577,7 @@ with left_col:
 
     perk_html = (
         '<div style="margin-top:12px;">'
-        + render_perk_line(perk_rows["minor"], "Minor Perks", "#67e8f9")
+        + render_perk_line(perk_rows["minor"], "Minor Perks", "#ff9db0")
         + render_perk_line(perk_rows["major"], "Major Perks", "#fbbf24")
         + '</div>'
     )

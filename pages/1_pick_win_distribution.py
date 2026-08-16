@@ -10,18 +10,17 @@ from app_data import (
     translate_tier_name,
 )
 from ui import (
-    GLOBAL_BG_COLOR,
-    GLOBAL_FONT_FAMILY,
     GLOBAL_GOOD_COLOR,
     GLOBAL_INFO_COLOR,
     GLOBAL_DANGER_COLOR,
-    GLOBAL_TEXT_COLOR,
+    GLOBAL_RANK_COLORS,
     apply_global_theme,
     render_page_hero,
-    render_top_navigation,
+    render_sidebar_navigation,
+    style_chart,
 )
 
-st.set_page_config(page_title="픽률/승률 분포", layout="wide")
+st.set_page_config(page_title="픽률/승률 분포", layout="wide", initial_sidebar_state="expanded")
 apply_global_theme()
 
 
@@ -77,7 +76,7 @@ render_page_hero(
     "영웅 메타 포지셔닝을 3차원으로 확인하고, 점 클릭으로 상세 분석으로 이동합니다.",
     badge="Meta Positioning 3D",
 )
-render_top_navigation("pick_win")
+render_sidebar_navigation("pick_win")
 st.markdown("<div style='height: 0.25rem;'></div>", unsafe_allow_html=True)
 
 raw_df = load_latest_stats()
@@ -121,13 +120,8 @@ if "ban_rate" not in filtered_df.columns:
     filtered_df["ban_rate"] = 0.0
 filtered_df["ban_rate"] = filtered_df["ban_rate"].fillna(0.0)
 
-rank_color_map = {
-    "S": "#ef4444",
-    "A": "#f59e0b",
-    "B": "#22c55e",
-    "C": "#60a5fa",
-    "D": "#94a3b8",
-}
+# 랭크 색은 표/카드/차트가 같아야 해서 ui 의 단일 정의를 쓴다.
+rank_color_map = GLOBAL_RANK_COLORS
 
 fig_2d = px.scatter(
     filtered_df,
@@ -164,22 +158,7 @@ fig_2d.update_traces(
     textfont=dict(size=10, color="#e2e8f0"),
     marker=dict(line=dict(width=1, color="rgba(226,232,240,0.55)")),
 )
-fig_2d.update_layout(
-    title=dict(
-        text="판단용 2D 분포: 픽률 x 승률",
-        font=dict(size=18, color=GLOBAL_TEXT_COLOR),
-        x=0,
-        xanchor="left",
-    ),
-    font=dict(family=GLOBAL_FONT_FAMILY, size=13, color=GLOBAL_TEXT_COLOR),
-    paper_bgcolor=GLOBAL_BG_COLOR,
-    plot_bgcolor=GLOBAL_BG_COLOR,
-    margin=dict(l=10, r=10, t=42, b=10),
-    legend=dict(bgcolor="rgba(17,24,39,0.8)", bordercolor="#374151", borderwidth=1),
-    xaxis=dict(gridcolor="#1f2937", zerolinecolor="#374151", showline=True, linecolor="#334155"),
-    yaxis=dict(gridcolor="#1f2937", zerolinecolor="#374151", showline=True, linecolor="#334155"),
-    height=430,
-)
+style_chart(fig_2d, title="판단용 2D 분포: 픽률 x 승률", height=430)
 
 st.caption(
     f"색상은 랭크, 점 크기는 밴률입니다. 초록({GLOBAL_GOOD_COLOR})은 성능, 파랑({GLOBAL_INFO_COLOR})은 정보, 빨강({GLOBAL_DANGER_COLOR})은 위험/밴 신호로 읽습니다."
@@ -230,42 +209,18 @@ for trace in fig.data:
         line_colors.append("#f8fafc" if meta_type != "보통" else "rgba(148,163,184,0.25)")
     trace.marker.line = dict(width=1, color=line_colors)
 
+style_chart(fig, height=560, scene=True)
+# 축 제목과 3D 전용 상호작용 설정은 공통 테마 위에 덧씌운다.
 fig.update_layout(
-    font=dict(family=GLOBAL_FONT_FAMILY, size=13, color=GLOBAL_TEXT_COLOR),
-    paper_bgcolor=GLOBAL_BG_COLOR,
     scene=dict(
-        xaxis=dict(
-            title="픽률 (%)",
-            backgroundcolor=GLOBAL_BG_COLOR,
-            gridcolor="#1f2937",
-            showbackground=True,
-            zerolinecolor="#374151",
-        ),
-        yaxis=dict(
-            title="승률 (%)",
-            backgroundcolor=GLOBAL_BG_COLOR,
-            gridcolor="#1f2937",
-            showbackground=True,
-            zerolinecolor="#374151",
-        ),
-        zaxis=dict(
-            title="밴률 (%)",
-            backgroundcolor=GLOBAL_BG_COLOR,
-            gridcolor="#1f2937",
-            showbackground=True,
-            zerolinecolor="#374151",
-        ),
-        bgcolor=GLOBAL_BG_COLOR,
+        xaxis=dict(title="픽률 (%)"),
+        yaxis=dict(title="승률 (%)"),
+        zaxis=dict(title="밴률 (%)"),
+        bgcolor="rgba(0,0,0,0)",
     ),
     margin=dict(l=0, r=0, t=10, b=0),
-    legend=dict(
-        bgcolor="rgba(17,24,39,0.8)",
-        bordercolor="#374151",
-        borderwidth=1,
-    ),
     clickmode="event+select",
     hovermode="closest",
-    height=560,
 )
 
 typed_count = int((filtered_df["meta_type"].astype(str) != "보통").sum())
