@@ -2,6 +2,8 @@ import streamlit as st
 import plotly.express as px
 import pandas as pd
 from app_data import (
+    role_option_label,
+    tier_option_label,
     get_initial_index,
     get_ordered_roles,
     get_ordered_tiers,
@@ -31,7 +33,7 @@ def get_selected_tier(df):
         "티어",
         tier_options,
         index=get_initial_index(tier_options, default_tier),
-        format_func=translate_tier_name,
+        format_func=tier_option_label,
         placeholder="티어 선택",
     )
 
@@ -42,7 +44,7 @@ def get_selected_role(df):
         "포지션",
         valid_roles,
         index=0,
-        format_func=translate_role_name,
+        format_func=role_option_label,
         placeholder="포지션 선택",
     )
 

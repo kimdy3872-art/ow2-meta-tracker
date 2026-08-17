@@ -16,11 +16,14 @@ from app_data import (
     load_latest_patch_note,
     load_latest_stats,
     clean_patch_note_content,
+    role_option_label,
+    tier_option_label,
     translate_role_name,
     translate_tier_name,
 )
 from ui import (
     _latest_data_date,
+    rank_badge,
     GLOBAL_BG_COLOR,
     GLOBAL_BORDER_COLOR,
     GLOBAL_FONT_FAMILY,
@@ -30,7 +33,7 @@ from ui import (
     GLOBAL_SURFACE_COLOR,
     GLOBAL_TEXT_COLOR,
     apply_global_theme,
-    render_hero_card_grid,
+    render_rotating_card_groups,
     render_hero_scroller,
     render_hero_showcase,
     render_map_cards,
@@ -358,32 +361,18 @@ def reset_filters():
 
 # 2차 지시서 D-2: 드롭다운 4개 + 라디오 1개 -> 컨트롤 3개.
 # 티어는 순서가 있는 값이라 드롭다운에 넣으면 현재 위치가 안 보인다. 세그먼트로.
-# 티어는 7칸이라 한 줄을 통으로 쓴다. key 와 default 를 같이 주면 Streamlit 이 경고하므로
-# 초기값은 위의 session_state 초기화에만 맡긴다.
-selected_tier = st.segmented_control(
-    "티어",
-    tiers,
-    key="selected_tier",
-    format_func=translate_tier_name,
-    label_visibility="collapsed",
-) or st.session_state.get("selected_tier", "Gold")
-
-_r_col, _s_col = st.columns([2.2, 1.6], gap="small")
-with _r_col:
-    selected_role = st.segmented_control(
-        "포지션",
-        ["All"] + roles,
-        key="selected_role",
-        format_func=translate_role_name,
-        label_visibility="collapsed",
-    ) or "All"
-with _s_col:
-    search_hero = st.text_input(
-        "영웅 검색",
-        key="search_hero",
-        placeholder="영웅 검색",
-        label_visibility="collapsed",
+# 티어/포지션은 드롭다운으로. 목록에는 "{아이콘} 골드" 형식의 라벨을 쓴다.
+_t_col, _r_col, _s_col = st.columns([1, 1, 1.4], gap="small")
+with _t_col:
+    selected_tier = st.selectbox(
+        "티어", tiers, key="selected_tier", format_func=tier_option_label
     )
+with _r_col:
+    selected_role = st.selectbox(
+        "포지션", ["All"] + roles, key="selected_role", format_func=role_option_label
+    )
+with _s_col:
+    search_hero = st.text_input("영웅 검색", key="search_hero", placeholder="영웅 이름")
 
 # 정렬은 드롭다운을 없애고 표 헤더 클릭으로 받는다(?sort= 쿼리 파라미터).
 SORT_COLUMNS = {
@@ -620,7 +609,7 @@ def render_rank_table_html(df):
             f"<td class='rate-cell'>{_bar('pick', row['pick_rate'], pick_rate)}</td>"
             f"<td class='rate-cell'>{_bar('ban', ban_rate_val, f'{ban_rate_val:.1f}%' if pd.notna(ban_rate_val) else '-')}</td>"
             f"<td class='score-cell nowrap'>{score_html}"
-            f"<span class='rank-pill' style='color:{rank_color};'>{rank}</span></td>"
+            f"{rank_badge(rank, rank_color)}</td>"
             "</tr>"
         )
     table_html = (
@@ -696,14 +685,7 @@ else:
 _win_top4 = df_filtered[df_filtered["win_rate"].notna()].sort_values("win_rate", ascending=False).head(4)
 _pick_top4 = df_filtered[df_filtered["pick_rate"].notna()].sort_values("pick_rate", ascending=False).head(4)
 
-_top4_options = {
-    "밴률": ("ban_rate", _ban_top4, GLOBAL_DANGER_COLOR),
-    "승률": ("win_rate", _win_top4, GLOBAL_GOOD_COLOR),
-    "픽률": ("pick_rate", _pick_top4, GLOBAL_INFO_COLOR),
-}
 # 2차 지시서 D-2: 전역 라디오를 없애고 이 카드 안에서만 전환되는 탭으로 흡수.
-if "main_top4_metric" not in st.session_state:
-    st.session_state.main_top4_metric = "밴률"
 def _map_cards(hero_name, limit=4):
     """전장별 승률 상위 카드. 전장 데이터가 없으면 빈 리스트."""
     if "map" not in df_raw.columns:
@@ -771,25 +753,15 @@ with _main_col:
         ],
     )
 
-    st.markdown("<div class='eyebrow'>Heroes</div>", unsafe_allow_html=True)
-    render_hero_scroller(
-        _build_top_cards(sort_col, sort_by, display_df.head(6), GLOBAL_GOOD_COLOR, limit=6),
-        favorites=st.session_state.get("favorites", set()),
-    )
-
-    _lbl_col, _tab_col = st.columns([1, 1.1], gap="small")
-    with _lbl_col:
-        st.markdown("<div class='eyebrow section-eyebrow'>TOP 4</div>",
-                    unsafe_allow_html=True)
-    with _tab_col:
-        selected_top4 = st.segmented_control(
-            "TOP 4 지표",
-            list(_top4_options.keys()),
-            key="main_top4_metric",
-            label_visibility="collapsed",
-        ) or "밴률"
-    top4_col, top4_df, top4_color = _top4_options[selected_top4]
-    render_hero_card_grid(_build_top_cards(top4_col, selected_top4, top4_df, top4_color))
+    # TOP Winrate / Pickrate / Banrate 를 자동 순환시킨다(제목도 함께 전환).
+    render_rotating_card_groups([
+        (f"TOP {label}", _build_top_cards(col, name, frame, color))
+        for label, name, col, frame, color in [
+            ("WINRATE", "승률", "win_rate", _win_top4, GLOBAL_GOOD_COLOR),
+            ("PICKRATE", "픽률", "pick_rate", _pick_top4, GLOBAL_INFO_COLOR),
+            ("BANRATE", "밴률", "ban_rate", _ban_top4, GLOBAL_DANGER_COLOR),
+        ]
+    ])
 
     _maps = _map_cards(_top_hero)
     if _maps:

@@ -4,6 +4,8 @@ import html
 import os
 import re
 from app_data import (
+    role_option_label,
+    tier_option_label,
     DATA_CACHE_TTL,
     get_hero_banner_art,
     get_hero_color,
@@ -236,7 +238,7 @@ with tier_col:
         "티어",
         tier_candidates,
         index=tier_candidates.index(default_tier),
-        format_func=translate_tier_name,
+        format_func=tier_option_label,
         placeholder="티어 선택",
     )
 

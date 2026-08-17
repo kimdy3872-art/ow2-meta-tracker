@@ -1827,3 +1827,145 @@ h1, h2, h3, h4,
     background: var(--app-good);
     box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.16);
 }
+
+/* ---------------------------------------------------------------------------
+   TOP 카드 자동 순환
+   Streamlit 재실행 없이 CSS 키프레임만으로 전환한다. 세 묶음을 겹쳐 두고
+   각 묶음의 애니메이션 시작 시각을 어긋나게 준다.
+   --------------------------------------------------------------------------- */
+
+.rot-wrap {
+    position: relative;
+    min-height: 232px;
+}
+
+.rot-slide {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    animation-name: rot-cycle;
+    animation-iteration-count: infinite;
+    animation-timing-function: ease-in-out;
+    pointer-events: none;
+}
+
+/* 보이는 동안에만 클릭을 받는다 */
+.rot-slide { animation-fill-mode: both; }
+
+@keyframes rot-cycle {
+    0%      { opacity: 0; transform: translateY(10px) scale(0.995); pointer-events: none; }
+    3%      { opacity: 1; transform: none; pointer-events: auto; }
+    30%     { opacity: 1; transform: none; pointer-events: auto; }
+    34%     { opacity: 0; transform: translateY(-8px) scale(0.995); pointer-events: none; }
+    100%    { opacity: 0; transform: translateY(10px) scale(0.995); pointer-events: none; }
+}
+
+.rot-title { margin-bottom: 7px; }
+
+.rot-dots {
+    position: absolute;
+    top: 0;
+    right: 2px;
+    display: flex;
+    gap: 5px;
+}
+
+.rot-dots i {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.16);
+    animation-name: rot-dot;
+    animation-iteration-count: infinite;
+    animation-timing-function: ease-in-out;
+    animation-fill-mode: both;
+}
+
+@keyframes rot-dot {
+    0%, 34%, 100% { background: rgba(255, 255, 255, 0.16); }
+    3%, 30%       { background: var(--app-accent); }
+}
+
+/* 애니메이션을 원치 않는 사용자는 첫 묶음만 고정으로 본다 */
+@media (prefers-reduced-motion: reduce) {
+    .rot-slide { animation: none; opacity: 0; }
+    .rot-slide:first-child { opacity: 1; pointer-events: auto; }
+    .rot-dots { display: none; }
+}
+
+/* ---------------------------------------------------------------------------
+   TOP MAPS - 4장 높이 균형
+   강조 카드를 띄우던 translateY 를 없앤 뒤 정렬 기준도 stretch 로 되돌린다.
+   --------------------------------------------------------------------------- */
+
+.map-grid {
+    align-items: stretch;
+    padding-top: 0;
+}
+
+.map-card {
+    height: auto;
+    min-height: 132px;
+}
+
+.map-card.featured {
+    transform: none;
+}
+
+/* ---------------------------------------------------------------------------
+   랭크 뱃지
+   --------------------------------------------------------------------------- */
+
+.rank-badge {
+    position: relative;
+    display: inline-grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+}
+
+.rank-badge svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.rank-badge b {
+    position: relative;
+    font-family: var(--app-num-font);
+    font-size: 14px;
+    line-height: 1;
+    font-weight: 400;
+}
+
+.ow-card-rank {
+    background: rgba(10, 8, 20, 0.55);
+    border: 0;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--r-chip);
+    backdrop-filter: blur(3px);
+}
+
+/* ---------------------------------------------------------------------------
+   드롭다운 폭 통일
+   글자 수에 비해 지나치게 넓어 "설문 폼"처럼 보였다. 한 값으로 묶는다.
+   --------------------------------------------------------------------------- */
+
+.stSelectbox,
+[data-testid="stSelectbox"] {
+    max-width: 220px;
+}
+
+.stTextInput,
+[data-testid="stTextInput"] {
+    max-width: 280px;
+}
+
+[data-testid="stSelectbox"] label,
+[data-testid="stTextInput"] label {
+    white-space: nowrap;
+}

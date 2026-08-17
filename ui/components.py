@@ -22,6 +22,25 @@ def _one_line(markup: str) -> str:
     return "".join(line.strip() for line in markup.splitlines())
 
 
+# 랭크 뱃지. 도형을 랭크마다 바꿨더니 A 의 삼각형이 경고 표지(⚠)처럼 읽혀서,
+# 형태는 육각 방패 하나로 통일하고 구분은 색으로 준다(색은 이미 랭크의 의미 담당).
+# 최상위 S 만 채움으로 무게를 더한다.
+_RANK_SHIELD = "M12 2.6 20.5 7v10L12 21.4 3.5 17V7z"
+
+
+def rank_badge(rank: str, color: str) -> str:
+    """랭크 뱃지 HTML. 표·카드·HERO 어디서나 같은 모양을 쓴다."""
+    rank = str(rank or "-")
+    filled = rank == "S"
+    fill = f"{color}2e" if filled else "none"
+    return (
+        f"<span class='rank-badge{' filled' if filled else ''}' style='color:{color};'>"
+        f"<svg viewBox='0 0 24 24' fill='{fill}' stroke='currentColor' stroke-width='1.5' "
+        f"stroke-linejoin='round' aria-hidden='true'><path d='{_RANK_SHIELD}'/></svg>"
+        f"<b>{html.escape(rank)}</b></span>"
+    )
+
+
 ICON_HEART = (
     "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.5' "
     "stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'>"
@@ -126,6 +145,37 @@ def render_hero_banner(
         """),
         unsafe_allow_html=True,
     )
+
+
+def _hero_card_markup(card, featured: bool = False) -> str:
+    """카드 하나의 HTML. 그리드와 자동 순환이 같은 마크업을 쓴다."""
+    if card.get("art_url"):
+        pos = min(max(float(card.get("focal_x") or 0.6) * 100, 25), 85)
+        art = (f"<div class='ow-card-art' style=\"background-image:url('"
+               f"{html.escape(str(card['art_url']), quote=True)}');"
+               f"background-position:{pos:.0f}% 28%;\"></div>")
+    else:
+        art = "<div class='ow-card-art' style='background:#1b1e2e;'></div>"
+
+    rank_html = ""
+    if card.get("rank"):
+        rank_html = (f"<div class='ow-card-rank'>"
+                     f"{rank_badge(card['rank'], card.get('rank_color', '#fff'))}</div>")
+
+    body = (
+        f"<div class='ow-card-body'>"
+        f"<div class='ow-card-metric nowrap' style=\"color:{card.get('metric_color', '#fff')};\">"
+        f"{html.escape(str(card.get('metric', '-')))}</div>"
+        f"<div class='ow-card-name nowrap'>{html.escape(str(card.get('name', '-')))}</div>"
+        f"<div class='ow-card-sub nowrap'>{html.escape(str(card.get('sub', '')))}</div>"
+        f"</div>"
+    )
+    classes = "ow-card featured" if featured else "ow-card"
+    href = card.get("href")
+    if href:
+        return (f"<a class='{classes}' target='_self' "
+                f"href='{html.escape(str(href), quote=True)}'>{art}{rank_html}{body}</a>")
+    return f"<div class='{classes}'>{art}{rank_html}{body}</div>"
 
 
 def render_hero_card_grid(cards) -> None:
@@ -475,5 +525,41 @@ def render_hero_portrait_card(hero_name: str, art: dict | None, accent: str, cap
         f"<div class='portrait-card-body'>"
         f"<div class='portrait-card-name nowrap'>{html.escape(hero_name)}</div>"
         f"{cap}</div></div>",
+        unsafe_allow_html=True,
+    )
+
+
+def render_rotating_card_groups(groups, interval: int = 6) -> None:
+    """제목 + 카드 4장을 한 묶음으로 자동 순환시킨다.
+
+    Streamlit 에서 타이머 재실행을 걸면 매 주기마다 전체 스크립트가 다시 돌아 비싸고
+    상호작용도 끊긴다. 그래서 세 묶음을 모두 렌더해 두고 CSS 키프레임으로만 전환한다.
+    (rerun 0회, 사용자가 필터를 만지는 동안에도 끊기지 않는다.)
+
+    groups: [(제목, [카드 dict, ...]), ...]
+    """
+    if not groups:
+        return
+    count = len(groups)
+    total = interval * count
+    blocks = []
+    for index, (title, cards) in enumerate(groups):
+        delay = -interval * (count - index) % total
+        items = "".join(_hero_card_markup(c, featured=(i == 0))
+                        for i, c in enumerate(cards))
+        blocks.append(
+            f"<div class='rot-slide' style='animation-duration:{total}s;"
+            f"animation-delay:{-interval * index}s;'>"
+            f"<div class='eyebrow rot-title'>{html.escape(str(title))}</div>"
+            f"<div class='ow-card-grid'>{items}</div>"
+            f"</div>"
+        )
+    dots = "".join(
+        f"<i style='animation-duration:{total}s;animation-delay:{-interval * i}s;'></i>"
+        for i in range(count)
+    )
+    st.markdown(
+        f"<div class='rot-wrap' style='--rot-total:{total}s;'>{''.join(blocks)}"
+        f"<div class='rot-dots'>{dots}</div></div>",
         unsafe_allow_html=True,
     )

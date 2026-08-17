@@ -119,6 +119,25 @@ TIER_LABELS = {
     "Grandmaster": "그랜드마스터",
 }
 TIER_ORDER = ["All", "Bronze", "Silver", "Gold", "Platinum", "Diamond", "Master", "Grandmaster"]
+# 드롭다운 목록에 붙일 표식. selectbox 옵션은 평문만 받아서 SVG/이미지를 못 넣는다.
+# 티어 색과 맞춘 컬러 원으로 대신한다.
+TIER_ICONS = {
+    "All": "⚫",
+    "Bronze": "🟤",
+    "Silver": "⚪",
+    "Gold": "🟡",
+    "Platinum": "🟢",
+    "Diamond": "🔵",
+    "Master": "🟠",
+    "Grandmaster": "🔴",
+}
+ROLE_ICONS = {
+    "All": "⬜",
+    "Tank": "🛡️",
+    "Damage": "⚔️",
+    "Support": "➕",
+    "Unknown": "❔",
+}
 ROLE_ORDER = ["All", "Tank", "Damage", "Support"]
 NUMERIC_STATS_COLUMNS = [
     "win_rate",
@@ -347,6 +366,15 @@ def get_hero_subrole(hero_name):
 
 def translate_subrole_name(subrole_name):
     return SUBROLE_LABELS.get(str(subrole_name), str(subrole_name))
+
+
+def tier_option_label(tier):
+    """드롭다운 표시용 "{아이콘} 골드" 라벨."""
+    return f"{TIER_ICONS.get(tier, '⚫')} {translate_tier_name(tier)}"
+
+
+def role_option_label(role):
+    return f"{ROLE_ICONS.get(role, '❔')} {translate_role_name(role)}"
 
 
 def translate_tier_name(tier_name):

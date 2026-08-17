@@ -6,6 +6,8 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from app_data import (
+    role_option_label,
+    tier_option_label,
     DATA_CACHE_TTL,
     get_hero_banner_art,
     get_hero_color,
@@ -242,7 +244,7 @@ with controls_1[0]:
         "포지션",
         role_options,
         index=get_initial_index(role_options, "All"),
-        format_func=translate_role_name,
+        format_func=role_option_label,
         placeholder="포지션 선택",
     )
 
@@ -255,7 +257,18 @@ if not hero_options:
     st.warning("선택한 포지션에 해당하는 영웅 데이터가 없습니다.")
     st.stop()
 
-preferred_hero = st.session_state.get("detail_hero")
+# 기본 선택이 알파벳 순 1번이라 신규 영웅(D.MON 등)이 잡히고, 그 영웅은 스냅샷이 1개뿐이라
+# 처음 들어온 사람은 매번 빈 차트를 본다. 히스토리가 가장 많은 영웅을 기본값으로 둔다.
+_date_col = "period_date" if "period_date" in role_df.columns else "update_date"
+_snapshot_counts = (
+    role_df.groupby(role_df["hero"].astype(str))[_date_col].nunique()
+    if _date_col in role_df.columns else None
+)
+_richest_hero = (
+    str(_snapshot_counts.idxmax()) if _snapshot_counts is not None and not _snapshot_counts.empty
+    else hero_options[0]
+)
+preferred_hero = st.session_state.get("detail_hero") or _richest_hero
 with controls_1[1]:
     selected_hero = st.selectbox(
         "영웅",
@@ -273,7 +286,7 @@ with controls_1[2]:
         "티어",
         tier_options,
         index=get_initial_index(tier_options, preferred_tier),
-        format_func=translate_tier_name,
+        format_func=tier_option_label,
         placeholder="티어 선택",
     )
 
