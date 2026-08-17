@@ -1436,3 +1436,122 @@ body [data-baseweb="popover"] ::-webkit-scrollbar-track {
     .hero-showcase-art { display: none; }
     .hero-showcase-left { max-width: 100%; }
 }
+
+/* ---------------------------------------------------------------------------
+   지시서 STEP 4 - 시계열 페이지
+   --------------------------------------------------------------------------- */
+
+.kpi-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.kpi-card {
+    border: 1px solid var(--app-line);
+    border-radius: var(--r-inner);
+    background: linear-gradient(180deg, #171a28 0%, #101320 100%);
+    padding: 14px 16px 15px;
+}
+
+.kpi-value {
+    font-family: var(--app-num-font);
+    font-size: 56px;
+    line-height: 1;
+    color: #fff;
+    margin-top: 6px;
+}
+
+.kpi-delta {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 0.76rem;
+    font-weight: 700;
+}
+
+.kpi-delta.up {
+    color: #bbf7d0;
+    background: rgba(52, 211, 153, 0.14);
+    border: 1px solid rgba(52, 211, 153, 0.4);
+}
+
+.kpi-delta.down {
+    color: #fecaca;
+    background: rgba(248, 113, 113, 0.14);
+    border: 1px solid rgba(248, 113, 113, 0.4);
+}
+
+.portrait-card {
+    position: relative;
+    height: 300px;
+    border-radius: var(--r-card);
+    overflow: hidden;
+    border: 1px solid var(--app-line);
+    background: linear-gradient(160deg, var(--pc-accent, #3b1a5c) 0%, #12111f 78%);
+}
+
+.portrait-card-art {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: bottom center;
+}
+
+.portrait-card-art.bg {
+    background-size: cover;
+}
+
+.portrait-card-body {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 12px 14px 14px;
+    background: linear-gradient(180deg, transparent, rgba(8, 6, 16, 0.9));
+}
+
+.portrait-card-name {
+    font-family: var(--app-display-font);
+    color: #fff;
+    font-size: 1.5rem;
+    line-height: 1.1;
+}
+
+.portrait-card-cap {
+    color: var(--app-muted);
+    font-size: 0.78rem;
+    font-weight: 650;
+    margin-top: 2px;
+}
+
+/* 탭 헤더를 pill 로. 활성 탭은 액센트 밑줄. */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 6px;
+    border-bottom: 1px solid var(--app-line);
+}
+
+.stTabs [data-baseweb="tab"] {
+    height: 40px;
+    padding: 0 16px;
+    border-radius: 10px 10px 0 0;
+    color: var(--app-muted) !important;
+    font-weight: 700;
+}
+
+.stTabs [aria-selected="true"] {
+    color: var(--app-accent) !important;
+    background: rgba(255, 70, 85, 0.08);
+}
+
+.stTabs [data-baseweb="tab-highlight"] {
+    background-color: var(--app-accent) !important;
+}
+
+@media (max-width: 900px) {
+    .kpi-row { grid-template-columns: 1fr; }
+}

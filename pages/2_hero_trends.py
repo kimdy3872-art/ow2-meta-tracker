@@ -7,6 +7,8 @@ import streamlit as st
 
 from app_data import (
     DATA_CACHE_TTL,
+    get_hero_banner_art,
+    get_hero_color,
     get_hero_image_url,
     get_initial_index,
     get_ordered_roles,
@@ -22,6 +24,8 @@ from ui import (
     GLOBAL_SURFACE_COLOR,
     GLOBAL_TEXT_COLOR,
     apply_global_theme,
+    render_hero_portrait_card,
+    render_kpi_row,
     render_page_hero,
     render_sidebar_navigation,
     style_chart,
@@ -366,33 +370,40 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-metric_cols = st.columns(4)
-for col, metric in zip(metric_cols[:3], ["win_rate", "pick_rate", "ban_rate"]):
-    if metric not in map_df.columns:
-        col.metric(METRIC_CONFIG[metric]["label"], "-")
-        continue
+# 지시서 STEP 4: st.metric 은 숫자 크기 제어가 어려워 커스텀 HTML 로 간다.
+_art_col, _kpi_col = st.columns([1, 2.6], gap="large")
 
-    suffix = METRIC_CONFIG[metric]["suffix"]
-    latest_value = latest_row.get(metric)
-    previous_value = previous_row.get(metric) if previous_row is not None else None
-    delta = latest_value - previous_value if previous_value is not None and pd.notna(previous_value) else None
-    col.metric(
-        METRIC_CONFIG[metric]["label"],
-        format_metric_value(latest_value, suffix),
-        format_delta(delta, suffix),
+with _art_col:
+    render_hero_portrait_card(
+        selected_hero,
+        get_hero_banner_art(selected_hero),
+        get_hero_color(selected_hero),
+        caption=f"{translate_tier_name(selected_tier)} · 랭크 {latest_rank}",
     )
 
-with metric_cols[3]:
-    st.markdown(
-        f"""
-        <div style="border:1px solid {GLOBAL_BORDER_COLOR};border-radius:12px;padding:10px 12px;
-            background:linear-gradient(180deg,rgba(18,31,54,0.88),rgba(9,15,28,0.92));">
-            <div style="color:{GLOBAL_MUTED_TEXT_COLOR};font-size:0.86rem;margin-bottom:5px;">현재 랭크</div>
-            <div style="color:{rank_color(latest_rank)};font-size:2rem;font-weight:900;line-height:1;">{latest_rank}</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+with _kpi_col:
+    _kpis = []
+    for metric in ["win_rate", "pick_rate", "ban_rate"]:
+        cfg = METRIC_CONFIG[metric]
+        if metric not in map_df.columns:
+            _kpis.append((cfg["label"], "-", "", None, True))
+            continue
+        latest_value = latest_row.get(metric)
+        previous_value = previous_row.get(metric) if previous_row is not None else None
+        delta = (
+            latest_value - previous_value
+            if previous_value is not None and pd.notna(previous_value) and pd.notna(latest_value)
+            else None
+        )
+        value_text = "-" if pd.isna(latest_value) else f"{float(latest_value):.1f}"
+        _kpis.append((
+            cfg["label"],
+            value_text,
+            cfg["suffix"],
+            None if delta is None else f"{abs(delta):.1f}{cfg['suffix']}",
+            bool(delta is not None and delta >= 0),
+        ))
+    render_kpi_row(_kpis)
 
 if not chart_metrics:
     st.warning("차트에 표시할 지표가 없습니다.")
@@ -428,13 +439,11 @@ def render_metric_chart(metric, chart_df):
     else:
         y_range = None
 
-    style_chart(fig, title=cfg["label"], height=300)
+    style_chart(fig, height=260)
     fig.update_layout(
-        margin=dict(l=10, r=10, t=34, b=10),
+        margin=dict(l=10, r=10, t=12, b=10),
         hovermode="x unified",
         showlegend=False,
-        # 제목 색은 지표별 색을 그대로 쓴다(승률 초록 / 픽률 파랑 / 밴률 빨강).
-        title=dict(font=dict(color=cfg["color"])),
         xaxis=dict(title="스냅샷 날짜"),
         yaxis=dict(
             title=f"{cfg['label']} ({suffix})" if suffix else cfg["label"],
@@ -445,8 +454,11 @@ def render_metric_chart(metric, chart_df):
     st.plotly_chart(fig, config={"displayModeBar": True})
 
 
-for metric in chart_metrics:
-    render_metric_chart(metric, map_df)
+# 지시서 STEP 4: 3개를 세로로 쌓지 않고 탭으로 전환.
+_tabs = st.tabs([METRIC_CONFIG[m]["label"] for m in chart_metrics])
+for _tab, _metric in zip(_tabs, chart_metrics):
+    with _tab:
+        render_metric_chart(_metric, map_df)
 
 table_cols = ["period_label", "win_rate", "pick_rate", "ban_rate", "rank"]
 table_cols = [col for col in table_cols if col in map_df.columns]

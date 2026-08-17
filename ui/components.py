@@ -396,3 +396,55 @@ def render_rail_rows(title: str, rows, empty_text: str = "") -> None:
         f"<div class='rail-card'><div class='eyebrow'>{html.escape(title)}</div>{body}</div>",
         unsafe_allow_html=True,
     )
+
+
+def render_kpi_row(items) -> None:
+    """KPI 카드 행. st.metric 은 숫자 크기를 못 키워서 직접 그린다.
+
+    items: (라벨, 값, 단위, 델타 텍스트 또는 None, 델타 양수 여부) 리스트.
+    """
+    cells = []
+    for label, value, unit, delta_text, delta_up in items:
+        delta_html = ""
+        if delta_text:
+            cls = "up" if delta_up else "down"
+            arrow = "▲" if delta_up else "▼"
+            delta_html = (
+                f"<span class='kpi-delta {cls} nowrap'>{arrow} {html.escape(str(delta_text))}</span>"
+            )
+        unit_html = f"<span class='unit'>{html.escape(str(unit))}</span>" if unit else ""
+        cells.append(
+            "<div class='kpi-card'>"
+            f"<div class='eyebrow'>{html.escape(str(label))}</div>"
+            f"<div class='kpi-value nowrap'>{html.escape(str(value))}{unit_html}</div>"
+            f"{delta_html}</div>"
+        )
+    st.markdown(f"<div class='kpi-row'>{''.join(cells)}</div>", unsafe_allow_html=True)
+
+
+def render_hero_portrait_card(hero_name: str, art: dict | None, accent: str, caption: str = "") -> None:
+    """시계열 상단 좌측의 영웅 세로 카드."""
+    art = art or {}
+    inner = ""
+    if art.get("cutout_url"):
+        inner = (
+            f"<img class='portrait-card-art' alt='' aria-hidden='true' "
+            f"onerror=\"this.style.display='none'\" "
+            f"src='{html.escape(art['cutout_url'], quote=True)}'>"
+        )
+    elif art.get("splash_url"):
+        pos = min(max(float(art.get("focal_x") or 0.66) * 100, 55), 88)
+        inner = (
+            f"<div class='portrait-card-art bg' style=\"background-image:url('"
+            f"{html.escape(art['splash_url'], quote=True)}');background-position:{pos:.0f}% 26%;\"></div>"
+        )
+    cap = f"<div class='portrait-card-cap nowrap'>{html.escape(caption)}</div>" if caption else ""
+    # 한 줄로 낸다. 조각이 비면 빈 줄이 생기고, 그 뒤 들여쓴 줄을 Streamlit 이 코드 블록으로
+    # 파싱해 HTML 이 그대로 노출된다.
+    st.markdown(
+        f"<div class='portrait-card' style='--pc-accent:{accent};'>{inner}"
+        f"<div class='portrait-card-body'>"
+        f"<div class='portrait-card-name nowrap'>{html.escape(hero_name)}</div>"
+        f"{cap}</div></div>",
+        unsafe_allow_html=True,
+    )

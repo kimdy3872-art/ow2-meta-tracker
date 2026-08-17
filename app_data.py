@@ -169,6 +169,7 @@ RANK_THRESHOLDS = {
 
 HERO_NAME_TO_API_NAME = {
     "D.VA": "D.Va",
+    "D.MON": "D.Mon",
     "겐지": "Genji",
     "도미나": "Domina",
     "둠피스트": "Doomfist",
