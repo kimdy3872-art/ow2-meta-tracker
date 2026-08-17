@@ -1,0 +1,8 @@
+# 위젯 기본색만 담당한다. 카드/타이포는 전부 assets/style.css 로 간다.
+[theme]
+base = "dark"
+primaryColor = "#ff4655"
+backgroundColor = "#0a0c12"
+secondaryBackgroundColor = "#12141c"
+textColor = "#f2f4f8"
+font = "sans serif"
