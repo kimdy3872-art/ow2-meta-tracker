@@ -1,6 +1,14 @@
-"""Plotly 공통 테마. 페이지별 개별 스타일 코드는 두지 않는다."""
+"""Plotly 공통 테마.
+
+pio.templates 에 "ow2" 를 등록하고 기본값으로 걸어서, 페이지에서 fig 를 만들면 배경·폰트·
+축 색이 자동으로 붙게 한다. 페이지별 개별 스타일 코드는 두지 않는다.
+style_chart() 는 제목·높이처럼 차트마다 다른 것만 얹는다.
+"""
 
 from __future__ import annotations
+
+import plotly.graph_objects as go
+import plotly.io as pio
 
 from .tokens import (
     GLOBAL_ACCENT_COLOR,
@@ -76,3 +84,39 @@ def style_chart(fig, title: str = "", height: int | None = None, scene: bool = F
 
     fig.update_layout(**layout)
     return fig
+
+
+def _register_template() -> None:
+    axis = dict(
+        gridcolor=GLOBAL_CHART_GRID_COLOR,
+        zerolinecolor=GLOBAL_CHART_ZERO_COLOR,
+        linecolor=GLOBAL_CHART_AXIS_COLOR,
+        tickcolor=GLOBAL_CHART_AXIS_COLOR,
+        tickfont=dict(family=GLOBAL_DISPLAY_FONT_FAMILY, size=12,
+                      color=GLOBAL_MUTED_TEXT_COLOR),
+        zeroline=False,
+    )
+    pio.templates["ow2"] = go.layout.Template(
+        layout=dict(
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor=GLOBAL_CHART_PLOT_BG,
+            font=dict(family=GLOBAL_FONT_FAMILY, size=12, color=GLOBAL_TEXT_COLOR),
+            xaxis=axis,
+            yaxis=axis,
+            hoverlabel=dict(
+                bgcolor="#1e222e",
+                bordercolor=GLOBAL_ACCENT_COLOR,
+                font=dict(family=GLOBAL_FONT_FAMILY, size=12, color=GLOBAL_TEXT_COLOR),
+            ),
+            legend=dict(
+                bgcolor="rgba(18, 20, 33, 0.82)",
+                bordercolor="rgba(148, 150, 190, 0.22)",
+                borderwidth=1,
+            ),
+            margin=dict(l=40, r=20, t=20, b=40),
+        )
+    )
+    pio.templates.default = "ow2"
+
+
+_register_template()
