@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import html
+import urllib.parse
 
 import streamlit as st
 
@@ -238,3 +239,160 @@ def render_sidebar_navigation(current_page: str, data_date: str | None = None) -
                 f'<div class="ow-nav-foot-value">{html.escape(str(data_date))}</div></div>',
                 unsafe_allow_html=True,
             )
+
+
+# ---------------------------------------------------------------------------
+# 지시서 STEP 2 - 랭크 순위표 페이지 컴포넌트
+# ---------------------------------------------------------------------------
+
+def render_hero_showcase(
+    hero_name: str,
+    art: dict | None,
+    accent: str,
+    watermark: str,
+    stats,
+    eyebrow: str = "TOP HERO",
+    meta: str = "",
+) -> None:
+    """페이지 시그니처 HERO 카드.
+
+    위젯을 조합하지 않고 HTML 한 덩어리로 렌더한다. 아트가 카드 위로 삐져나와야 해서
+    래퍼에 여백을 주고 카드만 overflow: hidden 으로 둔다.
+    """
+    art = art or {}
+    cutout = art.get("cutout_url")
+    splash = art.get("splash_url")
+    focal = art.get("focal_x") or 0.66
+
+    layers = [f"linear-gradient(115deg, {accent} 0%, #2a1440 58%, #140d24 100%)"]
+    bg_style = ";".join(
+        [f"background-image:{layers[0]}"]
+    )
+    art_html = ""
+    if cutout:
+        art_html = (
+            f"<img class='hero-showcase-art' alt='' aria-hidden='true' "
+            f"onerror=\"this.style.display='none'\" "
+            f"src='{html.escape(cutout, quote=True)}'>"
+        )
+    elif splash:
+        # 컷아웃이 없는 영웅은 스플래시를 우측에 깔고 스크림으로 덮는다.
+        pos = min(max(focal * 100, 55), 88)
+        bg_style = (
+            f"background-image:{layers[0]},url('{html.escape(splash, quote=True)}');"
+            f"background-position:center,{pos:.0f}% 28%;"
+            f"background-size:cover,cover;"
+        )
+
+    stat_html = "".join(
+        "<div class='hero-showcase-stat'>"
+        f"<div class='eyebrow'>{html.escape(str(label))}</div>"
+        f"<div class='hero-showcase-stat-value nowrap'>{value}</div>"
+        "</div>"
+        for label, value in stats
+    )
+    meta_html = (
+        f"<div class='hero-showcase-meta nowrap'>{html.escape(meta)}</div>" if meta else ""
+    )
+
+    st.markdown(
+        f"""
+        <section class="hero-showcase">
+            <div class="hero-showcase-card" style="{bg_style}">
+                <div class="hero-showcase-num">{html.escape(watermark)}</div>
+                <div class="hero-showcase-left">
+                    <span class="eyebrow">{html.escape(eyebrow)}</span>
+                    <h2 class="hero-showcase-name display">{html.escape(hero_name)}</h2>
+                    {meta_html}
+                    <div class="hero-showcase-stats">{stat_html}</div>
+                </div>
+            </div>
+            {art_html}
+        </section>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_hero_scroller(cards, favorites=None) -> None:
+    """상위 영웅 세로 카드 가로 스크롤. 우상단 하트로 즐겨찾기 토글."""
+    favorites = favorites or set()
+    items = []
+    for card in cards:
+        name = str(card.get("name", "-"))
+        art_url = card.get("art_url")
+        pos = min(max(float(card.get("focal_x") or 0.62) * 100, 25), 85)
+        art = (
+            f"<div class='hero-tile-art' style=\"background-image:url('"
+            f"{html.escape(str(art_url), quote=True)}');background-position:{pos:.0f}% 24%;\"></div>"
+            if art_url else "<div class='hero-tile-art' style='background:#1b1e2e;'></div>"
+        )
+        is_fav = name in favorites
+        heart = (
+            f"<a class='hero-tile-fav{' on' if is_fav else ''}' target='_self' "
+            f"href='?fav={urllib.parse.quote(name, safe='')}' "
+            f"title='즐겨찾기'>{'♥' if is_fav else '♡'}</a>"
+        )
+        items.append(
+            f"<div class='hero-tile'>"
+            f"<a class='hero-tile-link' target='_self' "
+            f"href='?hero={urllib.parse.quote(name, safe='')}'>{art}"
+            f"<div class='hero-tile-body'>"
+            f"<div class='hero-tile-metric nowrap' style=\"color:{card.get('metric_color', '#fff')};\">"
+            f"{html.escape(str(card.get('metric', '-')))}</div>"
+            f"<div class='hero-tile-name nowrap'>{html.escape(name)}</div>"
+            f"</div></a>{heart}</div>"
+        )
+    st.markdown(f"<div class='hero-scroller'>{''.join(items)}</div>", unsafe_allow_html=True)
+
+
+def render_map_cards(cards) -> None:
+    """전장 카드. 첫 카드(승률 1위)만 위로 띄운다."""
+    items = []
+    for index, card in enumerate(cards):
+        cls = "map-card featured" if index == 0 else "map-card"
+        img = html.escape(str(card.get("image") or ""), quote=True)
+        items.append(
+            f"<div class='{cls}'>"
+            f"<div class='map-card-art' style=\"background-image:url('{img}');\"></div>"
+            f"<div class='map-card-body'>"
+            f"<div class='map-card-name nowrap'>{html.escape(str(card.get('name', '-')))}</div>"
+            f"<div class='map-card-metric nowrap'>{html.escape(str(card.get('metric', '-')))}</div>"
+            f"</div></div>"
+        )
+    st.markdown(f"<div class='map-grid'>{''.join(items)}</div>", unsafe_allow_html=True)
+
+
+def render_meta_score_card(score, rank, hero_name) -> None:
+    """META SCORE 카드. 종합 점수를 0~1000 으로 편 표시용 값."""
+    st.markdown(
+        f"""
+        <div class="rail-card meta-score-card">
+            <div class="eyebrow">Meta Score</div>
+            <div class="meta-score-value nowrap">{int(round(score))}<span class="unit">/1000</span></div>
+            <div class="meta-score-sub nowrap">{html.escape(str(hero_name))} · 랭크 {html.escape(str(rank))}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_rail_rows(title: str, rows, empty_text: str = "") -> None:
+    """우측 레일 공통 행 목록. rows: (초상화 url, 이름, 값 텍스트, 값 색)."""
+    if not rows:
+        body = f"<div class='rail-empty'>{html.escape(empty_text)}</div>" if empty_text else ""
+    else:
+        body = "".join(
+            f"<a class='rail-row' target='_self' "
+            f"href='?hero={urllib.parse.quote(str(name), safe='')}'>"
+            + (f"<img class='rail-row-img' src='{html.escape(str(img), quote=True)}' alt=''>"
+               if img else "<div class='rail-row-img'></div>")
+            + f"<div class='rail-row-name nowrap'>{html.escape(str(name))}</div>"
+            f"<div class='rail-row-value nowrap' style=\"color:{color};\">{html.escape(str(value))}</div>"
+            "</a>"
+            for img, name, value, color in rows
+        )
+    st.markdown(
+        f"<div class='rail-card'><div class='eyebrow'>{html.escape(title)}</div>{body}</div>",
+        unsafe_allow_html=True,
+    )

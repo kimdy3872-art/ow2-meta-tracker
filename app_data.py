@@ -548,8 +548,78 @@ def get_hero_image_url(hero_name):
     )
 
 
+@st.cache_data(ttl=DATA_CACHE_TTL)
+def load_score_deltas(data_tier):
+    """직전 스냅샷 대비 종합 점수 변화. {영웅명: delta}
+
+    일간 히스토리 파케이에 날짜별 total_score 가 있으므로 최근 두 날짜를 비교한다.
+    비교할 스냅샷이 하나뿐이면 빈 dict 를 돌려주고, 호출부는 섹션을 생략한다.
+    """
+    frames = []
+    for path in list_data_files(os.path.join("data", "history", "daily")):
+        try:
+            frames.append(read_data_parquet(path))
+        except Exception:
+            continue
+    if not frames:
+        return {}
+
+    df = pd.concat(frames, ignore_index=True)
+    needed = {"hero", "update_date", "total_score", "data_tier", "map"}
+    if not needed.issubset(df.columns):
+        return {}
+
+    df = df[(df["data_tier"] == data_tier) & (df["map"].astype(str) == "all-maps")].copy()
+    df["update_date"] = df["update_date"].astype(str)
+    dates = sorted(df["update_date"].dropna().unique())
+    if len(dates) < 2:
+        return {}
+
+    latest = df[df["update_date"] == dates[-1]].set_index("hero")["total_score"]
+    previous = df[df["update_date"] == dates[-2]].set_index("hero")["total_score"]
+    delta = (latest - previous).dropna()
+    return {str(hero): float(value) for hero, value in delta.items()}
+
+
+def normalize_meta_score(series, reference=None):
+    """z-score 기반 종합 점수를 표시용 0~1000 으로 편다.
+
+    reference 를 주면 그 분포의 min/max 를 기준으로 편다. 정규화 풀과 조회 대상을 분리해야
+    하는 경우(전 티어 기준으로 특정 영웅 값을 환산)에 쓴다.
+    랭크 산정 자체는 기존 z-score 를 그대로 쓴다. 이건 화면 표시 전용이다.
+    """
+    values = pd.to_numeric(series, errors="coerce")
+    base = values if reference is None else pd.to_numeric(reference, errors="coerce")
+    lo, hi = base.min(), base.max()
+    if pd.isna(lo) or pd.isna(hi) or hi <= lo:
+        return values.notna().astype(float) * 500.0
+    return ((values - lo) / (hi - lo) * 1000.0).clip(0, 1000)
+
+
 HERO_ART_MANIFEST_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                       "data", "hero_art_manifest.json")
+HERO_COLORS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                "assets", "hero_colors.json")
+
+
+@st.cache_data
+def load_hero_colors():
+    """영웅 대표색. scripts/extract_hero_colors.py 가 만든다."""
+    try:
+        with open(HERO_COLORS_PATH, encoding="utf-8") as fp:
+            return json.load(fp)
+    except Exception:
+        return {}
+
+
+def get_hero_color(hero_name, fallback="#3b1a5c"):
+    api_name = HERO_NAME_TO_API_NAME.get(hero_name, hero_name)
+    for key, entry in (load_hero_art_manifest() or {}).items():
+        if key == api_name:
+            manifest_key = entry.get("cutout_path", "")
+            slug = os.path.splitext(os.path.basename(manifest_key))[0]
+            return load_hero_colors().get(slug, fallback)
+    return fallback
 
 
 @st.cache_data

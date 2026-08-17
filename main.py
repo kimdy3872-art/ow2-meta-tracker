@@ -6,6 +6,10 @@ from app_data import (
     ROLE_ORDER,
     TIER_ORDER,
     get_hero_banner_art,
+    get_hero_color,
+    get_map_image_url,
+    load_score_deltas,
+    normalize_meta_score,
     get_hero_image_url,
     load_latest_balance_patch_note,
     load_latest_patch_ai_analysis,
@@ -25,8 +29,12 @@ from ui import (
     GLOBAL_SURFACE_COLOR,
     GLOBAL_TEXT_COLOR,
     apply_global_theme,
-    render_hero_banner,
     render_hero_card_grid,
+    render_hero_scroller,
+    render_hero_showcase,
+    render_map_cards,
+    render_meta_score_card,
+    render_rail_rows,
     render_rank_rail,
     render_page_hero,
     render_sidebar_navigation,
@@ -401,7 +409,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-render_patch_intelligence_block()
+# 패치노트는 순위표 아래 expander 로 내렸다(지시서: 상단은 시각적 임팩트 우선).
 
 # -------------------------------------------------
 # 4. 데이터 필터링
@@ -593,11 +601,20 @@ if df_filtered.empty:
 # -------------------------------------------------
 
 
-def _build_top_cards(metric_col, label, top_df, metric_color):
+def _format_metric(metric_col, value):
+    """종합 점수는 비율이 아니라 z-score 라 % 를 붙이면 안 된다."""
+    if pd.isna(value):
+        return "-"
+    if metric_col == "total_score":
+        return f"{float(value):+.2f}"
+    return f"{float(value):.1f}%"
+
+
+def _build_top_cards(metric_col, label, top_df, metric_color, limit=4):
     """상위 영웅을 아트 카드로. 배너와 같은 스플래시 아트 + 초점 좌표를 재사용한다."""
     rank_color_map = {"S": "#ef4444", "A": "#f59e0b", "B": "#22c55e", "C": GLOBAL_INFO_COLOR, "D": "#94a3b8"}
     cards = []
-    for i in range(min(4, len(top_df))):
+    for i in range(min(limit, len(top_df))):
         row = top_df.iloc[i]
         hero_name = str(row["hero"])
         value = row[metric_col]
@@ -607,7 +624,7 @@ def _build_top_cards(metric_col, label, top_df, metric_color):
             # 카드가 세로형이라 초상화(정사각)보다 스플래시 아트가 덜 늘어난다.
             "art_url": art.get("splash_url") or get_hero_image_url(hero_name),
             "focal_x": art.get("focal_x", 0.6),
-            "metric": f"{float(value):.1f}%" if pd.notna(value) else "-",
+            "metric": _format_metric(metric_col, value),
             "metric_color": metric_color,
             "sub": f"{label} {i + 1}위 · {translate_role_name(str(row.get('role', '')))}",
             "rank": str(row.get("rank", "")),
@@ -645,9 +662,28 @@ selected_top4 = st.radio(
 )
 top4_col, top4_df, top4_color = _top4_options[selected_top4]
 
-# 섹션 라벨은 컬럼 바깥에 둔다. 왼쪽 컬럼 안에 넣으면 그만큼 오른쪽 패널이 위로 어긋난다.
+def _map_cards(hero_name, limit=4):
+    """전장별 승률 상위 카드. 전장 데이터가 없으면 빈 리스트."""
+    if "map" not in df_raw.columns:
+        return []
+    rows = df_raw[
+        (df_raw["data_tier"] == selected_tier)
+        & (df_raw["hero"].astype(str) == str(hero_name))
+        & (df_raw["map"].astype(str) != "all-maps")
+        & (df_raw["win_rate"].notna())
+    ].sort_values("win_rate", ascending=False).head(limit)
+    return [
+        {
+            "name": str(r.get("map_name") or r.get("map")),
+            "metric": f"{float(r['win_rate']):.1f}%",
+            "image": get_map_image_url(str(r["map"])),
+        }
+        for _, r in rows.iterrows()
+    ]
+
+
 st.markdown(
-    f"<div class='ow-rail-title' style='margin-bottom:7px;'>{selected_top4} TOP 4</div>",
+    f"<div class='eyebrow' style='margin-bottom:7px;'>{selected_top4} TOP 4</div>",
     unsafe_allow_html=True,
 )
 _grid_col, _rail_col = st.columns([3.1, 1], gap="small")
@@ -709,49 +745,120 @@ display_df = df_filtered.sort_values(
     ascending=False
 )[display_cols]
 
-def render_top_hero_banner(df):
-    """현재 필터에서 1위인 영웅을 배너로 보여준다."""
-    if df.empty:
-        return
+if display_df.empty:
+    st.info("선택한 조건에 해당하는 영웅이 없습니다.")
+    st.stop()
 
-    top = df.iloc[0]
-    hero = str(top["hero"])
+# 지시서 STEP 2: 사이드바(메뉴) + 메인 + 우측 레일. 지시서의 left 컬럼은 사이드바와
+# 역할이 겹쳐 두지 않는다.
+_main_col, _rail_col2 = st.columns([3.4, 1.5], gap="large")
 
-    def pct(value):
-        return "-" if pd.isna(value) else f"{float(value):.1f}%"
+with _main_col:
+    _top = display_df.iloc[0]
+    _top_hero = str(_top["hero"])
 
-    stats = [
-        ("픽률", pct(top.get("pick_rate"))),
-        ("승률", pct(top.get("win_rate"))),
-        ("밴률", pct(top.get("ban_rate"))),
-        ("종합 점수", "-" if pd.isna(top.get("total_score")) else f"{float(top['total_score']):.1f}"),
-    ]
+    def _pct(v):
+        return "-" if pd.isna(v) else f"{float(v):.1f}<span class='unit'>%</span>"
 
-    # 배경의 거대 숫자는 현재 정렬 기준값을 쓴다. 표에서 왜 1위인지가 바로 보이도록.
-    headline_value = top.get(sort_col)
-    if pd.isna(headline_value):
-        headline = ""
+    _watermark = _top.get(sort_col)
+    if pd.isna(_watermark):
+        _watermark_text = "-"
     elif sort_col == "total_score":
-        headline = f"{float(headline_value):.1f}"
+        _watermark_text = f"{float(_watermark):.1f}"
     else:
-        headline = f"{float(headline_value):.1f}%"
+        _watermark_text = f"{float(_watermark):.1f}%"
 
-    render_hero_banner(
-        hero_name=hero,
-        art=get_hero_banner_art(hero),
-        stats=stats,
-        headline=headline,
-        kicker=f"{sort_by} 1위",
+    render_hero_showcase(
+        hero_name=_top_hero,
+        art=get_hero_banner_art(_top_hero),
+        accent=get_hero_color(_top_hero),
+        watermark=_watermark_text,
+        eyebrow=f"{sort_by} 1위",
         meta=f"{translate_tier_name(selected_tier)} · "
-             f"{translate_role_name(str(top.get('role', '')))} · 랭크 {top.get('rank', '-')}",
+             f"{translate_role_name(str(_top.get('role', '')))} · 랭크 {_top.get('rank', '-')}",
+        stats=[
+            ("승률", _pct(_top.get("win_rate"))),
+            ("픽률", _pct(_top.get("pick_rate"))),
+            ("밴률", _pct(_top.get("ban_rate"))),
+            ("종합 점수", "-" if pd.isna(_top.get("total_score"))
+                       else f"{float(_top['total_score']):+.2f}"),
+        ],
     )
 
+    st.markdown("<div class='eyebrow'>Heroes</div>", unsafe_allow_html=True)
+    render_hero_scroller(
+        _build_top_cards(sort_col, sort_by, display_df.head(6), GLOBAL_GOOD_COLOR, limit=6),
+        favorites=st.session_state.get("favorites", set()),
+    )
 
-if not display_df.empty:
-    render_top_hero_banner(display_df)
+    _maps = _map_cards(_top_hero)
+    if _maps:
+        st.markdown("<div class='eyebrow'>Top Maps</div>", unsafe_allow_html=True)
+        render_map_cards(_maps)
+
     st.markdown(render_rank_table_html(display_df), unsafe_allow_html=True)
-else:
-    st.info("선택한 조건에 해당하는 영웅이 없습니다.")
+
+with _rail_col2:
+    # 정규화 풀에 그 영웅이 1위로 들어있으면 항상 1000 이 나온다. 전 티어를 기준으로 펴서
+    # "다른 티어까지 통틀어 어느 위치인가"를 보여준다.
+    # 같은 영웅이 티어마다 행을 가지므로 hero 로 dict 를 만들면 값이 덮어써진다.
+    # 기준 분포(전 티어)와 조회 값(현재 행)을 분리해서 환산한다.
+    _pool = df_raw[df_raw["map"].astype(str) == "all-maps"]["total_score"]
+    _meta_score = float(
+        normalize_meta_score(pd.Series([_top.get("total_score")]), reference=_pool).iloc[0]
+    )
+    render_meta_score_card(
+        _meta_score,
+        _top.get("rank", "-"),
+        _top_hero,
+    )
+
+    _deltas = load_score_deltas(selected_tier)
+    _delta_rows = []
+    if _deltas:
+        _ranked = sorted(
+            ((h, d) for h, d in _deltas.items()
+             if h in set(display_df["hero"].astype(str))),
+            key=lambda x: -abs(x[1]),
+        )[:4]
+        _delta_rows = [
+            (get_hero_image_url(h), h, f"{d:+.2f}",
+             GLOBAL_GOOD_COLOR if d >= 0 else GLOBAL_DANGER_COLOR)
+            for h, d in _ranked
+        ]
+    render_rail_rows("최근 변동", _delta_rows,
+                     empty_text="비교할 이전 스냅샷이 아직 없습니다.")
+
+    if "ban_rate" in display_df.columns:
+        _ban3 = display_df[display_df["ban_rate"].notna()].sort_values(
+            "ban_rate", ascending=False).head(3)
+        render_rail_rows(
+            "밴률 TOP 3",
+            [(get_hero_image_url(str(r["hero"])), str(r["hero"]),
+              f"{float(r['ban_rate']):.1f}%", GLOBAL_DANGER_COLOR)
+             for _, r in _ban3.iterrows()],
+        )
+
+    render_rank_rail(
+        "랭크 분포",
+        _rank_distribution_rows(display_df),
+        footnote=f"{translate_tier_name(selected_tier)} · 총 {len(display_df)}명",
+    )
+
+with st.expander("최근 패치노트"):
+    render_patch_intelligence_block()
+
+# 즐겨찾기 토글: 하트 링크가 ?fav=<영웅> 으로 들어온다.
+if "favorites" not in st.session_state:
+    st.session_state.favorites = set()
+fav_from_query = st.query_params.get("fav")
+if isinstance(fav_from_query, list):
+    fav_from_query = fav_from_query[0] if fav_from_query else None
+if fav_from_query:
+    fav_name = urllib.parse.unquote(str(fav_from_query))
+    st.session_state.favorites ^= {fav_name}
+    st.query_params.clear()
+    st.rerun()
 
 hero_from_query = st.query_params.get("hero")
 if isinstance(hero_from_query, list):

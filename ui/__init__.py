@@ -10,7 +10,12 @@ from .components import (  # noqa: F401
     NAV_ITEMS,
     render_hero_banner,
     render_hero_card_grid,
+    render_hero_scroller,
+    render_hero_showcase,
+    render_map_cards,
+    render_meta_score_card,
     render_page_hero,
+    render_rail_rows,
     render_rank_rail,
     render_sidebar_navigation,
 )
