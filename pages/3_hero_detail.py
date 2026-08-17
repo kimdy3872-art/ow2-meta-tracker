@@ -5,6 +5,8 @@ import os
 import re
 from app_data import (
     DATA_CACHE_TTL,
+    get_hero_banner_art,
+    get_hero_color,
     get_hero_image_url,
     get_hero_subrole,
     get_map_image_url,
@@ -27,6 +29,7 @@ from ui import (
     GLOBAL_TEXT_COLOR,
     GLOBAL_WARN_COLOR,
     apply_global_theme,
+    render_hero_showcase,
     render_page_hero,
     render_sidebar_navigation,
 )
@@ -266,21 +269,6 @@ def _fmt_score(value):
     return "-" if pd.isna(numeric_value) else f"{numeric_value:+.2f}"
 
 
-summary_items = [
-    ("승률", _fmt_percent(hero_row.get("win_rate")), GLOBAL_GOOD_COLOR),
-    ("픽률", _fmt_percent(hero_row.get("pick_rate")), GLOBAL_INFO_COLOR),
-    ("밴률", _fmt_percent(hero_row.get("ban_rate")), GLOBAL_DANGER_COLOR),
-    ("종합 점수", _fmt_score(hero_row.get("total_score")), GLOBAL_WARN_COLOR),
-]
-summary_html = "".join(
-    "\n".join(line.lstrip() for line in f"""
-    <div class="hero-summary-item">
-        <div class="hero-summary-label">{html.escape(label)}</div>
-        <div class="hero-summary-value" style="color:{color};">{html.escape(value)}</div>
-    </div>
-    """.splitlines())
-    for label, value, color in summary_items
-)
 rank_value = html.escape(str(hero_row.get("rank", "-")))
 score_strength_raw = str(hero_row.get("score_strength", "보통") or "보통")
 score_strength = html.escape(score_strength_raw)
@@ -296,107 +284,31 @@ score_strength_class = {
     "전문가픽": "hero-score-expert",
     "비주류": "hero-score-niche",
 }.get(score_strength_raw)
-score_strength_html = (
-    f'<div class="hero-score-pill {score_strength_class}">{score_strength}</div>'
-    if score_strength_class
-    else ""
+
+# 지시서 STEP 5: 나란히 놓인 5개 카드를 페이지1 과 같은 HERO 카드 1개로 통합.
+# 워터마크만 종합 점수로 바꾼다. 단위는 <span class="unit"> 로 분리해 줄바꿈을 막는다.
+def _stat(value, suffix="%"):
+    v = pd.to_numeric(value, errors="coerce")
+    return "-" if pd.isna(v) else f"{v:.1f}<span class='unit'>{suffix}</span>"
+
+
+_score_val = pd.to_numeric(hero_row.get("total_score"), errors="coerce")
+render_hero_showcase(
+    hero_name=hero_name,
+    art=get_hero_banner_art(hero_name),
+    accent=get_hero_color(hero_name),
+    watermark="-" if pd.isna(_score_val) else f"{_score_val:+.2f}",
+    eyebrow="Hero Deep Dive",
+    meta=f"{translate_tier_name(selected_tier)} · "
+         f"{translate_role_name(str(hero_row.get('role', '')))} · "
+         f"랭크 {hero_row.get('rank', '-')} · {score_strength_raw}",
+    stats=[
+        ("승률", _stat(hero_row.get("win_rate"))),
+        ("픽률", _stat(hero_row.get("pick_rate"))),
+        ("밴률", _stat(hero_row.get("ban_rate"))),
+        ("종합 점수", "-" if pd.isna(_score_val) else f"{_score_val:+.2f}"),
+    ],
 )
-summary_strip_html = "\n".join(line.lstrip() for line in f"""
-    <style>
-    .hero-summary-strip {{
-        display: grid;
-        grid-template-columns: repeat(5, minmax(0, 1fr));
-        gap: 10px;
-        margin: 8px 0 16px;
-    }}
-    .hero-summary-item {{
-        border: 1px solid {GLOBAL_BORDER_COLOR};
-        border-radius: 12px;
-        background: linear-gradient(180deg, {GLOBAL_SURFACE_COLOR} 0%, #0f1b31 100%);
-        padding: 11px 13px;
-        min-width: 0;
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
-    }}
-    .hero-summary-label {{
-        color: {GLOBAL_MUTED_TEXT_COLOR};
-        font-size: 0.78rem;
-        font-weight: 800;
-        letter-spacing: 0.04em;
-        margin-bottom: 5px;
-    }}
-    .hero-summary-value {{
-        font-size: 1.42rem;
-        font-weight: 900;
-        line-height: 1;
-    }}
-    .hero-summary-rank {{
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 10px;
-    }}
-    .hero-summary-rank strong {{
-        color: {GLOBAL_TEXT_COLOR};
-        font-size: 1.8rem;
-        line-height: 1;
-    }}
-    .hero-score-pill {{
-        display: inline-block;
-        padding: 2px 7px;
-        border-radius: 999px;
-        font-size: 0.68rem;
-        font-weight: 850;
-        letter-spacing: 0.02em;
-    }}
-    .hero-score-dominant {{
-        color: #fde68a;
-        background: rgba(250, 204, 21, 0.14);
-        border: 1px solid rgba(250, 204, 21, 0.36);
-    }}
-    .hero-score-overheated {{
-        color: #fdba74;
-        background: rgba(249, 115, 22, 0.14);
-        border: 1px solid rgba(251, 146, 60, 0.42);
-    }}
-    .hero-score-ban-pressure {{
-        color: #fecaca;
-        background: rgba(248, 113, 113, 0.14);
-        border: 1px solid rgba(248, 113, 113, 0.42);
-    }}
-    .hero-score-underrated {{
-        color: #86efac;
-        background: rgba(16, 185, 129, 0.14);
-        border: 1px solid rgba(52, 211, 153, 0.42);
-    }}
-    .hero-score-expert {{
-        color: #99f6e4;
-        background: rgba(20, 184, 166, 0.13);
-        border: 1px solid rgba(45, 212, 191, 0.38);
-    }}
-    .hero-score-niche {{
-        color: #cbd5e1;
-        background: rgba(148, 163, 184, 0.10);
-        border: 1px solid rgba(148, 163, 184, 0.28);
-    }}
-    @media (max-width: 980px) {{
-        .hero-summary-strip {{grid-template-columns: repeat(2, minmax(0, 1fr));}}
-    }}
-    @media (max-width: 560px) {{
-        .hero-summary-strip {{grid-template-columns: 1fr;}}
-    }}
-    </style>
-    <div class="hero-summary-strip">
-        {summary_html}
-        <div class="hero-summary-item hero-summary-rank">
-            <div>
-                <div class="hero-summary-label">랭크</div>
-                {score_strength_html}
-            </div>
-            <strong>{rank_value}</strong>
-        </div>
-    </div>
-    """.splitlines())
-st.markdown(summary_strip_html, unsafe_allow_html=True)
 
 left_col, right_col = st.columns([1, 2.5], gap="large")
 
@@ -552,11 +464,17 @@ with left_col:
             perk_image_url = perk.get("perk_image_raw_url") or perk.get("perk_image_url") or DEFAULT_PERK_IMAGE_URL
             perk_image_url = html.escape(str(perk_image_url))
 
+            # 지시서 STEP 5: 아이콘 확대 + 선호도 프로그레스 바. 퍽 이름은 nowrap.
+            bar_width = float(perk_rate) if pd.notna(perk_rate) else 0.0
             cards.append(
                 f'<div class="perk-card" tabindex="0" aria-label="{perk_name} 특전 상세 설명">'
-                f'<img src="{perk_image_url}" style="width:28px;height:28px;object-fit:cover;border-radius:6px;border:1px solid #475569;flex-shrink:0;" />'
-                f'<div style="flex:1;color:#e2e8f0;font-size:0.82rem;font-weight:700;line-height:1.2;">{perk_name}</div>'
-                f'<div style="color:{accent_color};font-size:0.82rem;font-weight:800;min-width:56px;text-align:right;">{best_mark}{perk_rate_text}</div>'
+                f'<img class="perk-icon" src="{perk_image_url}" alt="" />'
+                f'<div class="perk-main">'
+                f'<div class="perk-name nowrap">{perk_name}</div>'
+                f'<div class="perk-bar"><span style="width:{min(max(bar_width, 0), 100):.0f}%;'
+                f'background:{accent_color};"></span></div>'
+                f'</div>'
+                f'<div class="perk-rate nowrap" style="color:{accent_color};">{best_mark}{perk_rate_text}</div>'
                 f'<div class="perk-tooltip" role="tooltip">'
                 f'<div class="perk-tooltip-head">'
                 f'<img class="perk-tooltip-icon" src="{perk_image_url}" alt="" />'

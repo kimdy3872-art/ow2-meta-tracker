@@ -1555,3 +1555,48 @@ body [data-baseweb="popover"] ::-webkit-scrollbar-track {
 @media (max-width: 900px) {
     .kpi-row { grid-template-columns: 1fr; }
 }
+
+/* 지시서 STEP 5 - PERKS 확대 */
+.perk-card { gap: 11px !important; padding: 9px 11px !important; }
+
+.perk-icon {
+    width: 44px;
+    height: 44px;
+    object-fit: cover;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    flex-shrink: 0;
+}
+
+.perk-main { flex: 1; min-width: 0; }
+
+.perk-name {
+    color: #e6e8f7;
+    font-size: 0.88rem;
+    font-weight: 700;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.perk-bar {
+    margin-top: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+}
+
+.perk-bar span {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+}
+
+.perk-rate {
+    font-family: var(--app-num-font);
+    font-size: 20px;
+    min-width: 62px;
+    text-align: right;
+    flex-shrink: 0;
+}
