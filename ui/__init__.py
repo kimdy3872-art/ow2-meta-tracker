@@ -7,6 +7,7 @@ from .tokens import *  # noqa: F401,F403
 from .theme import apply_global_theme, inject_css  # noqa: F401
 from .plotly_theme import style_chart  # noqa: F401
 from .components import (  # noqa: F401
+    _latest_data_date,
     NAV_ITEMS,
     render_hero_banner,
     render_hero_card_grid,

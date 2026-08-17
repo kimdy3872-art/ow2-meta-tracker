@@ -20,6 +20,7 @@ from app_data import (
     translate_tier_name,
 )
 from ui import (
+    _latest_data_date,
     GLOBAL_BG_COLOR,
     GLOBAL_BORDER_COLOR,
     GLOBAL_FONT_FAMILY,
@@ -52,6 +53,7 @@ apply_global_theme()
 render_page_hero(
     "오버워치 2 경쟁전 메타 센터", "",
     badge="Live Competitive Meta",
+    live_label=_latest_data_date(),
 )
 render_sidebar_navigation("main")
 st.markdown("<div style='height: 0.25rem;'></div>", unsafe_allow_html=True)

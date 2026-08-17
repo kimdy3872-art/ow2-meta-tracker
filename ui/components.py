@@ -13,6 +13,15 @@ import streamlit as st
 from .tokens import *  # noqa: F401,F403
 
 # 인라인 SVG 아이콘. 참고 목업의 이모지 개수는 0개다.
+def _one_line(markup: str) -> str:
+    """여러 줄 HTML 을 한 줄로 만든다.
+
+    f-string 조각이 비면 빈 줄이 생기고, 그 뒤 들여쓴 줄을 Streamlit 마크다운이 코드
+    블록으로 파싱해 HTML 이 화면에 그대로 노출된다. 이 함수를 거치면 그 경우가 사라진다.
+    """
+    return "".join(line.strip() for line in markup.splitlines())
+
+
 ICON_HEART = (
     "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.5' "
     "stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'>"
@@ -30,15 +39,17 @@ ICON_TRI_DOWN = (
 )
 
 
-def render_page_hero(title: str, subtitle: str, badge: str = "Overwatch 2 Meta") -> None:
+def render_page_hero(title: str, subtitle: str, badge: str = "Overwatch 2 Meta",
+                     live_label: str = "") -> None:
+    live = (f"<span class='live-dot' title='마지막 갱신'><i></i>"
+            f"{html.escape(live_label)}</span>") if live_label else ""
+    sub = f"<p class='ow-hero-sub'>{html.escape(subtitle)}</p>" if subtitle else ""
+    # 조각이 비면 빈 줄이 생기고 뒤따르는 들여쓴 줄이 코드 블록으로 파싱된다. 한 줄로 낸다.
     st.markdown(
-        f"""
-        <section class="ow-hero-wrap">
-            <div class="ow-hero-badge">{html.escape(badge)}</div>
-            <h1 class="ow-hero-title">{html.escape(title)}</h1>
-            {f'<p class="ow-hero-sub">{html.escape(subtitle)}</p>' if subtitle else ''}
-        </section>
-        """,
+        f"<section class='ow-hero-wrap'>"
+        f"<div class='ow-hero-badge'>{html.escape(badge)}</div>{live}"
+        f"<h1 class='ow-hero-title'>{html.escape(title)}</h1>{sub}"
+        f"</section>",
         unsafe_allow_html=True,
     )
 
@@ -98,7 +109,7 @@ def render_hero_banner(
     )
 
     st.markdown(
-        f"""
+        _one_line(f"""
         <section class="ow-hero-banner{' has-cutout' if cutout_url else ''}">
             <div class="ow-hero-banner-card">
                 <div class="ow-hero-banner-bg" style="{bg_style}"></div>
@@ -112,7 +123,7 @@ def render_hero_banner(
             </div>
             {cutout_html}
         </section>
-        """,
+        """),
         unsafe_allow_html=True,
     )
 
@@ -312,7 +323,7 @@ def render_hero_showcase(
     )
 
     st.markdown(
-        f"""
+        _one_line(f"""
         <section class="hero-showcase">
             <div class="hero-showcase-card" style="{bg_style}">
                 <div class="hero-showcase-num">{html.escape(watermark)}</div>
@@ -325,7 +336,7 @@ def render_hero_showcase(
             </div>
             {art_html}
         </section>
-        """,
+        """),
         unsafe_allow_html=True,
     )
 
@@ -383,13 +394,13 @@ def render_map_cards(cards) -> None:
 def render_meta_score_card(score, rank, hero_name) -> None:
     """META SCORE 카드. 종합 점수를 0~1000 으로 편 표시용 값."""
     st.markdown(
-        f"""
+        _one_line(f"""
         <div class="rail-card meta-score-card">
             <div class="eyebrow">Meta Score</div>
             <div class="meta-score-value nowrap">{int(round(score))}<span class="unit">/1000</span></div>
             <div class="meta-score-sub nowrap">{html.escape(str(hero_name))} · 랭크 {html.escape(str(rank))}</div>
         </div>
-        """,
+        """),
         unsafe_allow_html=True,
     )
 

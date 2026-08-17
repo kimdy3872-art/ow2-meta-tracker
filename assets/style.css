@@ -1446,7 +1446,8 @@ body [data-baseweb="popover"] ::-webkit-scrollbar-track {
 
 .portrait-card {
     position: relative;
-    height: 300px;
+    min-height: 300px;
+    height: 100%;
     border-radius: var(--r-card);
     overflow: hidden;
     border: 1px solid var(--app-line);
@@ -1792,12 +1793,9 @@ h1, h2, h3, h4,
     align-items: stretch;
 }
 
-[data-testid="stHorizontalBlock"]:has(.portrait-card) [data-testid="stColumn"] > div {
-    height: 100%;
-}
-
-[data-testid="stHorizontalBlock"]:has(.portrait-card) .portrait-card { height: 100%; }
-[data-testid="stHorizontalBlock"]:has(.portrait-card) .kpi-row { height: 100%; margin-bottom: 0; }
+/* height:100% 는 부모에 높이가 없으면 0 으로 접힌다. min-height 로 바닥을 깔고
+   stretch 로 늘린다. */
+[data-testid="stHorizontalBlock"]:has(.portrait-card) .kpi-row { margin-bottom: 0; }
 [data-testid="stHorizontalBlock"]:has(.portrait-card) .kpi-card {
     display: flex;
     flex-direction: column;
@@ -1808,3 +1806,24 @@ h1, h2, h3, h4,
 .perk-icon { width: 64px !important; height: 64px !important; }
 .perk-card { align-items: center; }
 .eyebrow { white-space: nowrap; }
+
+/* PART C: 마지막 갱신 시각을 상단 라이브 점으로 */
+.live-dot {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 10px;
+    color: var(--app-muted);
+    font-size: 0.74rem;
+    font-weight: 650;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.live-dot i {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--app-good);
+    box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.16);
+}
