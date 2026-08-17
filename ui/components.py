@@ -281,25 +281,24 @@ def render_hero_showcase(
     splash = art.get("splash_url")
     focal = art.get("focal_x") or 0.66
 
-    layers = [f"linear-gradient(115deg, {accent} 0%, #2a1440 58%, #140d24 100%)"]
-    bg_style = ";".join(
-        [f"background-image:{layers[0]}"]
-    )
+    # 2차 지시서 D-4: 아트를 <img> 로 카드 밖에 띄우지 않는다. 배경 레이어로 넣고
+    # overflow:hidden 으로 잘라 겹침을 원천 차단한다. 아트가 없어도 그라디언트 +
+    # 워터마크만으로 성립해야 한다(검은 빈 칸 금지).
+    base = f"linear-gradient(115deg, {accent} 0%, #2a1440 58%, #140d24 100%)"
+    scrim = ("linear-gradient(100deg, rgba(10,12,18,0.96) 0%, "
+             "rgba(10,12,18,0.75) 42%, transparent 78%)")
+    art_url = cutout or splash
+    if art_url:
+        safe = html.escape(str(art_url), quote=True)
+        pos = "right center" if cutout else f"{min(max(focal * 100, 55), 88):.0f}% 26%"
+        size = "auto 118%" if cutout else "cover"
+        bg_style = (f"background-image:{scrim},url('{safe}'),{base};"
+                    f"background-position:center,{pos},center;"
+                    f"background-size:cover,{size},cover;"
+                    "background-repeat:no-repeat,no-repeat,no-repeat;")
+    else:
+        bg_style = f"background-image:{scrim},{base};background-size:cover,cover;"
     art_html = ""
-    if cutout:
-        art_html = (
-            f"<img class='hero-showcase-art' alt='' aria-hidden='true' "
-            f"onerror=\"this.style.display='none'\" "
-            f"src='{html.escape(cutout, quote=True)}'>"
-        )
-    elif splash:
-        # 컷아웃이 없는 영웅은 스플래시를 우측에 깔고 스크림으로 덮는다.
-        pos = min(max(focal * 100, 55), 88)
-        bg_style = (
-            f"background-image:{layers[0]},url('{html.escape(splash, quote=True)}');"
-            f"background-position:center,{pos:.0f}% 28%;"
-            f"background-size:cover,cover;"
-        )
 
     stat_html = "".join(
         "<div class='hero-showcase-stat'>"

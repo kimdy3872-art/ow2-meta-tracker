@@ -300,87 +300,15 @@ render_hero_showcase(
 left_col, right_col = st.columns([1, 2.5], gap="large")
 
 with left_col:
-    image_url = get_hero_image_url(hero_name) or "https://dummyimage.com/320x320/1f2937/f8fafc.png&text=Hero"
+    # 2차 지시서 D-7: 초상화 카드 / 이름 / 역할 배지는 상단 HERO 카드와 정보가 100% 중복이라
+    # 제거했다. 하위 역할 정보만 살려 PERKS 위에 한 줄로 둔다.
     subrole = get_hero_subrole(hero_name)
-    subrole_badge = ""
     if subrole:
-        subrole_label = html.escape(translate_subrole_name(subrole))
-        subrole_badge = (
-            f'<div title="하위 역할: {subrole_label}" style="display:inline-block;'
-            f'font-family:{GLOBAL_FONT_FAMILY};font-size:0.9rem;font-weight:700;color:#fde68a;'
-            'letter-spacing:0.03em;background:linear-gradient(180deg,rgba(69,48,13,0.94) 0%,'
-            'rgba(30,24,12,0.96) 100%);border:1px solid rgba(251,191,36,0.48);'
-            'border-radius:999px;padding:4px 10px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.12);">'
-            f'하위 역할 · {subrole_label}</div>'
+        st.markdown(
+            f"<div class='eyebrow' style='margin-bottom:8px;'>"
+            f"하위 역할 · {html.escape(translate_subrole_name(subrole))}</div>",
+            unsafe_allow_html=True,
         )
-    st.markdown(
-        f"""
-        <div style="
-            position: relative;
-            width: 172px;
-            padding: 10px;
-            border-radius: 12px;
-            background:
-                linear-gradient(180deg, rgba(248, 250, 252, 0.08) 0%, rgba(15, 23, 42, 0.92) 18%, rgba(2, 6, 23, 0.98) 100%);
-            border: 1px solid #5b6b84;
-            box-shadow:
-                0 14px 30px rgba(2, 6, 23, 0.62),
-                0 0 0 1px rgba(148, 163, 184, 0.18),
-                0 0 18px rgba(56, 189, 248, 0.24),
-                inset 0 1px 0 rgba(255, 255, 255, 0.22);
-            margin-bottom: 12px;
-            overflow: hidden;
-        ">
-            <div style="
-                position: absolute;
-                top: 0;
-                left: 0;
-                right: 0;
-                height: 36%;
-                background: linear-gradient(180deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.0) 100%);
-                pointer-events: none;
-            "></div>
-            <img src="{html.escape(image_url)}" style="
-                width: 152px;
-                height: 152px;
-                object-fit: cover;
-                border-radius: 10px;
-                border: 1px solid rgba(148, 163, 184, 0.45);
-                display: block;
-                box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.85);
-            " />
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-    st.markdown(
-        f"""
-        <div style="
-            font-family: {GLOBAL_FONT_FAMILY};
-            font-size: 1.36rem;
-            font-weight: 800;
-            color: #e2ecff;
-            letter-spacing: 0.02em;
-            text-shadow: 0 1px 0 rgba(12, 18, 32, 0.8), 0 0 10px rgba(96, 165, 250, 0.2);
-            line-height: 1.2;
-            margin-top: 6px;
-        ">{html.escape(str(hero_name))}</div>
-        """,
-        unsafe_allow_html=True,
-    )
-    role_label = html.escape(translate_role_name(str(hero_row.get("role", "Unknown"))))
-    role_badge = (
-        f'<div style="display:inline-block;font-family:{GLOBAL_FONT_FAMILY};font-size:0.9rem;'
-        'font-weight:700;color:#ffd2db;letter-spacing:0.06em;text-transform:uppercase;'
-        'background:linear-gradient(180deg,rgba(30,41,59,0.95) 0%,rgba(15,23,42,0.95) 100%);'
-        'border:1px solid rgba(255,122,140,0.45);border-radius:999px;padding:4px 10px;'
-        f'box-shadow:inset 0 1px 0 rgba(255,255,255,0.16);">{role_label}</div>'
-    )
-    badge_row = (
-        '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:7px;margin-top:8px;">'
-        f'{role_badge}{subrole_badge}</div>'
-    )
-    st.markdown(badge_row, unsafe_allow_html=True)
 
     balance_patch_note = load_latest_balance_patch_note()
     patch_analysis = load_latest_patch_ai_analysis(balance_patch_note.get("id") if balance_patch_note else None)

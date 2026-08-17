@@ -1051,9 +1051,10 @@ body [data-baseweb="popover"] ::-webkit-scrollbar-track {
 
 /* 숫자와 단위가 갈라져 줄바꿈되는 것을 막는다 (지시서 [6] / STEP 5) */
 .unit {
-    font-size: 0.62em;
+    font-size: 0.45em;
     margin-left: 2px;
     opacity: 0.75;
+    vertical-align: baseline;
 }
 
 .nowrap,
@@ -1097,14 +1098,14 @@ body [data-baseweb="popover"] ::-webkit-scrollbar-track {
 
 .hero-showcase {
     position: relative;
-    padding-top: 54px;
     margin: 0 0 18px;
+    min-width: 0;
 }
 
 .hero-showcase-card {
     position: relative;
-    height: 268px;
-    border-radius: var(--r-card);
+    min-height: 260px;
+    border-radius: var(--r-hero);
     overflow: hidden;
     padding: 26px 30px;
     box-shadow: var(--shadow);
@@ -1162,23 +1163,6 @@ body [data-baseweb="popover"] ::-webkit-scrollbar-track {
     font-size: 34px;
     line-height: 1.1;
     color: #fff;
-}
-
-.hero-showcase-art {
-    position: absolute;
-    right: 2%;
-    bottom: 0;
-    top: 0;
-    height: 100%;
-    width: auto;
-    max-width: 56%;
-    object-fit: contain;
-    object-position: bottom right;
-    pointer-events: none;
-    z-index: 3;
-    filter: drop-shadow(0 18px 30px rgba(0, 0, 0, 0.6));
-    -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 20%);
-    mask-image: linear-gradient(to right, transparent 0%, #000 20%);
 }
 
 /* ---------------------------------------------------------------------------
@@ -1410,7 +1394,6 @@ body [data-baseweb="popover"] ::-webkit-scrollbar-track {
 
 @media (max-width: 1100px) {
     .map-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .hero-showcase-art { display: none; }
     .hero-showcase-left { max-width: 100%; }
 }
 
@@ -1787,3 +1770,41 @@ h1, h2, h3, h4,
     z-index: 10;
     background: var(--bg);
 }
+
+/* D-5 필터 칩: 선택/미선택을 채움 vs outline 으로 명확히 */
+[data-testid="stPills"] button[aria-pressed="false"],
+[data-testid="stPills"] button[aria-checked="false"] {
+    background: transparent !important;
+    border: 1px solid var(--app-line) !important;
+    color: var(--app-muted) !important;
+}
+
+[data-testid="stPills"] button[aria-pressed="true"],
+[data-testid="stPills"] button[aria-checked="true"] {
+    background: rgba(255, 70, 85, 0.16) !important;
+    border: 1px solid var(--app-accent) !important;
+    color: var(--app-text) !important;
+}
+
+
+/* D-6: 좌측 아트 카드와 우측 KPI 의 높이를 맞춘다 */
+[data-testid="stHorizontalBlock"]:has(.portrait-card) {
+    align-items: stretch;
+}
+
+[data-testid="stHorizontalBlock"]:has(.portrait-card) [data-testid="stColumn"] > div {
+    height: 100%;
+}
+
+[data-testid="stHorizontalBlock"]:has(.portrait-card) .portrait-card { height: 100%; }
+[data-testid="stHorizontalBlock"]:has(.portrait-card) .kpi-row { height: 100%; margin-bottom: 0; }
+[data-testid="stHorizontalBlock"]:has(.portrait-card) .kpi-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* D-7: PERKS 확대 - 아이콘 64px, 이름은 아이콘 아래 한 줄 */
+.perk-icon { width: 64px !important; height: 64px !important; }
+.perk-card { align-items: center; }
+.eyebrow { white-space: nowrap; }

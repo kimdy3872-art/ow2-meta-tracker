@@ -184,7 +184,7 @@ fig_2d.update_traces(
     textfont=dict(size=10, color="#e2e8f0"),
     marker=dict(line=dict(width=1, color="rgba(226,232,240,0.55)")),
 )
-style_chart(fig_2d, height=470)
+style_chart(fig_2d, height=460)
 
 fig = px.scatter_3d(
     filtered_df,
@@ -229,22 +229,27 @@ for trace in fig.data:
         line_colors.append("#f8fafc" if meta_type != "보통" else "rgba(148,163,184,0.25)")
     trace.marker.line = dict(width=1, color=line_colors)
 
-style_chart(fig, height=470, scene=True)
+style_chart(fig, height=460, scene=True)
 # 축 제목과 3D 전용 상호작용 설정은 공통 테마 위에 덧씌운다.
+# 2차 지시서 D-5: 3D 범례가 데이터를 가려서 끈다(2D 범례 하나만 남긴다).
+# 축 라벨은 작게, tick 은 5개로 줄여 회전 시 읽기 쉽게.
+_axis_title = dict(font=dict(size=11))
 fig.update_layout(
     scene=dict(
-        xaxis=dict(title="픽률 (%)"),
-        yaxis=dict(title="승률 (%)"),
-        zaxis=dict(title="밴률 (%)"),
+        xaxis=dict(title=dict(text="픽률 (%)", font=dict(size=11)), nticks=5),
+        yaxis=dict(title=dict(text="승률 (%)", font=dict(size=11)), nticks=5),
+        zaxis=dict(title=dict(text="밴률 (%)", font=dict(size=11)), nticks=5),
         bgcolor="rgba(0,0,0,0)",
+        aspectmode="cube",
     ),
     margin=dict(l=0, r=0, t=10, b=0),
     clickmode="event+select",
     hovermode="closest",
+    showlegend=False,
 )
 
 # 지시서 STEP 3: 2D 와 3D 를 세로로 쌓지 않고 나란히.
-_c2d, _c3d = st.columns([1, 1], gap="large")
+_c2d, _c3d = st.columns([1.15, 1], gap="large")
 with _c2d:
     st.markdown("<div class='eyebrow'>판단용 2D · 픽률 x 승률</div>", unsafe_allow_html=True)
     st.plotly_chart(fig_2d, key="pick_win_scatter_2d",
@@ -260,12 +265,7 @@ with _c3d:
         use_container_width=True,
     )
 
-st.caption(
-    f"색상은 랭크, 점 크기는 밴률입니다. 초록({GLOBAL_GOOD_COLOR})은 성능, "
-    f"파랑({GLOBAL_INFO_COLOR})은 정보, 빨강({GLOBAL_DANGER_COLOR})은 위험/밴 신호입니다. "
-    "3D 는 드래그로 회전·스크롤로 줌, 점을 클릭하면 상세로 이동합니다. "
-    "이름표는 종합 점수 상위 8명만 표시되고 나머지는 hover 로 확인합니다."
-)
+st.caption("색상 = 랭크 · 점 크기 = 밴률 · 라벨은 상위 8명")
 
 selected_hero = extract_selected_hero(event)
 if selected_hero:
