@@ -114,11 +114,15 @@ TIER_LABELS = {
     "Silver": "실버",
     "Gold": "골드",
     "Platinum": "플래티넘",
+    "Emerald": "에메랄드",
     "Diamond": "다이아몬드",
     "Master": "마스터",
     "Grandmaster": "그랜드마스터",
+    "Champion": "챔피언",
 }
-TIER_ORDER = ["All", "Bronze", "Silver", "Gold", "Platinum", "Diamond", "Master", "Grandmaster"]
+# 에메랄드는 2026-08-12 신설 티어. 데이터가 들어오기 시작하면 자동으로 노출된다.
+TIER_ORDER = ["All", "Bronze", "Silver", "Gold", "Platinum", "Emerald",
+              "Diamond", "Master", "Grandmaster", "Champion"]
 # 드롭다운 목록에 붙일 표식. selectbox 옵션은 평문만 받아서 SVG/이미지를 못 넣는다.
 # 티어 색과 맞춘 컬러 원으로 대신한다.
 TIER_ICONS = {
@@ -127,9 +131,11 @@ TIER_ICONS = {
     "Silver": "⚪",
     "Gold": "🟡",
     "Platinum": "🟢",
+    "Emerald": "🟩",
     "Diamond": "🔵",
     "Master": "🟠",
     "Grandmaster": "🔴",
+    "Champion": "🟣",
 }
 ROLE_ICONS = {
     "All": "⬜",

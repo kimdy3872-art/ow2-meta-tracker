@@ -10,6 +10,7 @@ import urllib.parse
 
 import streamlit as st
 
+from .badges import delta_arrow, heart_icon, rank_badge  # noqa: F401
 from .tokens import *  # noqa: F401,F403
 
 # 인라인 SVG 아이콘. 참고 목업의 이모지 개수는 0개다.
@@ -22,40 +23,6 @@ def _one_line(markup: str) -> str:
     return "".join(line.strip() for line in markup.splitlines())
 
 
-# 랭크 뱃지. 도형을 랭크마다 바꿨더니 A 의 삼각형이 경고 표지(⚠)처럼 읽혀서,
-# 형태는 육각 방패 하나로 통일하고 구분은 색으로 준다(색은 이미 랭크의 의미 담당).
-# 최상위 S 만 채움으로 무게를 더한다.
-_RANK_SHIELD = "M12 2.6 20.5 7v10L12 21.4 3.5 17V7z"
-
-
-def rank_badge(rank: str, color: str) -> str:
-    """랭크 뱃지 HTML. 표·카드·HERO 어디서나 같은 모양을 쓴다."""
-    rank = str(rank or "-")
-    filled = rank == "S"
-    fill = f"{color}2e" if filled else "none"
-    return (
-        f"<span class='rank-badge{' filled' if filled else ''}' style='color:{color};'>"
-        f"<svg viewBox='0 0 24 24' fill='{fill}' stroke='currentColor' stroke-width='1.5' "
-        f"stroke-linejoin='round' aria-hidden='true'><path d='{_RANK_SHIELD}'/></svg>"
-        f"<b>{html.escape(rank)}</b></span>"
-    )
-
-
-ICON_HEART = (
-    "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.5' "
-    "stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'>"
-    "<path d='M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21.2l7.8-7.7 1-1.1a5.5 5.5 0 0 0 0-7.8z'/>"
-    "</svg>"
-)
-ICON_HEART_FILLED = ICON_HEART.replace("fill='none'", "fill='currentColor'")
-ICON_TRI_UP = (
-    "<svg viewBox='0 0 10 8' fill='currentColor' aria-hidden='true'>"
-    "<path d='M5 0 10 8H0z'/></svg>"
-)
-ICON_TRI_DOWN = (
-    "<svg viewBox='0 0 10 8' fill='currentColor' aria-hidden='true'>"
-    "<path d='M5 8 0 0h10z'/></svg>"
-)
 
 
 def render_page_hero(title: str, subtitle: str, badge: str = "Overwatch 2 Meta",
@@ -160,7 +127,7 @@ def _hero_card_markup(card, featured: bool = False) -> str:
     rank_html = ""
     if card.get("rank"):
         rank_html = (f"<div class='ow-card-rank'>"
-                     f"{rank_badge(card['rank'], card.get('rank_color', '#fff'))}</div>")
+                     f"{rank_badge(card['rank'])}</div>")
 
     body = (
         f"<div class='ow-card-body'>"
@@ -409,7 +376,7 @@ def render_hero_scroller(cards, favorites=None) -> None:
             f"<a class='hero-tile-fav{' on' if is_fav else ''}' target='_self' "
             f"href='?fav={urllib.parse.quote(name, safe='')}' "
             f"title='즐겨찾기' aria-label='즐겨찾기'>"
-            f"{ICON_HEART_FILLED if is_fav else ICON_HEART}</a>"
+            f"{heart_icon(is_fav)}</a>"
         )
         items.append(
             f"<div class='hero-tile'>"
@@ -486,7 +453,7 @@ def render_kpi_row(items) -> None:
         delta_html = ""
         if delta_text:
             cls = "up" if delta_up else "down"
-            arrow = ICON_TRI_UP if delta_up else ICON_TRI_DOWN
+            arrow = delta_arrow(delta_up)
             delta_html = (
                 f"<span class='kpi-delta {cls} nowrap'>{arrow}"
                 f"<span>{html.escape(str(delta_text))}</span></span>"

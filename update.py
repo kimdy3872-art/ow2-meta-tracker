@@ -54,7 +54,8 @@ role_dict = {
 }
 
 # 2. 티어 리스트 정의
-tiers = ["All", "Bronze", "Silver", "Gold", "Platinum", "Diamond", "Master", "Grandmaster"]
+# 에메랄드는 2026-08-12 신설. 플래티넘과 다이아몬드 사이에 들어간다.
+tiers = ["All", "Bronze", "Silver", "Gold", "Platinum", "Emerald", "Diamond", "Master", "Grandmaster"]
 
 map_dict = {
     "all-maps": "전체 전장",

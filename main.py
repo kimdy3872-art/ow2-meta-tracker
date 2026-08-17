@@ -5,6 +5,7 @@ import html
 from app_data import (
     ROLE_ORDER,
     TIER_ORDER,
+    get_ordered_tiers,
     get_hero_banner_art,
     get_hero_color,
     get_map_image_url,
@@ -307,7 +308,9 @@ df_raw = load_latest_stats()
 # 3. 메인 상단 필터
 # -------------------------------------------------
 roles = [role for role in ROLE_ORDER if role != "All"]
-tiers = TIER_ORDER
+# TIER_ORDER 를 그대로 쓰면 아직 수집되지 않은 티어(에메랄드 등)가 빈 화면으로 뜬다.
+# 데이터에 실제로 있는 티어만 노출하고, 수집이 시작되면 자동으로 목록에 들어온다.
+tiers = get_ordered_tiers(df_raw)
 
 
 def render_metric_card(title, value, accent_color="#0b69ff"):
@@ -609,7 +612,7 @@ def render_rank_table_html(df):
             f"<td class='rate-cell'>{_bar('pick', row['pick_rate'], pick_rate)}</td>"
             f"<td class='rate-cell'>{_bar('ban', ban_rate_val, f'{ban_rate_val:.1f}%' if pd.notna(ban_rate_val) else '-')}</td>"
             f"<td class='score-cell nowrap'>{score_html}"
-            f"{rank_badge(rank, rank_color)}</td>"
+            f"{rank_badge(rank)}</td>"
             "</tr>"
         )
     table_html = (

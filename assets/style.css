@@ -1969,3 +1969,24 @@ h1, h2, h3, h4,
 [data-testid="stTextInput"] label {
     white-space: nowrap;
 }
+
+/* badges.py 통합: SVG 뱃지는 자체 크기를 가지므로 래퍼는 자리만 잡는다 */
+.rank-badge,
+.ow-card-rank {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: 0;
+    padding: 0;
+    width: auto;
+    height: auto;
+    backdrop-filter: none;
+}
+
+.ow-card-rank {
+    background: rgba(10, 8, 20, 0.5);
+    border-radius: var(--r-chip);
+    padding: 2px;
+    backdrop-filter: blur(3px);
+}

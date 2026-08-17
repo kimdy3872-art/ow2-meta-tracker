@@ -31,10 +31,5 @@ GLOBAL_CHART_GRID_COLOR = "rgba(148, 150, 190, 0.15)"
 GLOBAL_CHART_AXIS_COLOR = "rgba(148, 150, 190, 0.34)"
 # zeroline 을 액센트 색으로 두면 3D 씬 축에 빨간 선이 그어져 경고처럼 읽힌다. 중립색 유지.
 GLOBAL_CHART_ZERO_COLOR = "rgba(168, 170, 205, 0.32)"
-GLOBAL_RANK_COLORS = {
-    "S": "#ef4444",
-    "A": "#f59e0b",
-    "B": "#22c55e",
-    "C": GLOBAL_INFO_COLOR,
-    "D": "#94a3b8",
-}
+# 표·카드·차트가 같은 색을 써야 한다. ui/badges.py 의 RANK_COLORS 가 단일 출처다.
+from .badges import RANK_COLORS as GLOBAL_RANK_COLORS  # noqa: E402
