@@ -579,9 +579,11 @@ def get_hero_banner_art(hero_name):
         return None
 
     splash = entry.get("splash") or {}
-    use_cutout = bool(entry.get("use_cutout")) and bool(entry.get("cutout_url"))
+    use_cutout = bool(entry.get("use_cutout")) and bool(entry.get("cutout_path"))
+    # Streamlit Cloud 는 /app/static/... 절대 경로를 앱 셸이 가로채 이미지 대신 HTML 을
+    # 돌려준다. 데이터와 같은 GitHub raw 경로로 읽으면 로컬/배포 모두 동일하게 동작한다.
     return {
-        "cutout_url": entry.get("cutout_url") if use_cutout else None,
+        "cutout_url": _remote_url(entry["cutout_path"]) if use_cutout else None,
         "splash_url": splash.get("2600") or splash.get("1600") or splash.get("960"),
         "focal_x": entry.get("focal_x", 0.7),
         "use_cutout": use_cutout,

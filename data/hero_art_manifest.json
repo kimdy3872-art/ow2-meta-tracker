@@ -8,18 +8,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltf8e9415141b0ec36/631a8b65e7bdcf0dd996c8e1/1600_Dva.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltcd4bcf30a5794639/631a8b65f581050de0035df6/2600_Dva.jpg"
   },
+  "cutout_path": "static/hero_art/dva.webp",
   "cutout_size": [
-   1582,
+   1358,
    760
   ],
   "focal_x": 0.774,
   "health": {
-   "solid_ratio": 0.398,
-   "width_ratio": 0.608
+   "solid_ratio": 0.716,
+   "width_ratio": 0.522
   },
-  "use_cutout": false,
-  "cutout_url": "/app/static/hero_art/dva.webp",
-  "qa_note": "메카가 어두운 배경과 붙어 분리 실패"
+  "use_cutout": true
  },
  "kiriko": {
   "name": "Kiriko",
@@ -30,17 +29,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt74033e83230dc856/631a8b34f581050de0035df2/1600_Kiriko.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt09d0b0474ed8053b/631a8b345f39a30d9cedbac4/2600_Kiriko.jpg"
   },
+  "cutout_path": "static/hero_art/kiriko.webp",
   "cutout_size": [
-   1217,
-   754
+   642,
+   729
   ],
   "focal_x": 0.694,
   "health": {
-   "solid_ratio": 0.262,
-   "width_ratio": 0.468
+   "solid_ratio": 0.472,
+   "width_ratio": 0.247
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/kiriko.webp"
+  "use_cutout": true
  },
  "ana": {
   "name": "Ana",
@@ -51,17 +50,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt97ec60cf959e81f3/631a8babe337fa0dc7263beb/1600_Ana.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt76ab9c7b4d291756/631a8bab636d390da7825df5/2600_Ana.jpg"
   },
+  "cutout_path": "static/hero_art/ana.webp",
   "cutout_size": [
-   1221,
-   760
+   852,
+   704
   ],
   "focal_x": 0.708,
   "health": {
-   "solid_ratio": 0.349,
-   "width_ratio": 0.47
+   "solid_ratio": 0.51,
+   "width_ratio": 0.328
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/ana.webp"
+  "use_cutout": true
  },
  "anran": {
   "name": "Anran",
@@ -72,17 +71,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltad4c1a0ddfe03d0f/69d6e1078d465d09974c5e98/1600_Anran.png",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt9b7863b08388e81f/69d6e0fa369d00815f7d8ccc/2600_Anran.png"
   },
+  "cutout_path": "static/hero_art/anran.webp",
   "cutout_size": [
-   1835,
-   1077
+   1639,
+   1431
   ],
   "focal_x": 0.691,
   "health": {
-   "solid_ratio": 0.312,
-   "width_ratio": 0.478
+   "solid_ratio": 0.447,
+   "width_ratio": 0.427
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/anran.webp"
+  "use_cutout": true
  },
  "ashe": {
   "name": "Ashe",
@@ -93,17 +92,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt83273c22d0b94966/631a8ba0636d390da7825df1/1600_Ashe.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt3fc10a3baca12db5/631a8ba0a633280e74dc25cd/2600_Ashe.jpg"
   },
+  "cutout_path": "static/hero_art/ashe.webp",
   "cutout_size": [
-   2166,
-   733
+   707,
+   718
   ],
   "focal_x": 0.69,
   "health": {
-   "solid_ratio": 0.139,
-   "width_ratio": 0.833
+   "solid_ratio": 0.535,
+   "width_ratio": 0.272
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/ashe.webp"
+  "use_cutout": true
  },
  "baptiste": {
   "name": "Baptiste",
@@ -114,17 +113,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt7409943072f0d44c/631a8b99f581050de0035dfa/1600_Baptiste.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt5ef4dacade9780da/631a8b99e337fa0dc7263be7/2600_Baptiste.jpg"
   },
+  "cutout_path": "static/hero_art/baptiste.webp",
   "cutout_size": [
-   1183,
-   733
+   855,
+   689
   ],
   "focal_x": 0.702,
   "health": {
-   "solid_ratio": 0.415,
-   "width_ratio": 0.455
+   "solid_ratio": 0.556,
+   "width_ratio": 0.329
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/baptiste.webp"
+  "use_cutout": true
  },
  "bastion": {
   "name": "Bastion",
@@ -135,17 +134,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltcd0d5eb4b44d35f1/631a8b92e7bdcf0dd996c8e5/1600_Bastion.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltac77c0e793cedb9d/631a8b923ab6f40dd2a906b1/2600_Bastion.jpg"
   },
+  "cutout_path": "static/hero_art/bastion.webp",
   "cutout_size": [
-   1666,
-   760
+   1286,
+   700
   ],
   "focal_x": 0.684,
   "health": {
-   "solid_ratio": 0.461,
-   "width_ratio": 0.641
+   "solid_ratio": 0.591,
+   "width_ratio": 0.495
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/bastion.webp"
+  "use_cutout": true
  },
  "brigitte": {
   "name": "Brigitte",
@@ -156,17 +155,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltf362dee5d41929be/631a8b7feef3ae0e03c743b6/1600_Brigitte.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt985b7156ca9b6e62/631a8b7f5f39a30d9cedbacc/2600_Brigitte.jpg"
   },
+  "cutout_path": "static/hero_art/brigitte.webp",
   "cutout_size": [
-   1450,
-   736
+   1067,
+   715
   ],
   "focal_x": 0.726,
   "health": {
-   "solid_ratio": 0.465,
-   "width_ratio": 0.558
+   "solid_ratio": 0.607,
+   "width_ratio": 0.41
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/brigitte.webp"
+  "use_cutout": true
  },
  "cassidy": {
   "name": "Cassidy",
@@ -177,17 +176,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt242e79efb1e27251/631a8b791566e20e82f30288/1600_Cassidy.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt4bb4c31f6849c25b/631a8b781613910e6926bfd4/2600_Cassidy.jpg"
   },
+  "cutout_path": "static/hero_art/cassidy.webp",
   "cutout_size": [
-   2397,
-   733
+   899,
+   697
   ],
   "focal_x": 0.673,
   "health": {
-   "solid_ratio": 0.21,
-   "width_ratio": 0.922
+   "solid_ratio": 0.554,
+   "width_ratio": 0.346
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/cassidy.webp"
+  "use_cutout": true
  },
  "dmon": {
   "name": "D.Mon",
@@ -198,17 +197,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltd3c87960c2414bdd/6a73d89ef42b958b982fa771/1600_Dmon.png",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt2543b5c043d434ed/6a73d8971bb9c51a0d6bc682/2600_Dmon.png"
   },
+  "cutout_path": "static/hero_art/dmon.webp",
   "cutout_size": [
-   2145,
-   1122
+   2341,
+   1513
   ],
   "focal_x": 0.736,
   "health": {
-   "solid_ratio": 0.404,
-   "width_ratio": 0.559
+   "solid_ratio": 0.6,
+   "width_ratio": 0.61
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/dmon.webp"
+  "use_cutout": true
  },
  "domina": {
   "name": "Domina",
@@ -219,17 +218,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltd95bdd9d3b5bf26f/6981752219662433bbaefd7d/1600_Domina.png",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt5522a118520166f8/6981752246798a3f5135fce2/2600_Domina.png"
   },
+  "cutout_path": "static/hero_art/domina.webp",
   "cutout_size": [
-   2239,
-   1012
+   2560,
+   1341
   ],
   "focal_x": 0.758,
   "health": {
-   "solid_ratio": 0.453,
-   "width_ratio": 0.583
+   "solid_ratio": 0.509,
+   "width_ratio": 0.667
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/domina.webp"
+  "use_cutout": true
  },
  "doomfist": {
   "name": "Doomfist",
@@ -240,17 +239,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt3f24de1ac73c318b/631a8b6ba633280e74dc25c9/1600_Doomfist.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blteaa58e824d1fc399/631a8b6b0e1b4f0e7b89a538/2600_Doomfist.jpg"
   },
+  "cutout_path": "static/hero_art/doomfist.webp",
   "cutout_size": [
-   1480,
-   687
+   1235,
+   697
   ],
   "focal_x": 0.705,
   "health": {
-   "solid_ratio": 0.418,
-   "width_ratio": 0.569
+   "solid_ratio": 0.566,
+   "width_ratio": 0.475
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/doomfist.webp"
+  "use_cutout": true
  },
  "echo": {
   "name": "Echo",
@@ -261,17 +260,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt5f4efcfb6dd8d23a/631a98f5f581050de0035e00/1600_Echo.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt6a6dc9da49d17b95/631a8b5feef3ae0e03c743ae/2600_Echo.jpg"
   },
+  "cutout_path": "static/hero_art/echo.webp",
   "cutout_size": [
-   1384,
-   729
+   555,
+   720
   ],
   "focal_x": 0.689,
   "health": {
-   "solid_ratio": 0.164,
-   "width_ratio": 0.532
+   "solid_ratio": 0.531,
+   "width_ratio": 0.213
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/echo.webp"
+  "use_cutout": true
  },
  "emre": {
   "name": "Emre",
@@ -282,17 +281,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt6a5edb14ffdf9a6c/698cfe6d30e8580fb0cc4dc9/1600_Emre.png",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltb3519446b8ce60de/698cfe5dfa5dc9748c88fc81/2600_Emre.png"
   },
+  "cutout_path": "static/hero_art/emre.webp",
   "cutout_size": [
-   3086,
-   1122
+   1864,
+   1425
   ],
   "focal_x": 0.672,
   "health": {
-   "solid_ratio": 0.195,
-   "width_ratio": 0.804
+   "solid_ratio": 0.421,
+   "width_ratio": 0.485
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/emre.webp"
+  "use_cutout": true
  },
  "freja": {
   "name": "Freja",
@@ -303,17 +302,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt8793fc472f3e5896/67ec5f24d23f4982e2d031cc/1600_Freja.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltfd88f7e9b2d383ab/67ec5f176a1a262c61c31bf7/2600_Freja.jpg"
   },
+  "cutout_path": "static/hero_art/freja.webp",
   "cutout_size": [
-   1600,
-   707
+   902,
+   733
   ],
   "focal_x": 0.66,
   "health": {
-   "solid_ratio": 0.334,
-   "width_ratio": 0.615
+   "solid_ratio": 0.518,
+   "width_ratio": 0.347
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/freja.webp"
+  "use_cutout": true
  },
  "genji": {
   "name": "Genji",
@@ -324,17 +323,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt22836a6cfd1c3335/631a8b576d5f7a0df8d92798/1600_Genji.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltb6d5cb702c3e2476/631a8b57e7bdcf0dd996c8dd/2600_Genji.jpg"
   },
+  "cutout_path": "static/hero_art/genji.webp",
   "cutout_size": [
-   1346,
-   760
+   832,
+   751
   ],
   "focal_x": 0.697,
   "health": {
-   "solid_ratio": 0.185,
-   "width_ratio": 0.518
+   "solid_ratio": 0.456,
+   "width_ratio": 0.32
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/genji.webp"
+  "use_cutout": true
  },
  "hanzo": {
   "name": "Hanzo",
@@ -345,17 +344,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt94cbaa8364b60dc7/631a8b50eef3ae0e03c743aa/1600_Hanzo.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt6ea101bee04bc99e/631a8b505f39a30d9cedbac8/2600_Hanzo.jpg"
   },
+  "cutout_path": "static/hero_art/hanzo.webp",
   "cutout_size": [
-   1120,
-   730
+   567,
+   710
   ],
   "focal_x": 0.724,
   "health": {
-   "solid_ratio": 0.273,
-   "width_ratio": 0.431
+   "solid_ratio": 0.557,
+   "width_ratio": 0.218
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/hanzo.webp"
+  "use_cutout": true
  },
  "hazard": {
   "name": "Hazard",
@@ -366,17 +365,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt858312851ab13877/671ac1914210e8458b19bd67/1600_Hazard.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltd748c1f5f124ef06/671ac189ef1216fa37bf67e3/2600_Hazard.jpg"
   },
+  "cutout_path": "static/hero_art/hazard.webp",
   "cutout_size": [
-   1239,
-   760
+   971,
+   655
   ],
   "focal_x": 0.712,
   "health": {
-   "solid_ratio": 0.264,
-   "width_ratio": 0.477
+   "solid_ratio": 0.696,
+   "width_ratio": 0.373
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/hazard.webp"
+  "use_cutout": true
  },
  "illari": {
   "name": "Illari",
@@ -387,17 +386,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt37638ea14bd0c85f/64c03bd64d4d9e27e4296283/1600_Illari.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt9562c18014520536/64c03bd68365f5881905c8b4/2600_Illari.jpg"
   },
+  "cutout_path": "static/hero_art/illari.webp",
   "cutout_size": [
-   1288,
-   713
+   757,
+   682
   ],
   "focal_x": 0.665,
   "health": {
-   "solid_ratio": 0.347,
-   "width_ratio": 0.495
+   "solid_ratio": 0.564,
+   "width_ratio": 0.291
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/illari.webp"
+  "use_cutout": true
  },
  "jetpack-cat": {
   "name": "Jetpack Cat",
@@ -408,17 +407,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt034eb85ea8ae467d/6998f14663c7d6868014bc4b/1600_Jetpack_Cat.png",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt10ffe80a3102f50a/6998f13b163d10141b723b9d/2600_Jetpack_Cat.png"
   },
+  "cutout_path": "static/hero_art/jetpack-cat.webp",
   "cutout_size": [
-   2044,
-   980
+   1762,
+   1253
   ],
   "focal_x": 0.713,
   "health": {
-   "solid_ratio": 0.353,
-   "width_ratio": 0.532
+   "solid_ratio": 0.511,
+   "width_ratio": 0.459
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/jetpack-cat.webp"
+  "use_cutout": true
  },
  "junker-queen": {
   "name": "Junker Queen",
@@ -429,17 +428,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt7621ddcf8e25d478/631a8b49be2fcf0db5eea4c4/1600_Junker_Queen.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt3a1be33596e910c4/631a8b49a0ff920e11e791bc/2600_Junker_Queen.jpg"
   },
+  "cutout_path": "static/hero_art/junker-queen.webp",
   "cutout_size": [
-   1328,
+   896,
    760
   ],
   "focal_x": 0.68,
   "health": {
-   "solid_ratio": 0.246,
-   "width_ratio": 0.511
+   "solid_ratio": 0.54,
+   "width_ratio": 0.345
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/junker-queen.webp"
+  "use_cutout": true
  },
  "junkrat": {
   "name": "Junkrat",
@@ -450,17 +449,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltf1d3568684bc383f/631a8b430e1b4f0e7b89a530/1600_Junkrat.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt413418f41eeb64fd/631a8b4385af980dae7a2ef2/2600_Junkrat.jpg"
   },
+  "cutout_path": "static/hero_art/junkrat.webp",
   "cutout_size": [
-   1346,
-   760
+   867,
+   716
   ],
   "focal_x": 0.704,
   "health": {
-   "solid_ratio": 0.314,
-   "width_ratio": 0.518
+   "solid_ratio": 0.498,
+   "width_ratio": 0.333
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/junkrat.webp"
+  "use_cutout": true
  },
  "juno": {
   "name": "Juno",
@@ -471,17 +470,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blte81ec81f23dbb109/668daea468915426bc7774a7/1600_Juno.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltbc59ec946d1bfeaa/668dae9d839db28999d3657d/2600_Juno.jpg"
   },
+  "cutout_path": "static/hero_art/juno.webp",
   "cutout_size": [
-   1214,
-   697
+   818,
+   694
   ],
   "focal_x": 0.674,
   "health": {
-   "solid_ratio": 0.318,
-   "width_ratio": 0.467
+   "solid_ratio": 0.566,
+   "width_ratio": 0.315
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/juno.webp"
+  "use_cutout": true
  },
  "lifeweaver": {
   "name": "Lifeweaver",
@@ -492,17 +491,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt94961e7349cf1d7c/641243e4b624bd69a0f705ae/1600_Lifeweaver.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltec463c7444135f68/641243e41839f965bff26773/2600_Lifeweaver.jpg"
   },
+  "cutout_path": "static/hero_art/lifeweaver.webp",
   "cutout_size": [
-   1529,
-   760
+   1122,
+   756
   ],
   "focal_x": 0.655,
   "health": {
-   "solid_ratio": 0.295,
-   "width_ratio": 0.588
+   "solid_ratio": 0.485,
+   "width_ratio": 0.432
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/lifeweaver.webp"
+  "use_cutout": true
  },
  "lucio": {
   "name": "Lúcio",
@@ -513,17 +512,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt77c5cddf632a67d7/631a8b2bf581050de0035dee/1600_Lucio.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt1193d24377ff3b38/631a8b2b1613910e6926bfd0/2600_Lucio.jpg"
   },
+  "cutout_path": "static/hero_art/lucio.webp",
   "cutout_size": [
-   1112,
-   755
+   557,
+   719
   ],
   "focal_x": 0.709,
   "health": {
-   "solid_ratio": 0.277,
-   "width_ratio": 0.428
+   "solid_ratio": 0.523,
+   "width_ratio": 0.214
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/lucio.webp"
+  "use_cutout": true
  },
  "mauga": {
   "name": "Mauga",
@@ -534,17 +533,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt52d14924e3880c39/654d7d2d02f5a2701444f840/1600_Mauga.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt5449cd196343e5cc/654d7d436864f761cb9116fc/2600_Mauga.jpg"
   },
+  "cutout_path": "static/hero_art/mauga.webp",
   "cutout_size": [
-   1592,
-   705
+   1300,
+   733
   ],
   "focal_x": 0.726,
   "health": {
-   "solid_ratio": 0.435,
-   "width_ratio": 0.612
+   "solid_ratio": 0.555,
+   "width_ratio": 0.5
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/mauga.webp"
+  "use_cutout": true
  },
  "mei": {
   "name": "Mei",
@@ -555,17 +554,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltd0eb5529be69efbc/633773a6f87c00687e8ef21a/1600_Mei_02.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt1040e5bd61b0ba3a/633773a61ccd046877c0e4db/2600_Mei_02.jpg"
   },
+  "cutout_path": "static/hero_art/mei.webp",
   "cutout_size": [
-   1247,
+   803,
    738
   ],
   "focal_x": 0.702,
   "health": {
-   "solid_ratio": 0.357,
-   "width_ratio": 0.48
+   "solid_ratio": 0.628,
+   "width_ratio": 0.309
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/mei.webp"
+  "use_cutout": true
  },
  "mercy": {
   "name": "Mercy",
@@ -576,18 +575,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blta556d4020266a6db/631a8b1eeef3ae0e03c743a2/1600_Mercy.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltc7021b63955d7b54/631a8b1e3ab6f40dd2a906a5/2600_Mercy.jpg"
   },
+  "cutout_path": "static/hero_art/mercy.webp",
   "cutout_size": [
-   1463,
+   997,
    760
   ],
   "focal_x": 0.678,
   "health": {
-   "solid_ratio": 0.233,
-   "width_ratio": 0.563
+   "solid_ratio": 0.599,
+   "width_ratio": 0.383
   },
-  "use_cutout": false,
-  "cutout_url": "/app/static/hero_art/mercy.webp",
-  "qa_note": "날개/배경이 찢어진 잔해로 남음"
+  "use_cutout": true
  },
  "mizuki": {
   "name": "Mizuki",
@@ -598,17 +596,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt238ff23dff0963b7/698e2db73bdb1652a583ca89/1600_Mizuki.png",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt5950c03caf5c3ee8/698e2da530e8581778cc4fba/2600_Mizuki.png"
   },
+  "cutout_path": "static/hero_art/mizuki.webp",
   "cutout_size": [
-   1745,
-   975
+   1502,
+   1256
   ],
   "focal_x": 0.7,
   "health": {
-   "solid_ratio": 0.36,
-   "width_ratio": 0.454
+   "solid_ratio": 0.544,
+   "width_ratio": 0.391
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/mizuki.webp"
+  "use_cutout": true
  },
  "moira": {
   "name": "Moira",
@@ -619,17 +617,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt8188c6691a334d73/631a8b17be2fcf0db5eea4bc/1600_Moira.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt0556ab9582933672/631a8b176d5f7a0df8d92794/2600_Moira.jpg"
   },
+  "cutout_path": "static/hero_art/moira.webp",
   "cutout_size": [
-   1453,
-   753
+   1013,
+   701
   ],
   "focal_x": 0.679,
   "health": {
-   "solid_ratio": 0.276,
-   "width_ratio": 0.559
+   "solid_ratio": 0.465,
+   "width_ratio": 0.39
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/moira.webp"
+  "use_cutout": true
  },
  "orisa": {
   "name": "Orisa",
@@ -640,17 +638,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt24fd76394a4111f7/631a8b0ba633280e74dc25c5/1600_Orisa.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt2a3558a604095f57/631a8b0b0e1b4f0e7b89a52c/2600_Orisa.jpg"
   },
+  "cutout_path": "static/hero_art/orisa.webp",
   "cutout_size": [
-   1539,
-   760
+   1202,
+   686
   ],
   "focal_x": 0.703,
   "health": {
-   "solid_ratio": 0.361,
-   "width_ratio": 0.592
+   "solid_ratio": 0.515,
+   "width_ratio": 0.462
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/orisa.webp"
+  "use_cutout": true
  },
  "pharah": {
   "name": "Pharah",
@@ -661,17 +659,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blte7cef1a9a6df49eb/631a8af2a0ff920e11e791b8/1600_Pharah.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltae2251cef8936b19/631a8af2636d390da7825dd7/2600_Pharah.jpg"
   },
+  "cutout_path": "static/hero_art/pharah.webp",
   "cutout_size": [
-   1389,
+   1032,
    760
   ],
   "focal_x": 0.682,
   "health": {
-   "solid_ratio": 0.51,
-   "width_ratio": 0.534
+   "solid_ratio": 0.617,
+   "width_ratio": 0.397
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/pharah.webp"
+  "use_cutout": true
  },
  "ramattra": {
   "name": "Ramattra",
@@ -682,17 +680,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt7cedd97f624c058d/637da2d146a48b0e063e4aad/1600_Ramattra.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt3ea4802af2023c58/637da2d1d44c1b0e1f0e8bc0/2600_Ramattra.jpg"
   },
+  "cutout_path": "static/hero_art/ramattra.webp",
   "cutout_size": [
-   1468,
+   1247,
    760
   ],
   "focal_x": 0.704,
   "health": {
-   "solid_ratio": 0.478,
-   "width_ratio": 0.565
+   "solid_ratio": 0.564,
+   "width_ratio": 0.48
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/ramattra.webp"
+  "use_cutout": true
  },
  "reaper": {
   "name": "Reaper",
@@ -703,17 +701,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt2c301b09e7e28f15/631a8af9e7bdcf0dd996c8d1/1600_Reaper.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt205f5d2e64729af4/631a8af90e1b4f0e7b89a528/2600_Reaper.jpg"
   },
+  "cutout_path": "static/hero_art/reaper.webp",
   "cutout_size": [
-   1542,
-   760
+   1063,
+   722
   ],
   "focal_x": 0.733,
   "health": {
-   "solid_ratio": 0.419,
-   "width_ratio": 0.593
+   "solid_ratio": 0.52,
+   "width_ratio": 0.409
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/reaper.webp"
+  "use_cutout": true
  },
  "reinhardt": {
   "name": "Reinhardt",
@@ -724,17 +722,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt8215ad99f856a606/631a8b03636d390da7825ddb/1600_Reinhardt.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltbbe906442602f70b/631a8b03a633280e74dc25c1/2600_Reinhardt.jpg"
   },
+  "cutout_path": "static/hero_art/reinhardt.webp",
   "cutout_size": [
-   1440,
-   760
+   1011,
+   627
   ],
   "focal_x": 0.746,
   "health": {
-   "solid_ratio": 0.514,
-   "width_ratio": 0.554
+   "solid_ratio": 0.761,
+   "width_ratio": 0.389
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/reinhardt.webp"
+  "use_cutout": true
  },
  "roadhog": {
   "name": "Roadhog",
@@ -745,18 +743,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt39930f17f179a7bd/631a8ae5eef3ae0e03c7439e/1600_Roadhog.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt53bec63947a5bd1f/631a8ae585af980dae7a2eee/2600_Roadhog.jpg"
   },
+  "cutout_path": "static/hero_art/roadhog.webp",
   "cutout_size": [
-   1506,
-   760
+   1186,
+   753
   ],
   "focal_x": 0.711,
   "health": {
-   "solid_ratio": 0.336,
-   "width_ratio": 0.579
+   "solid_ratio": 0.632,
+   "width_ratio": 0.456
   },
-  "use_cutout": false,
-  "cutout_url": "/app/static/hero_art/roadhog.webp",
-  "qa_note": "캐릭터가 사라지고 배경 오브젝트만 남음"
+  "use_cutout": true
  },
  "shion": {
   "name": "Shion",
@@ -767,17 +764,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt8a44cee96c28a435/6a28a8e3f1f5dd6cddd650b4/1600_Shion.png",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt26a62724a8a3587e/6a28a8d9d8658f40b63c9335/2600_Shion.png"
   },
+  "cutout_path": "static/hero_art/shion.webp",
   "cutout_size": [
-   2876,
-   1122
+   1358,
+   1314
   ],
   "focal_x": 0.711,
   "health": {
-   "solid_ratio": 0.191,
-   "width_ratio": 0.749
+   "solid_ratio": 0.607,
+   "width_ratio": 0.354
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/shion.webp"
+  "use_cutout": true
  },
  "sierra": {
   "name": "Sierra",
@@ -788,17 +785,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltf61dc39ad92dec50/69d6dabdc843ea442ebf069a/1600_Sierra.png",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltbfeb25b49ede0408/69d6dab0ffc7dd7d06813993/2600_Sierra.png"
   },
+  "cutout_path": "static/hero_art/sierra.webp",
   "cutout_size": [
-   1725,
-   1002
+   1588,
+   1385
   ],
   "focal_x": 0.71,
   "health": {
-   "solid_ratio": 0.279,
-   "width_ratio": 0.449
+   "solid_ratio": 0.421,
+   "width_ratio": 0.414
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/sierra.webp"
+  "use_cutout": true
  },
  "sigma": {
   "name": "Sigma",
@@ -809,17 +806,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt429c1784d8b446a4/631a8adbf581050de0035de6/1600_Sigma.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltcd6803238893c4ee/631a8adb6d5f7a0df8d92790/2600_Sigma.jpg"
   },
+  "cutout_path": "static/hero_art/sigma.webp",
   "cutout_size": [
-   1541,
-   683
+   1097,
+   640
   ],
   "focal_x": 0.721,
   "health": {
-   "solid_ratio": 0.459,
-   "width_ratio": 0.593
+   "solid_ratio": 0.6,
+   "width_ratio": 0.422
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/sigma.webp"
+  "use_cutout": true
  },
  "sojourn": {
   "name": "Sojourn",
@@ -830,17 +827,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt4e7eea062ae71ec8/631a8ad36d5f7a0df8d9278c/1600_Sojourn.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt074d60a0c1b22e57/631a8ad3a633280e74dc25b9/2600_Sojourn.jpg"
   },
+  "cutout_path": "static/hero_art/sojourn.webp",
   "cutout_size": [
-   1290,
-   714
+   586,
+   704
   ],
   "focal_x": 0.648,
   "health": {
-   "solid_ratio": 0.233,
-   "width_ratio": 0.496
+   "solid_ratio": 0.522,
+   "width_ratio": 0.225
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/sojourn.webp"
+  "use_cutout": true
  },
  "soldier-76": {
   "name": "Soldier: 76",
@@ -851,17 +848,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltaa73ebe257f75710/631a8ac985af980dae7a2eea/1600_Soldier_76.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt1fdfbf1c51e0c05d/631a8ac9a0ff920e11e791b4/2600_Soldier_76.jpg"
   },
+  "cutout_path": "static/hero_art/soldier-76.webp",
   "cutout_size": [
-   1549,
-   685
+   1010,
+   686
   ],
   "focal_x": 0.693,
   "health": {
-   "solid_ratio": 0.298,
-   "width_ratio": 0.596
+   "solid_ratio": 0.565,
+   "width_ratio": 0.388
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/soldier-76.webp"
+  "use_cutout": true
  },
  "sombra": {
   "name": "Sombra",
@@ -872,17 +869,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt73c08ba684761b8a/631a8ac1f581050de0035de2/1600_Sombra.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt668912e757ec1b56/631a8ac11566e20e82f30280/2600_Sombra.jpg"
   },
+  "cutout_path": "static/hero_art/sombra.webp",
   "cutout_size": [
-   1538,
-   724
+   1099,
+   715
   ],
   "focal_x": 0.684,
   "health": {
-   "solid_ratio": 0.325,
-   "width_ratio": 0.592
+   "solid_ratio": 0.409,
+   "width_ratio": 0.423
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/sombra.webp"
+  "use_cutout": true
  },
  "symmetra": {
   "name": "Symmetra",
@@ -893,17 +890,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt8bcd4a477c648ec3/631a8ab9a0ff920e11e791b0/1600_Symmetra.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt98ba3e34b8d7c3c7/631a8ab9636d390da7825dd3/2600_Symmetra.jpg"
   },
+  "cutout_path": "static/hero_art/symmetra.webp",
   "cutout_size": [
-   1734,
-   741
+   735,
+   676
   ],
   "focal_x": 0.711,
   "health": {
-   "solid_ratio": 0.224,
-   "width_ratio": 0.667
+   "solid_ratio": 0.428,
+   "width_ratio": 0.283
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/symmetra.webp"
+  "use_cutout": true
  },
  "torbjorn": {
   "name": "Torbjörn",
@@ -914,17 +911,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt8af1bdb781ba7048/631a8ab1eef3ae0e03c7439a/1600_Torbjorn.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt6704d0e1812cb068/631a8ab1a0ff920e11e791ac/2600_Torbjorn.jpg"
   },
+  "cutout_path": "static/hero_art/torbjorn.webp",
   "cutout_size": [
-   1519,
+   1152,
    760
   ],
   "focal_x": 0.689,
   "health": {
-   "solid_ratio": 0.311,
-   "width_ratio": 0.584
+   "solid_ratio": 0.535,
+   "width_ratio": 0.443
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/torbjorn.webp"
+  "use_cutout": true
  },
  "tracer": {
   "name": "Tracer",
@@ -935,17 +932,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltb9e273d8483050b8/631a8aab3ab6f40dd2a90699/1600_Tracer.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt9a87fc6f2249d9c8/631a8aaba633280e74dc25b5/2600_Tracer.jpg"
   },
+  "cutout_path": "static/hero_art/tracer.webp",
   "cutout_size": [
-   1249,
-   760
+   754,
+   748
   ],
   "focal_x": 0.685,
   "health": {
-   "solid_ratio": 0.308,
-   "width_ratio": 0.48
+   "solid_ratio": 0.478,
+   "width_ratio": 0.29
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/tracer.webp"
+  "use_cutout": true
  },
  "vendetta": {
   "name": "Vendetta",
@@ -956,17 +953,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blte69be4a8be101414/692f5b152575e140c24161e5/1600_Vendetta.png",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt22bd880e78e94c03/692f5b1c6da5309b6107b257/2600_Vendetta.png"
   },
+  "cutout_path": "static/hero_art/vendetta.webp",
   "cutout_size": [
-   3840,
-   1122
+   1601,
+   1520
   ],
   "focal_x": 0.735,
   "health": {
-   "solid_ratio": 0.185,
-   "width_ratio": 1.0
+   "solid_ratio": 0.564,
+   "width_ratio": 0.417
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/vendetta.webp"
+  "use_cutout": true
  },
  "venture": {
   "name": "Venture",
@@ -977,17 +974,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltdf3ffc4ee1a1d6b1/65e7a113e38ce3428689fade/1600_Venture.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blte622280f74e18bd7/65e7a10b31e2488e2e63ae8e/2600_Venture.jpg"
   },
+  "cutout_path": "static/hero_art/venture.webp",
   "cutout_size": [
-   2600,
-   760
+   1011,
+   679
   ],
   "focal_x": 0.719,
   "health": {
-   "solid_ratio": 0.263,
-   "width_ratio": 1.0
+   "solid_ratio": 0.625,
+   "width_ratio": 0.389
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/venture.webp"
+  "use_cutout": true
  },
  "widowmaker": {
   "name": "Widowmaker",
@@ -998,17 +995,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltf1291f31fd38e28b/631a8a981613910e6926bfc8/1600_Widowmaker.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt86d1bcba4c0d4730/631a8a98eef3ae0e03c74392/2600_Widowmaker.jpg"
   },
+  "cutout_path": "static/hero_art/widowmaker.webp",
   "cutout_size": [
-   1108,
-   733
+   387,
+   703
   ],
   "focal_x": 0.715,
   "health": {
-   "solid_ratio": 0.281,
-   "width_ratio": 0.426
+   "solid_ratio": 0.716,
+   "width_ratio": 0.149
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/widowmaker.webp"
+  "use_cutout": true
  },
  "winston": {
   "name": "Winston",
@@ -1019,17 +1016,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltf9557fb8c51d1c43/631a8aa4eef3ae0e03c74396/1600_Winston.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltf6c81bc8f3db2ce9/631a8aa4636d390da7825dcb/2600_Winston.jpg"
   },
+  "cutout_path": "static/hero_art/winston.webp",
   "cutout_size": [
-   1447,
-   760
+   966,
+   735
   ],
   "focal_x": 0.651,
   "health": {
-   "solid_ratio": 0.483,
-   "width_ratio": 0.557
+   "solid_ratio": 0.741,
+   "width_ratio": 0.372
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/winston.webp"
+  "use_cutout": true
  },
  "wrecking-ball": {
   "name": "Wrecking Ball",
@@ -1040,17 +1037,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt55cca804cba3d52e/631a8a691566e20e82f30278/1600_Wrecking_Ball.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt3ca77f61db745988/631a8a691613910e6926bfc4/2600_Wrecking_Ball.jpg"
   },
+  "cutout_path": "static/hero_art/wrecking-ball.webp",
   "cutout_size": [
-   1861,
-   650
+   588,
+   335
   ],
   "focal_x": 0.746,
   "health": {
-   "solid_ratio": 0.324,
-   "width_ratio": 0.716
+   "solid_ratio": 0.476,
+   "width_ratio": 0.226
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/wrecking-ball.webp"
+  "use_cutout": true
  },
  "wuyang": {
   "name": "Wuyang",
@@ -1061,17 +1058,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt4e9a801cc106755c/689bc8e2acf3ac2a464b9ef0/1600_Aqua.png",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltcdc9b5b3bfdd9e2c/689bc8d6a9c1ad3fc9bcb61e/2600_Aqua.png"
   },
+  "cutout_path": "static/hero_art/wuyang.webp",
   "cutout_size": [
-   1650,
+   725,
    760
   ],
   "focal_x": 0.724,
   "health": {
-   "solid_ratio": 0.244,
-   "width_ratio": 0.635
+   "solid_ratio": 0.609,
+   "width_ratio": 0.279
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/wuyang.webp"
+  "use_cutout": true
  },
  "zarya": {
   "name": "Zarya",
@@ -1082,17 +1079,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltde66354cc09d1bb6/631a8a60be2fcf0db5eea4b4/1600_Zarya.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltb73df6ce7e29a4f4/631a8a606d5f7a0df8d92784/2600_Zarya.jpg"
   },
+  "cutout_path": "static/hero_art/zarya.webp",
   "cutout_size": [
-   1600,
-   699
+   1013,
+   684
   ],
   "focal_x": 0.722,
   "health": {
-   "solid_ratio": 0.25,
-   "width_ratio": 0.615
+   "solid_ratio": 0.492,
+   "width_ratio": 0.39
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/zarya.webp"
+  "use_cutout": true
  },
  "zenyatta": {
   "name": "Zenyatta",
@@ -1103,16 +1100,16 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt31b9997e4476de74/631a8a57eef3ae0e03c7438a/1600_Zenyatta.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltaed6928bd9793d05/631a8a573ab6f40dd2a90691/2600_Zenyatta.jpg"
   },
+  "cutout_path": "static/hero_art/zenyatta.webp",
   "cutout_size": [
-   1435,
-   699
+   1112,
+   733
   ],
   "focal_x": 0.686,
   "health": {
-   "solid_ratio": 0.321,
-   "width_ratio": 0.552
+   "solid_ratio": 0.461,
+   "width_ratio": 0.428
   },
-  "use_cutout": true,
-  "cutout_url": "/app/static/hero_art/zenyatta.webp"
+  "use_cutout": true
  }
 }

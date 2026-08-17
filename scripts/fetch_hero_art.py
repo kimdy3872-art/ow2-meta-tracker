@@ -23,19 +23,24 @@ import numpy as np
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parent.parent
-# static/ 아래에 두면 Streamlit이 URL로 서빙해준다(.streamlit/config.toml의
-# enableStaticServing). base64로 매 리런마다 실어보내는 것보다 훨씬 가볍다.
+# 결과물은 저장소에 커밋하고, 앱은 GitHub raw 로 읽는다(데이터 로딩과 같은 경로).
 ART_DIR = ROOT / "static" / "hero_art"
-ART_URL_BASE = "/app/static/hero_art"
+# 저장소 상대 경로만 기록한다. 실제 URL 은 app_data 가 GitHub raw 기준으로 만든다
+# (Streamlit Cloud 는 /app/static/... 절대 경로를 앱 셸이 가로채 이미지를 못 준다).
+ART_REPO_PATH = "static/hero_art"
 MANIFEST_PATH = ROOT / "data" / "hero_art_manifest.json"
 
 OVERFAST_BASE = "https://overfast-api.tekrop.fr"
-SPLASH_SIZE = "2600"
+# focal_x 는 카드 배경(2600 스플래시)에 쓰이므로 2600 기준으로 계산해야 한다.
+FOCAL_SIZE = "2600"
+# 컷아웃은 1600 크롭으로 뜬다. 인물 픽셀 크기는 2600 과 같고(둘 다 높이 760) 배경만
+# 좁아서 피사체 비율이 높아진다.
+CUTOUT_SIZE = "1600"
 UA = {"User-Agent": "Mozilla/5.0"}
 
-# rembg 모델. isnet-general-use는 CPU에서 장당 ~30초로 실용적이고,
-# birefnet-general은 품질이 조금 낫지만 장당 10분 이상이라 배치 처리에 부적합하다.
-REMBG_MODEL = "isnet-general-use"
+# isnet-general-use 는 빠르지만 어두운 배경을 남긴다(53명 중 절반가량 실패).
+# birefnet-general 이 확연히 깨끗하다.
+REMBG_MODEL = "birefnet-general"
 
 
 def fetch_json(url, retries=3):
@@ -87,8 +92,23 @@ def cutout_health(rgba, src_size):
     }
 
 
+def make_session():
+    """birefnet 세션.
+
+    rembg 의 new_session 은 SessionOptions 를 받지 않는데, onnxruntime 의 기본 그래프
+    최적화가 이 973MB 모델에서 무한정 멈춘다(CPU 0%로 60분+ 관측). 최적화를 끄면
+    세션 생성 3초 / 추론 11초로 정상 동작하므로 세션 클래스를 직접 만든다.
+    """
+    import onnxruntime as ort
+    from rembg.sessions.birefnet_general import BiRefNetSessionGeneral
+
+    opts = ort.SessionOptions()
+    opts.graph_optimization_level = ort.GraphOptimizationLevel.ORT_DISABLE_ALL
+    return BiRefNetSessionGeneral(REMBG_MODEL, opts, ["CPUExecutionProvider"])
+
+
 def build(keys=None):
-    from rembg import new_session, remove
+    from rembg import remove
 
     ART_DIR.mkdir(parents=True, exist_ok=True)
     MANIFEST_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -101,21 +121,22 @@ def build(keys=None):
     if MANIFEST_PATH.exists():
         manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
 
-    session = new_session(REMBG_MODEL)
+    session = make_session()
 
     for i, hero in enumerate(heroes, 1):
         key, name = hero["key"], hero["name"]
         try:
             detail = fetch_json(f"{OVERFAST_BASE}/heroes/{key}")
             backgrounds = [b.get("url") for b in (detail.get("backgrounds") or []) if b.get("url")]
-            splash = next((u for u in backgrounds if f"/{SPLASH_SIZE}_" in u), None)
-            if not splash:
+            focal_src_url = next((u for u in backgrounds if f"/{FOCAL_SIZE}_" in u), None)
+            cutout_src_url = next((u for u in backgrounds if f"/{CUTOUT_SIZE}_" in u), None)
+            if not focal_src_url or not cutout_src_url:
                 print(f"[{i}/{len(heroes)}] {key}: 배너 아트 없음 - 건너뜀")
                 continue
 
-            src = fetch_image(splash)
+            src = fetch_image(focal_src_url)
             # alpha_matting은 어두운 영역에 유령 잔상을 남기므로 켜지 않는다.
-            rgba = remove(src, session=session)
+            rgba = remove(fetch_image(cutout_src_url), session=session)
             bbox = rgba.getchannel("A").getbbox()
             if bbox is None:
                 print(f"[{i}/{len(heroes)}] {key}: 컷아웃 전부 투명 - 건너뜀")
@@ -131,7 +152,7 @@ def build(keys=None):
                 "portrait": hero.get("portrait"),
                 "splash": {s: next((u for u in backgrounds if f"/{s}_" in u), None)
                            for s in ("960", "1600", "2600")},
-                "cutout_url": f"{ART_URL_BASE}/{key}.webp",
+                "cutout_path": f"{ART_REPO_PATH}/{key}.webp",
                 "cutout_size": list(cut.size),
                 "focal_x": focal_x(src),
                 "health": cutout_health(cut, src.size),

@@ -1,4 +1,0 @@
-[server]
-# static/ 디렉터리를 앱에서 URL로 서빙한다. 히어로 컷아웃(static/hero_art/*.webp)을
-# base64로 매 리런마다 실어보내지 않고 브라우저가 캐시하게 하려는 목적.
-enableStaticServing = true
