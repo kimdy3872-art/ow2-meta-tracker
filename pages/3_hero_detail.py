@@ -197,8 +197,7 @@ def get_hero_perk_rows(hero_name):
 
 
 render_page_hero(
-    "영웅 상세 리포트",
-    "선택한 영웅의 티어별 지표, 전장 성능, 특전 선호도를 한 번에 확인합니다.",
+    "영웅 상세 리포트", "",
     badge="Hero Deep Dive",
 )
 render_sidebar_navigation("detail")
@@ -230,18 +229,6 @@ if "All" not in tier_candidates:
 query_tier = str(st.query_params.get("tier", "Gold"))
 query_tier = str(st.session_state.get("detail_tier") or query_tier)
 default_tier = query_tier if query_tier in tier_candidates else ("Gold" if "Gold" in tier_candidates else tier_candidates[0])
-
-st.markdown(
-    """
-    <div class="ow-control-band">
-        <div class="ow-control-head">
-            <div class="ow-control-title">상세 조건</div>
-            <div class="ow-control-meta">티어를 바꾸면 요약 지표, 전장 성능, 특전 선호도가 함께 갱신됩니다.</div>
-        </div>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
 
 tier_col, _ = st.columns([1.25, 3.75])
 with tier_col:
@@ -459,7 +446,7 @@ with left_col:
                 perk_rate_text = f"{float(perk_rate):.0f}%"
             else:
                 perk_rate_text = "-"
-            best_mark = "👍 " if idx == best_idx else ""
+            is_best = idx == best_idx
 
             perk_image_url = perk.get("perk_image_raw_url") or perk.get("perk_image_url") or DEFAULT_PERK_IMAGE_URL
             perk_image_url = html.escape(str(perk_image_url))
@@ -472,9 +459,9 @@ with left_col:
                 f'<div class="perk-main">'
                 f'<div class="perk-name nowrap">{perk_name}</div>'
                 f'<div class="perk-bar"><span style="width:{min(max(bar_width, 0), 100):.0f}%;'
-                f'background:{accent_color};"></span></div>'
+                f'background:{accent_color if is_best else "rgba(255,255,255,0.28)"};"></span></div>'
                 f'</div>'
-                f'<div class="perk-rate nowrap" style="color:{accent_color};">{best_mark}{perk_rate_text}</div>'
+                f'<div class="perk-rate nowrap" style="color:{accent_color if is_best else "#9ba2c4"};">{perk_rate_text}</div>'
                 f'<div class="perk-tooltip" role="tooltip">'
                 f'<div class="perk-tooltip-head">'
                 f'<img class="perk-tooltip-icon" src="{perk_image_url}" alt="" />'

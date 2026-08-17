@@ -139,8 +139,7 @@ def format_map_option(map_id, df):
     return f"{label} ({map_id})"
 
 render_page_hero(
-    "영웅별 시계열",
-    "저장된 스냅샷을 따라 승률·픽률·밴률이 어떻게 움직였는지 영웅 단위로 확인합니다.",
+    "영웅별 시계열", "",
     badge="Hero Trend Watch",
 )
 render_sidebar_navigation("hero_trends")
@@ -232,18 +231,6 @@ st.markdown(
         }}
     }}
     </style>
-    """,
-    unsafe_allow_html=True,
-)
-
-st.markdown(
-    """
-    <div class="ow-control-band">
-        <div class="ow-control-head">
-            <div class="ow-control-title">시계열 조건</div>
-            <div class="ow-control-meta">포지션, 영웅, 티어, 전장을 고른 뒤 기간을 좁혀 추세를 확인합니다.</div>
-        </div>
-    </div>
     """,
     unsafe_allow_html=True,
 )

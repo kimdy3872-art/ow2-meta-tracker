@@ -72,8 +72,7 @@ def extract_selected_hero(event_data):
 
 
 render_page_hero(
-    "픽률 · 승률 · 밴률 3D 분포",
-    "영웅 메타 포지셔닝을 3차원으로 확인하고, 점 클릭으로 상세 분석으로 이동합니다.",
+    "픽률 · 승률 · 밴률 3D 분포", "",
     badge="Meta Positioning 3D",
 )
 render_sidebar_navigation("pick_win")
@@ -81,17 +80,6 @@ st.markdown("<div style='height: 0.25rem;'></div>", unsafe_allow_html=True)
 
 raw_df = load_latest_stats()
 
-st.markdown(
-    """
-    <div class="ow-control-band">
-        <div class="ow-control-head">
-            <div class="ow-control-title">분포 조건</div>
-            <div class="ow-control-meta">2D는 빠른 판단용, 3D는 밴률까지 포함한 탐색용입니다.</div>
-        </div>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
 f1, f2 = st.columns([1.0, 1.0])
 with f1:
     selected_tier = get_selected_tier(raw_df)

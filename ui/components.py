@@ -12,6 +12,23 @@ import streamlit as st
 
 from .tokens import *  # noqa: F401,F403
 
+# 인라인 SVG 아이콘. 참고 목업의 이모지 개수는 0개다.
+ICON_HEART = (
+    "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.5' "
+    "stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'>"
+    "<path d='M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21.2l7.8-7.7 1-1.1a5.5 5.5 0 0 0 0-7.8z'/>"
+    "</svg>"
+)
+ICON_HEART_FILLED = ICON_HEART.replace("fill='none'", "fill='currentColor'")
+ICON_TRI_UP = (
+    "<svg viewBox='0 0 10 8' fill='currentColor' aria-hidden='true'>"
+    "<path d='M5 0 10 8H0z'/></svg>"
+)
+ICON_TRI_DOWN = (
+    "<svg viewBox='0 0 10 8' fill='currentColor' aria-hidden='true'>"
+    "<path d='M5 8 0 0h10z'/></svg>"
+)
+
 
 def render_page_hero(title: str, subtitle: str, badge: str = "Overwatch 2 Meta") -> None:
     st.markdown(
@@ -19,7 +36,7 @@ def render_page_hero(title: str, subtitle: str, badge: str = "Overwatch 2 Meta")
         <section class="ow-hero-wrap">
             <div class="ow-hero-badge">{html.escape(badge)}</div>
             <h1 class="ow-hero-title">{html.escape(title)}</h1>
-            <p class="ow-hero-sub">{html.escape(subtitle)}</p>
+            {f'<p class="ow-hero-sub">{html.escape(subtitle)}</p>' if subtitle else ''}
         </section>
         """,
         unsafe_allow_html=True,
@@ -331,7 +348,8 @@ def render_hero_scroller(cards, favorites=None) -> None:
         heart = (
             f"<a class='hero-tile-fav{' on' if is_fav else ''}' target='_self' "
             f"href='?fav={urllib.parse.quote(name, safe='')}' "
-            f"title='즐겨찾기'>{'♥' if is_fav else '♡'}</a>"
+            f"title='즐겨찾기' aria-label='즐겨찾기'>"
+            f"{ICON_HEART_FILLED if is_fav else ICON_HEART}</a>"
         )
         items.append(
             f"<div class='hero-tile'>"
@@ -408,9 +426,10 @@ def render_kpi_row(items) -> None:
         delta_html = ""
         if delta_text:
             cls = "up" if delta_up else "down"
-            arrow = "▲" if delta_up else "▼"
+            arrow = ICON_TRI_UP if delta_up else ICON_TRI_DOWN
             delta_html = (
-                f"<span class='kpi-delta {cls} nowrap'>{arrow} {html.escape(str(delta_text))}</span>"
+                f"<span class='kpi-delta {cls} nowrap'>{arrow}"
+                f"<span>{html.escape(str(delta_text))}</span></span>"
             )
         unit_html = f"<span class='unit'>{html.escape(str(unit))}</span>" if unit else ""
         cells.append(

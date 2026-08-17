@@ -50,8 +50,7 @@ st.set_page_config(
 )
 apply_global_theme()
 render_page_hero(
-    "오버워치 2 경쟁전 메타 센터",
-    "티어와 포지션별 지표를 대시보드 형식으로 확인할 수 있습니다.",
+    "오버워치 2 경쟁전 메타 센터", "",
     badge="Live Competitive Meta",
 )
 render_sidebar_navigation("main")
@@ -344,8 +343,6 @@ if "selected_tier" not in st.session_state:
     st.session_state.selected_tier = "Gold"
 if "selected_role" not in st.session_state:
     st.session_state.selected_role = "All"
-if "sort_by" not in st.session_state:
-    st.session_state.sort_by = "종합 점수"
 if "search_hero" not in st.session_state:
     st.session_state.search_hero = ""
 
@@ -353,61 +350,65 @@ if "search_hero" not in st.session_state:
 def reset_filters():
     st.session_state.selected_tier = "Gold"
     st.session_state.selected_role = "All"
-    st.session_state.sort_by = "종합 점수"
+    st.session_state.sort_col = "total_score"
+    st.session_state.sort_desc = True
     st.session_state.search_hero = ""
 
-st.markdown(
-    f"""
-    <div class="ow-control-band">
-        <div class="ow-control-head">
-            <div class="ow-control-title">분석 조건</div>
-            <div class="ow-control-meta">티어, 포지션, 정렬 기준을 먼저 고르면 아래 랭킹과 요약이 즉시 갱신됩니다.</div>
-        </div>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+# 2차 지시서 D-2: 드롭다운 4개 + 라디오 1개 -> 컨트롤 3개.
+# 티어는 순서가 있는 값이라 드롭다운에 넣으면 현재 위치가 안 보인다. 세그먼트로.
+# 티어는 7칸이라 한 줄을 통으로 쓴다. key 와 default 를 같이 주면 Streamlit 이 경고하므로
+# 초기값은 위의 session_state 초기화에만 맡긴다.
+selected_tier = st.segmented_control(
+    "티어",
+    tiers,
+    key="selected_tier",
+    format_func=translate_tier_name,
+    label_visibility="collapsed",
+) or st.session_state.get("selected_tier", "Gold")
 
-with st.container():
-    c1, c2, c3, c4, c5 = st.columns([1.05, 1.0, 0.95, 1.65, 0.55])
+_r_col, _s_col = st.columns([2.2, 1.6], gap="small")
+with _r_col:
+    selected_role = st.segmented_control(
+        "포지션",
+        ["All"] + roles,
+        key="selected_role",
+        format_func=translate_role_name,
+        label_visibility="collapsed",
+    ) or "All"
+with _s_col:
+    search_hero = st.text_input(
+        "영웅 검색",
+        key="search_hero",
+        placeholder="영웅 검색",
+        label_visibility="collapsed",
+    )
 
-    with c1:
-        selected_tier = st.selectbox(
-            "티어",
-            tiers,
-            key="selected_tier",
-            format_func=translate_tier_name,
-            placeholder="티어",
-        )
-    with c2:
-        selected_role = st.selectbox(
-            "포지션",
-            ["All"] + roles,
-            key="selected_role",
-            format_func=translate_role_name,
-            placeholder="포지션",
-        )
-    with c3:
-        sort_by = st.selectbox(
-            "정렬",
-            ["종합 점수", "승률", "픽률", "밴률"],
-            key="sort_by",
-            placeholder="정렬",
-        )
-    with c4:
-        search_hero = st.text_input(
-            "영웅 검색",
-            key="search_hero",
-            placeholder="영웅 검색",
-        )
-    with c5:
-        st.markdown("<div class='ow-filter-action-spacer'></div>", unsafe_allow_html=True)
-        st.button("초기화", width="stretch", on_click=reset_filters)
+# 정렬은 드롭다운을 없애고 표 헤더 클릭으로 받는다(?sort= 쿼리 파라미터).
+SORT_COLUMNS = {
+    "total_score": "종합 점수",
+    "win_rate": "승률",
+    "pick_rate": "픽률",
+    "ban_rate": "밴률",
+}
+if "sort_col" not in st.session_state:
+    st.session_state.sort_col = "total_score"
+if "sort_desc" not in st.session_state:
+    st.session_state.sort_desc = True
 
-st.markdown(
-    "<div class='ow-soft-divider'></div>",
-    unsafe_allow_html=True,
-)
+_sort_q = st.query_params.get("sort")
+if isinstance(_sort_q, list):
+    _sort_q = _sort_q[0] if _sort_q else None
+if _sort_q in SORT_COLUMNS:
+    if st.session_state.sort_col == _sort_q:
+        st.session_state.sort_desc = not st.session_state.sort_desc
+    else:
+        st.session_state.sort_col = _sort_q
+        st.session_state.sort_desc = True
+    st.query_params.clear()
+    st.rerun()
+
+sort_col = st.session_state.sort_col
+sort_by = SORT_COLUMNS[sort_col]
 
 # 패치노트는 순위표 아래 expander 로 내렸다(지시서: 상단은 시각적 임팩트 우선).
 
@@ -449,6 +450,20 @@ if not df_filtered.empty:
         )
     else:
         df_filtered["display_size"] = 1
+
+ICON_CARET = ("<svg class='sort-caret' viewBox='0 0 10 6' fill='currentColor' "
+              "aria-hidden='true'><path d='M5 6 0 0h10z'/></svg>")
+
+
+def _sort_header(key, label):
+    """표 헤더를 정렬 링크로. 드롭다운을 없앤 자리를 대신한다."""
+    active = st.session_state.get("sort_col") == key
+    caret = ICON_CARET if active else ""
+    cls = "sortable active" if active else "sortable"
+    flip = " flip" if active and not st.session_state.get("sort_desc", True) else ""
+    return (f"<th class='{cls}'><a href='?sort={key}' target='_self'>"
+            f"{html.escape(label)}<span class='caret-wrap{flip}'>{caret}</span></a></th>")
+
 
 def render_rank_table_html(df):
     rank_color_map = {
@@ -546,7 +561,7 @@ def render_rank_table_html(df):
         low_pick_html = ""
         if low_pick_warning:
             low_pick_html = f"<span class='low-pick-badge'>{html.escape(low_pick_warning)}</span>"
-        hero_cell_html = f"{hero_link}{badge_html}{low_pick_html}"
+        hero_cell_html = hero_link  # 포지션/메타 라벨은 아래 부제 줄로 흡수한다
         role = html.escape(translate_role_name(str(row["role"])))
         win_rate = f"{row['win_rate']:.1f}%"
         pick_rate = f"{row['pick_rate']:.1f}%"
@@ -557,7 +572,8 @@ def render_rank_table_html(df):
         rank = html.escape(str(row["rank"]))
         rank_color = rank_color_map.get(str(row["rank"]), GLOBAL_TEXT_COLOR)
         hero_url = get_hero_image_url(row["hero"])
-        img_html = f'<img src="{hero_url}"/>' if hero_url else "-"
+        img_html = (f'<img class="hero-cell-img" src="{hero_url}" alt=""/>' if hero_url
+                    else '<div class="hero-cell-img"></div>')
 
         pick_html = (
             f"<div class='rate-line'><div class='rate-bar'><div class='rate-fill pick' style='width:{min(max(row['pick_rate'],0),100)}%'></div></div>"
@@ -575,16 +591,46 @@ def render_rank_table_html(df):
             )
         else:
             ban_html = "<div class='rate-text' style='color:#6b7280;'>-</div>"
+        low_html = f"<span class='cell-warn'>{html.escape(low_pick_warning)}</span>" if low_pick_warning else ""
+        sub_bits = [role]
+        if meta_type:
+            sub_bits.append(meta_type)
+        sub_text = " · ".join(b for b in sub_bits if b)
+
+        def _bar(kind, value, text):
+            if pd.isna(value):
+                return "<div class='rate-text muted'>-</div>"
+            w = min(max(float(value), 0), 100)
+            return (
+                f"<div class='rate-line'><div class='rate-bar'>"
+                f"<div class='rate-fill {kind}' style='width:{w}%'></div></div>"
+                f"<div class='rate-text'>{text}</div></div>"
+            )
+
         rows.append(
-            f"<tr><td class='portrait-cell' data-label='초상화'>{img_html}</td><td class='hero-cell' data-label='영웅'>{hero_cell_html}</td><td class='role-cell' data-label='포지션'>{role}</td><td class='rate-cell win'>{win_html}</td><td class='rate-cell pick'>{pick_html}</td><td class='rate-cell ban'>{ban_html}</td><td class='score-cell' data-label='종합 점수'>{score_html}</td><td class='rank-cell' data-label='랭크'><span class='rank-pill' style='color:{rank_color};'>{rank}</span></td></tr>"
+            "<tr>"
+            f"<td class='hero-cell'>{img_html}"
+            f"<div class='hero-cell-text'>"
+            f"<div class='hero-cell-name nowrap'>{hero_cell_html}{low_html}</div>"
+            f"<div class='hero-cell-sub nowrap'>{html.escape(sub_text)}</div>"
+            f"</div></td>"
+            f"<td class='rate-cell'>{_bar('win', row['win_rate'], win_rate)}</td>"
+            f"<td class='rate-cell'>{_bar('pick', row['pick_rate'], pick_rate)}</td>"
+            f"<td class='rate-cell'>{_bar('ban', ban_rate_val, f'{ban_rate_val:.1f}%' if pd.notna(ban_rate_val) else '-')}</td>"
+            f"<td class='score-cell nowrap'>{score_html}"
+            f"<span class='rank-pill' style='color:{rank_color};'>{rank}</span></td>"
+            "</tr>"
         )
     table_html = (
         styles
-        + "<table class='overwatch-table'><thead><tr>"
-        + "<th>Portrait</th><th>영웅</th><th>포지션</th><th>승률</th><th>픽률</th><th>밴률</th><th>종합 점수</th><th>랭크</th>"
+        + "<div class='table-wrap'><table class='overwatch-table'><thead><tr>"
+        + "<th>영웅</th>"
+        + "".join(_sort_header(key, label) for key, label in
+                 [("win_rate", "승률"), ("pick_rate", "픽률"),
+                  ("ban_rate", "밴률"), ("total_score", "종합 점수")])
         + "</tr></thead><tbody>"
         + "".join(rows)
-        + "</tbody></table>"
+        + "</tbody></table></div>"
     )
     return table_html
 
@@ -653,15 +699,9 @@ _top4_options = {
     "승률": ("win_rate", _win_top4, GLOBAL_GOOD_COLOR),
     "픽률": ("pick_rate", _pick_top4, GLOBAL_INFO_COLOR),
 }
-selected_top4 = st.radio(
-    "TOP 4 지표",
-    list(_top4_options.keys()),
-    horizontal=True,
-    label_visibility="collapsed",
-    key="main_top4_metric",
-)
-top4_col, top4_df, top4_color = _top4_options[selected_top4]
-
+# 2차 지시서 D-2: 전역 라디오를 없애고 이 카드 안에서만 전환되는 탭으로 흡수.
+if "main_top4_metric" not in st.session_state:
+    st.session_state.main_top4_metric = "밴률"
 def _map_cards(hero_name, limit=4):
     """전장별 승률 상위 카드. 전장 데이터가 없으면 빈 리스트."""
     if "map" not in df_raw.columns:
@@ -682,67 +722,11 @@ def _map_cards(hero_name, limit=4):
     ]
 
 
-st.markdown(
-    f"<div class='eyebrow' style='margin-bottom:7px;'>{selected_top4} TOP 4</div>",
-    unsafe_allow_html=True,
-)
-_grid_col, _rail_col = st.columns([3.1, 1], gap="small")
-with _grid_col:
-    render_hero_card_grid(_build_top_cards(top4_col, selected_top4, top4_df, top4_color))
-with _rail_col:
-    render_rank_rail(
-        "랭크 분포",
-        _rank_distribution_rows(df_filtered),
-        footnote=f"{translate_tier_name(selected_tier)} · 총 {len(df_filtered)}명",
-    )
-
-st.markdown("<div class='ow-soft-divider'></div>", unsafe_allow_html=True)
-
-st.subheader("🏆 영웅 랭크 순위표")
-st.caption("영웅 이름을 클릭하면 상세 페이지로 이동합니다.")
-
-with st.expander("랭크는 어떻게 산정되나요?"):
-    st.markdown(
-        """
-        - 랭크는 같은 티어/포지션/전장(all-maps) 안에서 산정됩니다.
-        - 랭크는 "메타 지배력"을 측정합니다: 존재감(픽률+밴률) 65% + 성능 검증(수축 승률) 35%.
-        - 존재감은 픽률과 밴률의 합으로 계산합니다. 밴률이 높은 영웅은 픽이 눌려 있으므로, 둘의 합이 드래프트에서 차지하는 실제 지분을 나타냅니다.
-        - 성능은 픽률로 가중 수축한 승률입니다. 픽률이 낮을수록 승률을 비교군 평균 쪽으로 끌어당겨, 저픽률 고승률 영웅의 과대평가를 줄입니다.
-        - 영웅 이름 옆 메타 유형 라벨은 두 축의 조합입니다: `메타 지배`, `과열 주의`, `저평가 픽`, `전문가 픽`, `비주류`.
-        - 랭크는 분위수 강제 배분이 아니라 절대 점수 기준 `S/A/B/C/D`로 산정됩니다.
-        - 기준은 `S >= 1.25`, `A >= 0.50`, `B -0.50~0.50`, `C <= -0.50`, `D <= -1.00`입니다.
-        - 픽률 1.0% 미만 영웅은 저픽률 경고를 함께 표시합니다.
-        - 종합 점수는 같은 비교군 평균 대비 상대 점수라서 0보다 높으면 평균 이상, 낮으면 평균 이하로 해석할 수 있습니다.
-        - 표의 정렬 기준(종합 점수/승률/픽률/밴률)을 바꾸면 같은 집합 내 우선순위가 달라집니다.
-        - 데이터는 최신 수집일 기준으로만 비교됩니다.
-        """
-    )
-
-with st.expander("메타 유형 라벨은 뭔가요?"):
-    st.markdown(
-        """
-        - `메타 지배`: 존재감이 높고 성능도 평균 이상인 핵심 메타 영웅입니다.
-        - `과열 주의`: 픽률이 매우 높지만 성능 검증은 낮은 영웅입니다.
-        - `밴 압박`: 픽률은 낮지만 밴률이 매우 높아 강하게 의식되는 영웅입니다.
-        - `저평가 픽`: 존재감은 아직 낮지만 수축 승률 기준 성능이 매우 뚜렷한 영웅입니다.
-        - `전문가 픽`: 낮은 픽률 대비 승률이 매우 좋은 숙련자형 후보입니다.
-        - `비주류`: 존재감이 매우 낮고 성능 신호도 약한 영웅입니다.
-        - 라벨이 없으면 뚜렷한 유형 신호가 없는 `보통` 구간입니다.
-        """
-    )
-
-sort_col = {
-    "종합 점수": "total_score",
-    "승률": "win_rate",
-    "픽률": "pick_rate",
-    "밴률": "ban_rate",
-}.get(sort_by, "total_score")
-
 # 밴률 컬럼이 있으면 포함
 display_cols = ["hero", "role", "win_rate", "pick_rate", "ban_rate", "total_score", "score_strength", "pick_rate_warning", "rank"] if "ban_rate" in df_filtered.columns else ["hero", "role", "win_rate", "pick_rate", "total_score", "score_strength", "pick_rate_warning", "rank"]
 display_df = df_filtered.sort_values(
     sort_col,
-    ascending=False
+    ascending=not st.session_state.sort_desc,
 )[display_cols]
 
 if display_df.empty:
@@ -791,14 +775,31 @@ with _main_col:
         favorites=st.session_state.get("favorites", set()),
     )
 
+    _lbl_col, _tab_col = st.columns([1, 1.1], gap="small")
+    with _lbl_col:
+        st.markdown("<div class='eyebrow section-eyebrow'>TOP 4</div>",
+                    unsafe_allow_html=True)
+    with _tab_col:
+        selected_top4 = st.segmented_control(
+            "TOP 4 지표",
+            list(_top4_options.keys()),
+            key="main_top4_metric",
+            label_visibility="collapsed",
+        ) or "밴률"
+    top4_col, top4_df, top4_color = _top4_options[selected_top4]
+    render_hero_card_grid(_build_top_cards(top4_col, selected_top4, top4_df, top4_color))
+
     _maps = _map_cards(_top_hero)
     if _maps:
         st.markdown("<div class='eyebrow'>Top Maps</div>", unsafe_allow_html=True)
         render_map_cards(_maps)
 
+    st.markdown("<h3 class='section-title'>영웅 랭크 순위표</h3>", unsafe_allow_html=True)
+    st.caption("영웅 이름을 클릭하면 상세 페이지로 이동합니다. 헤더를 눌러 정렬합니다.")
     st.markdown(render_rank_table_html(display_df), unsafe_allow_html=True)
 
 with _rail_col2:
+    st.markdown("<div class='ow-rail-sticky'>", unsafe_allow_html=True)
     # 정규화 풀에 그 영웅이 1위로 들어있으면 항상 1000 이 나온다. 전 티어를 기준으로 펴서
     # "다른 티어까지 통틀어 어느 위치인가"를 보여준다.
     # 같은 영웅이 티어마다 행을 가지므로 hero 로 dict 를 만들면 값이 덮어써진다.
@@ -844,9 +845,43 @@ with _rail_col2:
         _rank_distribution_rows(display_df),
         footnote=f"{translate_tier_name(selected_tier)} · 총 {len(display_df)}명",
     )
+    st.markdown("</div>", unsafe_allow_html=True)
 
+# 2차 지시서 PART C: 참조용 블록은 전부 최하단으로.
+st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
 with st.expander("최근 패치노트"):
     render_patch_intelligence_block()
+
+with st.expander("랭크는 어떻게 산정되나요?"):
+    st.markdown(
+        """
+        - 랭크는 같은 티어/포지션/전장(all-maps) 안에서 산정됩니다.
+        - 랭크는 "메타 지배력"을 측정합니다: 존재감(픽률+밴률) 65% + 성능 검증(수축 승률) 35%.
+        - 존재감은 픽률과 밴률의 합으로 계산합니다. 밴률이 높은 영웅은 픽이 눌려 있으므로, 둘의 합이 드래프트에서 차지하는 실제 지분을 나타냅니다.
+        - 성능은 픽률로 가중 수축한 승률입니다. 픽률이 낮을수록 승률을 비교군 평균 쪽으로 끌어당겨, 저픽률 고승률 영웅의 과대평가를 줄입니다.
+        - 영웅 이름 옆 메타 유형 라벨은 두 축의 조합입니다: `메타 지배`, `과열 주의`, `저평가 픽`, `전문가 픽`, `비주류`.
+        - 랭크는 분위수 강제 배분이 아니라 절대 점수 기준 `S/A/B/C/D`로 산정됩니다.
+        - 기준은 `S >= 1.25`, `A >= 0.50`, `B -0.50~0.50`, `C <= -0.50`, `D <= -1.00`입니다.
+        - 픽률 1.0% 미만 영웅은 저픽률 경고를 함께 표시합니다.
+        - 종합 점수는 같은 비교군 평균 대비 상대 점수라서 0보다 높으면 평균 이상, 낮으면 평균 이하로 해석할 수 있습니다.
+        - 표의 정렬 기준(종합 점수/승률/픽률/밴률)을 바꾸면 같은 집합 내 우선순위가 달라집니다.
+        - 데이터는 최신 수집일 기준으로만 비교됩니다.
+        """
+    )
+
+with st.expander("메타 유형 라벨은 뭔가요?"):
+    st.markdown(
+        """
+        - `메타 지배`: 존재감이 높고 성능도 평균 이상인 핵심 메타 영웅입니다.
+        - `과열 주의`: 픽률이 매우 높지만 성능 검증은 낮은 영웅입니다.
+        - `밴 압박`: 픽률은 낮지만 밴률이 매우 높아 강하게 의식되는 영웅입니다.
+        - `저평가 픽`: 존재감은 아직 낮지만 수축 승률 기준 성능이 매우 뚜렷한 영웅입니다.
+        - `전문가 픽`: 낮은 픽률 대비 승률이 매우 좋은 숙련자형 후보입니다.
+        - `비주류`: 존재감이 매우 낮고 성능 신호도 약한 영웅입니다.
+        - 라벨이 없으면 뚜렷한 유형 신호가 없는 `보통` 구간입니다.
+        """
+    )
+
 
 # 즐겨찾기 토글: 하트 링크가 ?fav=<영웅> 으로 들어온다.
 if "favorites" not in st.session_state:
