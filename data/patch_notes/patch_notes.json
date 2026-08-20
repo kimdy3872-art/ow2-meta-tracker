@@ -299,27 +299,50 @@
   {
     "id": "patch-2026-08-14",
     "patch_version": "2026-08-14",
-    "title": "Overwatch Retail Patch Notes – August 14, 2026",
+    "title": "오버워치 2 패치 노트 - 2026년 8월 15일",
     "patch_date": "2026-08-14",
     "source_url": "https://overwatch.blizzard.com/ko-kr/news/patch-notes/live/2026/8/#patch-2026-08-14",
-    "raw_content": "2026년 8월 14일\nOverwatch Retail Patch Notes – August 14, 2026\nHotfix Update\nThis is a hotfix update. Replay codes from the August 11 patch are still available.\nHero Updates\nD.Mon\nFixed a bug with Portable Fusion Repeater that could result in hits failing to register.\nFixed a bug with Limit Break not correctly granting Overhealth for targets hit.\nFixed in a previous update - Resolved an issue that prevented Overhealth from being applied when Limit Break was activated.\nFixed a bug where Toggle Propulsors did not work on console platforms.\nHitbox Changes\nFixed an issue with being damaged from the front with while Power Barrier was deployed.\nAdjusted the height of the mech head hitbox to be more flush with the model.\nSurging Strike\nCast Time reduced from 0.15 to 0.05 seconds.\nRecovery reduced from 0.25 to 0.15 seconds.\nFusion Repeater\nCast Time reduced from 0.3 to 0.2 seconds.\nRecovery Time reduced from 0.5 to 0.2 seconds.\nJetpack Cat\nBase movement speed reduced from 6 to 5.5 meters per second.\nPurr\nSelf healing penalty increased from 25% to 40%.",
-    "parsed_content": "Hotfix Update\nThis is a hotfix update. Replay codes from the August 11 patch are still available.\nHero Updates\nD.Mon\nFixed a bug with Portable Fusion Repeater that could result in hits failing to register.\nFixed a bug with Limit Break not correctly granting Overhealth for targets hit.\nFixed in a previous update - Resolved an issue that prevented Overhealth from being applied when Limit Break was activated.\nFixed a bug where Toggle Propulsors did not work on console platforms.\nHitbox Changes\nFixed an issue with being damaged from the front with while Power Barrier was deployed.\nAdjusted the height of the mech head hitbox to be more flush with the model.\nSurging Strike\nCast Time reduced from 0.15 to 0.05 seconds.\nRecovery reduced from 0.25 to 0.15 seconds.\nFusion Repeater\nCast Time reduced from 0.3 to 0.2 seconds.\nRecovery Time reduced from 0.5 to 0.2 seconds.\nJetpack Cat\nBase movement speed reduced from 6 to 5.5 meters per second.\nPurr\nSelf healing penalty increased from 25% to 40%.",
-    "summary": "영향 영웅: D.Mon, Jetpack Cat · Hotfix Update · This is a hotfix update. Replay codes from the August 11 patch are still available.",
+    "raw_content": "2026년 8월 14일\n오버워치 2 패치 노트 - 2026년 8월 15일\n핫픽스 업데이트\n핫픽스 업데이트입니다. 8월 12일부터 생성된 리플레이 코드는 계속 이용할 수 있습니다.\n영웅 업데이트\nD.Mon\n휴대용 융합 연발총이 적중 판정되지 않던 문제를 수정했습니다.\n한계 돌파가 대상에게 적중 시 추가 생명력이 정상적으로 부여되지 않던 문제를 수정했습니다.\n이전 업데이트로 수정 완료됨 - 한계 돌파가 활성화되면 추가 생명력이 적용되지 않던 문제를 해결했습니다.\n히트박스 변경 사항\n파워 배리어를 전개 중인데도 전방 피해를 받던 문제를 수정했습니다.\n메카 머리의 히트박스 높이를 모델과 더 잘 맞도록 조정했습니다.\n돌진 강타\n시전 시간이 0.15초에서 0.05초로 감소했습니다.\n회복 시간이 0.25초에서 0.15초로 감소했습니다.\n융합 연발총\n시전 시간이 0.3초에서 0.2초로 감소했습니다.\n회복 시간이 0.5초에서 0.2초로 감소했습니다.\n제트팩 캣\n기본 이동 속도가 초당 6미터에서 5.5미터로 감소했습니다.\n골골대기\n자가 치유 감소 효과가 25%에서 40%로 증가했습니다.",
+    "parsed_content": "핫픽스 업데이트\n핫픽스 업데이트입니다. 8월 12일부터 생성된 리플레이 코드는 계속 이용할 수 있습니다.\n영웅 업데이트\nD.Mon\n휴대용 융합 연발총이 적중 판정되지 않던 문제를 수정했습니다.\n한계 돌파가 대상에게 적중 시 추가 생명력이 정상적으로 부여되지 않던 문제를 수정했습니다.\n이전 업데이트로 수정 완료됨 - 한계 돌파가 활성화되면 추가 생명력이 적용되지 않던 문제를 해결했습니다.\n히트박스 변경 사항\n파워 배리어를 전개 중인데도 전방 피해를 받던 문제를 수정했습니다.\n메카 머리의 히트박스 높이를 모델과 더 잘 맞도록 조정했습니다.\n돌진 강타\n시전 시간이 0.15초에서 0.05초로 감소했습니다.\n회복 시간이 0.25초에서 0.15초로 감소했습니다.\n융합 연발총\n시전 시간이 0.3초에서 0.2초로 감소했습니다.\n회복 시간이 0.5초에서 0.2초로 감소했습니다.\n제트팩 캣\n기본 이동 속도가 초당 6미터에서 5.5미터로 감소했습니다.\n골골대기\n자가 치유 감소 효과가 25%에서 40%로 증가했습니다.",
+    "summary": "영향 영웅: D.Mon, 제트팩 캣 · 핫픽스 업데이트 · 핫픽스 업데이트입니다. 8월 12일부터 생성된 리플레이 코드는 계속 이용할 수 있습니다.",
     "summary_items": [
-      "영향 영웅: D.Mon, Jetpack Cat",
-      "Hotfix Update",
-      "This is a hotfix update. Replay codes from the August 11 patch are still available.",
-      "Hero Updates",
-      "Fixed a bug with Portable Fusion Repeater that could result in hits failing to register.",
-      "Fixed a bug with Limit Break not correctly granting Overhealth for targets hit."
+      "영향 영웅: D.Mon, 제트팩 캣",
+      "핫픽스 업데이트",
+      "핫픽스 업데이트입니다. 8월 12일부터 생성된 리플레이 코드는 계속 이용할 수 있습니다.",
+      "휴대용 융합 연발총이 적중 판정되지 않던 문제를 수정했습니다.",
+      "한계 돌파가 대상에게 적중 시 추가 생명력이 정상적으로 부여되지 않던 문제를 수정했습니다.",
+      "이전 업데이트로 수정 완료됨 - 한계 돌파가 활성화되면 추가 생명력이 적용되지 않던 문제를 해결했습니다."
     ],
     "affected_heroes": [
       "D.Mon",
-      "Jetpack Cat"
+      "제트팩 캣"
     ],
     "has_hero_updates": true,
     "patch_category": "hero_balance",
     "created_at": "2026-08-15T01:09:33",
-    "updated_at": "2026-08-19T01:42:33"
+    "updated_at": "2026-08-20T01:20:40"
+  },
+  {
+    "id": "patch-2026-08-19",
+    "patch_version": "2026-08-19",
+    "title": "오버워치 2 패치 노트 - 2026년 8월 20일",
+    "patch_date": "2026-08-19",
+    "source_url": "https://overwatch.blizzard.com/ko-kr/news/patch-notes/live/2026/8/#patch-2026-08-19",
+    "raw_content": "2026년 8월 19일\n오버워치 2 패치 노트 - 2026년 8월 20일\n클라이언트 업데이트\n게임 클라이언트를 업데이트하는 데 필요한 업데이트입니다. 리플레이 코드는 모두 제거되었습니다.\n버그 수정\n아이헨발데 전장의 문제를 수정하고 경쟁전에서 전장을 다시 활성화했습니다.\n겐지 신화 음성 대사가 재생되지 않던 문제를 수정했습니다.\n4시즌 출시 이전에 획득한 저장된 단계 건너뛰기가 4시즌 배틀 패스에 적용되지 않던 문제를 수정했습니다.\n이전 시즌의 수령하지 않은 아이템이 지급되지 않던 문제를 수정했습니다.",
+    "parsed_content": "클라이언트 업데이트\n게임 클라이언트를 업데이트하는 데 필요한 업데이트입니다. 리플레이 코드는 모두 제거되었습니다.\n버그 수정\n아이헨발데 전장의 문제를 수정하고 경쟁전에서 전장을 다시 활성화했습니다.\n겐지 신화 음성 대사가 재생되지 않던 문제를 수정했습니다.\n4시즌 출시 이전에 획득한 저장된 단계 건너뛰기가 4시즌 배틀 패스에 적용되지 않던 문제를 수정했습니다.\n이전 시즌의 수령하지 않은 아이템이 지급되지 않던 문제를 수정했습니다.",
+    "summary": "클라이언트 업데이트 · 게임 클라이언트를 업데이트하는 데 필요한 업데이트입니다. 리플레이 코드는 모두 제거되었습니다. · 아이헨발데 전장의 문제를 수정하고 경쟁전에서 전장을 다시 활성화했습니다.",
+    "summary_items": [
+      "클라이언트 업데이트",
+      "게임 클라이언트를 업데이트하는 데 필요한 업데이트입니다. 리플레이 코드는 모두 제거되었습니다.",
+      "아이헨발데 전장의 문제를 수정하고 경쟁전에서 전장을 다시 활성화했습니다.",
+      "겐지 신화 음성 대사가 재생되지 않던 문제를 수정했습니다.",
+      "4시즌 출시 이전에 획득한 저장된 단계 건너뛰기가 4시즌 배틀 패스에 적용되지 않던 문제를 수정했습니다.",
+      "이전 시즌의 수령하지 않은 아이템이 지급되지 않던 문제를 수정했습니다."
+    ],
+    "affected_heroes": [],
+    "has_hero_updates": false,
+    "patch_category": "general",
+    "created_at": "2026-08-20T01:20:40",
+    "updated_at": "2026-08-20T01:20:40"
   }
 ]
