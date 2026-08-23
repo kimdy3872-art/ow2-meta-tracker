@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-22T00:41:41",
+  "generated_at": "2026-08-23T00:44:21",
   "method_note": "Diagnostics are used to audit the hand-designed presence-led meta formula; they do not automatically optimize production weights.",
   "long_term_plan": "patch_buff_nerf_history_based_regression",
   "formula": {
