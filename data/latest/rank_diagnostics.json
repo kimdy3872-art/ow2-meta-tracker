@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-24T00:49:21",
+  "generated_at": "2026-08-25T00:44:34",
   "method_note": "Diagnostics are used to audit the hand-designed presence-led meta formula; they do not automatically optimize production weights.",
   "long_term_plan": "patch_buff_nerf_history_based_regression",
   "formula": {
@@ -88,8 +88,8 @@
   },
   "overheat_monitor": {
     "available": true,
-    "s_a_rows": 3657,
-    "s_a_perf_negative_share": 0.20617992890347278,
+    "s_a_rows": 3641,
+    "s_a_perf_negative_share": 0.20790991485855534,
     "review_threshold": 0.15,
     "note": "S/A 랭크 중 성능 z<0(존재감만으로 상위) 비율. 이 값이 지속적으로 review_threshold를 넘으면 PRESENCE_BAN_WEIGHT 하향(예: 0.5)을 검토합니다."
   },
@@ -143,33 +143,33 @@
         "presence_weight": 0.55,
         "performance_weight": 0.45,
         "presence_ban_weight": 0.5,
-        "rank_change_rate": 0.14975541579315163,
-        "avg_abs_rank_delta": 0.14975541579315163,
-        "s_membership_change_rate": 0.031236897274633125
+        "rank_change_rate": 0.15059399021663172,
+        "avg_abs_rank_delta": 0.15059399021663172,
+        "s_membership_change_rate": 0.031865828092243184
       },
       {
         "presence_weight": 0.55,
         "performance_weight": 0.45,
         "presence_ban_weight": 0.75,
-        "rank_change_rate": 0.13018867924528302,
-        "avg_abs_rank_delta": 0.13018867924528302,
+        "rank_change_rate": 0.13256464011180993,
+        "avg_abs_rank_delta": 0.13256464011180993,
         "s_membership_change_rate": 0.022711390635918937
       },
       {
         "presence_weight": 0.55,
         "performance_weight": 0.45,
         "presence_ban_weight": 1.0,
-        "rank_change_rate": 0.12669461914744934,
-        "avg_abs_rank_delta": 0.12669461914744934,
-        "s_membership_change_rate": 0.018448637316561847
+        "rank_change_rate": 0.1276030747728861,
+        "avg_abs_rank_delta": 0.1276030747728861,
+        "s_membership_change_rate": 0.017540181691125086
       },
       {
         "presence_weight": 0.65,
         "performance_weight": 0.35,
         "presence_ban_weight": 0.5,
-        "rank_change_rate": 0.09503843466107617,
-        "avg_abs_rank_delta": 0.09503843466107617,
-        "s_membership_change_rate": 0.026554856743535988
+        "rank_change_rate": 0.0949685534591195,
+        "avg_abs_rank_delta": 0.0949685534591195,
+        "s_membership_change_rate": 0.025366876310272537
       },
       {
         "presence_weight": 0.65,
@@ -177,7 +177,7 @@
         "presence_ban_weight": 0.75,
         "rank_change_rate": 0.03787561146051712,
         "avg_abs_rank_delta": 0.03787561146051712,
-        "s_membership_change_rate": 0.009853249475890986
+        "s_membership_change_rate": 0.008665269042627533
       },
       {
         "presence_weight": 0.65,
@@ -191,33 +191,33 @@
         "presence_weight": 0.75,
         "performance_weight": 0.25,
         "presence_ban_weight": 0.5,
-        "rank_change_rate": 0.16240391334730958,
-        "avg_abs_rank_delta": 0.16240391334730958,
-        "s_membership_change_rate": 0.02613556953179595
+        "rank_change_rate": 0.1649895178197065,
+        "avg_abs_rank_delta": 0.1649895178197065,
+        "s_membership_change_rate": 0.025017470300489168
       },
       {
         "presence_weight": 0.75,
         "performance_weight": 0.25,
         "presence_ban_weight": 0.75,
-        "rank_change_rate": 0.13081761006289308,
-        "avg_abs_rank_delta": 0.13081761006289308,
-        "s_membership_change_rate": 0.017190775681341718
+        "rank_change_rate": 0.13011879804332635,
+        "avg_abs_rank_delta": 0.13011879804332635,
+        "s_membership_change_rate": 0.01642208245981831
       },
       {
         "presence_weight": 0.75,
         "performance_weight": 0.25,
         "presence_ban_weight": 1.0,
-        "rank_change_rate": 0.12452830188679245,
-        "avg_abs_rank_delta": 0.12452830188679245,
-        "s_membership_change_rate": 0.01740041928721174
+        "rank_change_rate": 0.1214535290006988,
+        "avg_abs_rank_delta": 0.1214535290006988,
+        "s_membership_change_rate": 0.017190775681341718
       }
     ],
     "summary": {
       "variant_count": 9,
-      "avg_rank_change_rate": 0.10636695395605249,
-      "max_rank_change_rate": 0.16240391334730958,
-      "avg_s_membership_change_rate": 0.018836866216321142,
-      "max_s_membership_change_rate": 0.031236897274633125
+      "avg_rank_change_rate": 0.10668530165385512,
+      "max_rank_change_rate": 0.1649895178197065,
+      "avg_s_membership_change_rate": 0.018308874912648498,
+      "max_s_membership_change_rate": 0.031865828092243184
     }
   }
 }

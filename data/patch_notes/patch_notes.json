@@ -348,25 +348,24 @@
   {
     "id": "patch-2026-08-20",
     "patch_version": "2026-08-20",
-    "title": "Overwatch Retail Patch Notes – August 20, 2026",
+    "title": "오버워치 2 패치 노트 - 2026년 8월 21일",
     "patch_date": "2026-08-20",
     "source_url": "https://overwatch.blizzard.com/ko-kr/news/patch-notes/live/2026/8/#patch-2026-08-20",
-    "raw_content": "2026년 8월 20일\nOverwatch Retail Patch Notes – August 20, 2026\nHotfix Update\nThis is a hotfix update. Replay codes from the August 19 update are still available.\nBug Fixes\nMizuki\nFixed an issue where Mizuki could reach unintended locations.",
-    "parsed_content": "Hotfix Update\nThis is a hotfix update. Replay codes from the August 19 update are still available.\nBug Fixes\nMizuki\nFixed an issue where Mizuki could reach unintended locations.",
-    "summary": "영향 영웅: Mizuki · Hotfix Update · This is a hotfix update. Replay codes from the August 19 update are still available.",
+    "raw_content": "2026년 8월 20일\n오버워치 2 패치 노트 - 2026년 8월 21일\n핫픽스 업데이트\n핫픽스 업데이트입니다. 8월 20일 업데이트부터 생성된 리플레이 코드는 계속 이용할 수 있습니다.\n버그 수정\n미즈키\n미즈키가 의도하지 않은 장소에 이를 수 있던 문제를 수정했습니다.",
+    "parsed_content": "핫픽스 업데이트\n핫픽스 업데이트입니다. 8월 20일 업데이트부터 생성된 리플레이 코드는 계속 이용할 수 있습니다.\n버그 수정\n미즈키\n미즈키가 의도하지 않은 장소에 이를 수 있던 문제를 수정했습니다.",
+    "summary": "영향 영웅: 미즈키 · 핫픽스 업데이트 · 핫픽스 업데이트입니다. 8월 20일 업데이트부터 생성된 리플레이 코드는 계속 이용할 수 있습니다.",
     "summary_items": [
-      "영향 영웅: Mizuki",
-      "Hotfix Update",
-      "This is a hotfix update. Replay codes from the August 19 update are still available.",
-      "Bug Fixes",
-      "Fixed an issue where Mizuki could reach unintended locations."
+      "영향 영웅: 미즈키",
+      "핫픽스 업데이트",
+      "핫픽스 업데이트입니다. 8월 20일 업데이트부터 생성된 리플레이 코드는 계속 이용할 수 있습니다.",
+      "미즈키가 의도하지 않은 장소에 이를 수 있던 문제를 수정했습니다."
     ],
     "affected_heroes": [
-      "Mizuki"
+      "미즈키"
     ],
     "has_hero_updates": true,
     "patch_category": "hero_balance",
     "created_at": "2026-08-22T00:44:32",
-    "updated_at": "2026-08-24T00:52:34"
+    "updated_at": "2026-08-25T00:47:45"
   }
 ]
