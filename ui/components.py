@@ -230,12 +230,18 @@ def render_hero_showcase(
     art_html = ""
 
     if cutout:
-        # 전신 렌더는 카드 배경이 아니라 별도 레이어로 깐다. drop-shadow 림라이트가
-        # 실루엣을 따라가려면 알파를 가진 자기 박스가 있어야 하는데, 배경 이미지로
-        # 넣으면 필터가 카드 전체에 걸려서 텍스트까지 번진다.
+        # 아트는 카드 배경 레이어가 아니라 독립 <img> 다. drop-shadow 림라이트가
+        # 실루엣을 따라가려면 알파를 가진 자기 박스가 필요하고, 카드 배경으로 두면
+        # 필터가 카드 전체에 걸려 텍스트까지 번진다.
+        #
+        # D-4("아트를 <img> 로 카드 밖에 띄우지 않는다")의 우려는 카드 밖 삐져나옴
+        # 이었다. 이 <img> 는 카드 *안쪽* absolute 이고 카드가 overflow:hidden 이라
+        # 그 우려는 발생하지 않는다.
         art_html = (
-            f"<div class='hero-showcase-art' style=\"background-image:url('"
-            f"{html.escape(str(cutout), quote=True)}');--hero-glow:{_glow(accent)};\"></div>"
+            f"<img class='hero-showcase-art' alt='' aria-hidden='true' "
+            f"style=\"--hero-glow:{_glow(accent)}\" "
+            f"onerror=\"this.style.display='none'\" "
+            f"src='{html.escape(str(cutout), quote=True)}'>"
         )
     elif splash:
         # 컷아웃이 없는 영웅만 스플래시로 대체한다. 이때는 인물 위치를 모르므로

@@ -269,7 +269,9 @@ header[data-testid="stHeader"],
 
 h1, h2, h3, h4, p, span, div, label, li, a, summary, input, select, button, table, th, td {
     font-family: var(--app-font) !important;
-}/* 디스플레이 타이포. 위 blanket 규칙보다 뒤에 와야 이긴다(동일 명시도,
+}
+
+/* 디스플레이 타이포. 위 blanket 규칙보다 뒤에 와야 이긴다(동일 명시도,
 나중 선언 승). */
 h1,
 h2,
@@ -646,15 +648,20 @@ body [data-baseweb="popover"] ::-webkit-scrollbar-track {
     top: 0;
     bottom: 0;
     width: 44%;
+    height: 100%;
     z-index: 1;
-    background-repeat: no-repeat;
-    background-position: right bottom;
-    background-size: contain;
+    object-fit: contain;
+    object-position: right bottom;
     pointer-events: none;
     -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 12%);
     mask-image: linear-gradient(to right, transparent 0%, #000 12%);
-}.hero-showcase-art,
-.portrait-card-art{
+}
+
+/* 어두운 그림자만 있으면 어두운 배너 위에서 인물이 배경에 먹힌다. 영웅 색
+   림라이트를 깔아야 확실히 떠오른다. --hero-glow 는 hero_colors.json 값을
+   ui/components.py 가 인라인으로 넘긴다. */
+.hero-showcase-art,
+.portrait-card-art {
     filter:
         drop-shadow(0 0 22px var(--hero-glow, rgba(255, 122, 140, 0.45)))
         drop-shadow(0 16px 26px rgba(2, 6, 23, 0.55))
@@ -890,7 +897,9 @@ body [data-baseweb="popover"] ::-webkit-scrollbar-track {
 .unit,
 .eyebrow {
     white-space: nowrap;
-}/* ---------------------------------------------------------------------------
+}
+
+/* ---------------------------------------------------------------------------
    지시서 [6] - 한글이 한 글자씩 세로로 깨지는 문제
    포지션 칩·메타 유형 배지·랭크 필처럼 짧은 라벨은 절대 줄바꿈되면 안 된다.
    --------------------------------------------------------------------------- */
@@ -1404,7 +1413,9 @@ h1, h2, h3, h4,
     text-shadow: none !important;
     filter: none !important;
     color: var(--app-text);
-}/* 카드는 테두리만. 그림자는 HERO 하나뿐이다. */
+}
+
+/* 카드는 테두리만. 그림자는 HERO 하나뿐이다. */
 .card,
 .rail-card,
 .ow-rail,
@@ -1420,7 +1431,9 @@ h1, h2, h3, h4,
     border-radius: var(--r-card) !important;
 }
 
-.hero-showcase-card { border-radius: var(--r-hero) !important; }.ow-hero-badge,
+.hero-showcase-card { border-radius: var(--r-hero) !important; }
+
+.ow-hero-badge,
 .patch-hero-badge,
 .meta-type-badge,
 .low-pick-badge,
@@ -1756,7 +1769,9 @@ h1, h2, h3, h4,
 [data-testid="stSelectbox"] label,
 [data-testid="stTextInput"] label {
     white-space: nowrap;
-}.ow-card-rank{
+}
+
+.ow-card-rank{
     display: inline-flex;
     align-items: center;
     justify-content: center;
