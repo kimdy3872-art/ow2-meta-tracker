@@ -21,7 +21,10 @@ from app_data import (
     translate_tier_name,
 )
 from ui import (
-    icon_selectbox,
+    COLS_ART_KPI,
+    GAP,
+    page_shell,
+    resolve_tier,
     GLOBAL_BORDER_COLOR,
     GLOBAL_FONT_FAMILY,
     GLOBAL_GOOD_COLOR,
@@ -31,14 +34,16 @@ from ui import (
     GLOBAL_SURFACE_COLOR,
     GLOBAL_TEXT_COLOR,
     GLOBAL_WARN_COLOR,
-    apply_global_theme,
     render_hero_showcase,
-    render_page_hero,
-    render_sidebar_navigation,
 )
 
-st.set_page_config(page_title="영웅 상세", layout="wide", initial_sidebar_state="expanded")
-apply_global_theme()
+_shell = page_shell(
+    page_key="detail",
+    title="영웅 상세 리포트",
+    badge="Hero Deep Dive",
+    filters=("tier",),
+)
+_shell.__enter__()
 st.markdown(
     """
     <style>
@@ -199,13 +204,6 @@ def get_hero_perk_rows(hero_name):
     return {"minor": minor_rows, "major": major_rows}
 
 
-render_page_hero(
-    "영웅 상세 리포트", "",
-    badge="Hero Deep Dive",
-)
-render_sidebar_navigation("detail")
-st.markdown("<div style='height: 0.25rem;'></div>", unsafe_allow_html=True)
-
 hero_from_query = st.session_state.get("detail_hero") or st.query_params.get("hero")
 if isinstance(hero_from_query, list):
     hero_from_query = hero_from_query[0] if hero_from_query else None
@@ -229,20 +227,12 @@ tier_candidates = sorted(
 )
 if "All" not in tier_candidates:
     tier_candidates = ["All"] + tier_candidates
-query_tier = str(st.query_params.get("tier", "Gold"))
-query_tier = str(st.session_state.get("detail_tier") or query_tier)
-default_tier = query_tier if query_tier in tier_candidates else ("Gold" if "Gold" in tier_candidates else tier_candidates[0])
-
-tier_col, _ = st.columns([1.25, 3.75])
-with tier_col:
-    selected_tier = icon_selectbox(
-        "티어",
-        tier_candidates,
-        "tiersel",
-        index=tier_candidates.index(default_tier),
-        format_func=tier_option_label,
-        placeholder="티어 선택",
-    )
+# 티어는 사이드바 전역 필터. 표에서 ?tier= 로 넘어온 값이 있으면 전역 선택을
+# 거기에 맞춰준다(링크를 눌러 들어온 의도가 우선).
+_incoming = str(st.session_state.pop("detail_tier", "") or st.query_params.get("tier", ""))
+if _incoming and _incoming in tier_candidates:
+    st.session_state["selected_tier"] = _incoming
+selected_tier = resolve_tier(tier_candidates)
 
 hero_tier_df = hero_summary_df[hero_summary_df["data_tier"] == selected_tier].copy()
 if hero_tier_df.empty:
@@ -301,7 +291,7 @@ render_hero_showcase(
     ],
 )
 
-left_col, right_col = st.columns([1, 2.5], gap="large")
+left_col, right_col = st.columns(COLS_ART_KPI, gap=GAP)
 
 with left_col:
     # 2차 지시서 D-7: 초상화 카드 / 이름 / 역할 배지는 상단 HERO 카드와 정보가 100% 중복이라
@@ -477,3 +467,5 @@ with right_col:
                 "".join(make_map_card(row) for _, row in hero_map_df.iterrows()),
                 unsafe_allow_html=True,
             )
+
+_shell.__exit__(None, None, None)

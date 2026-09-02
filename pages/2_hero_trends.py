@@ -21,21 +21,27 @@ from app_data import (
     translate_tier_name,
 )
 from ui import (
-    icon_selectbox,
+    COLS_ART_KPI,
+    COLS_HALF,
+    GAP,
+    page_shell,
+    resolve_tier,
+    selected_role as selected_role_value,
     GLOBAL_BORDER_COLOR,
     GLOBAL_MUTED_TEXT_COLOR,
     GLOBAL_SURFACE_COLOR,
     GLOBAL_TEXT_COLOR,
-    apply_global_theme,
     render_hero_portrait_card,
     render_kpi_row,
-    render_page_hero,
-    render_sidebar_navigation,
     style_chart,
 )
 
-st.set_page_config(page_title="영웅 시계열", layout="wide", initial_sidebar_state="expanded")
-apply_global_theme()
+_shell = page_shell(
+    page_key="hero_trends",
+    title="영웅별 시계열",
+    badge="Hero Trend Watch",
+)
+_shell.__enter__()
 
 METRIC_CONFIG = {
     "win_rate": {"label": "승률", "color": "#34d399", "suffix": "%"},
@@ -141,13 +147,6 @@ def format_map_option(map_id, df):
         return label
     return f"{label} ({map_id})"
 
-render_page_hero(
-    "영웅별 시계열", "",
-    badge="Hero Trend Watch",
-)
-render_sidebar_navigation("hero_trends")
-st.markdown("<div style='height: 0.25rem;'></div>", unsafe_allow_html=True)
-
 history_df = load_history_data()
 
 if history_df.empty:
@@ -238,17 +237,13 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-controls_1 = st.columns([1.0, 1.0, 1.4])
-with controls_1[0]:
-    role_options = get_ordered_roles(history_df)
-    selected_role = icon_selectbox(
-        "포지션",
-        role_options,
-        "rolesel",
-        index=get_initial_index(role_options, "All"),
-        format_func=role_option_label,
-        placeholder="포지션 선택",
-    )
+# 티어/포지션은 사이드바 전역 필터. 본문에는 이 페이지 고유 필터(영웅·전장)만
+# 한 줄로 둔다. 전장 목록이 영웅·티어에 의존해서, 열만 먼저 잡고 나중에 채운다.
+_controls = st.columns(COLS_HALF, gap=GAP)
+role_options = get_ordered_roles(history_df)
+selected_role = selected_role_value()
+if selected_role not in role_options:
+    selected_role = "All"
 
 role_df = history_df.copy()
 if selected_role != "All":
@@ -271,7 +266,7 @@ _richest_hero = (
     else hero_options[0]
 )
 preferred_hero = st.session_state.get("detail_hero") or _richest_hero
-with controls_1[1]:
+with _controls[0]:
     selected_hero = st.selectbox(
         "영웅",
         hero_options,
@@ -281,30 +276,21 @@ with controls_1[1]:
 
 hero_df = role_df[role_df["hero"].astype(str) == selected_hero].copy()
 
-with controls_1[2]:
-    tier_options = get_ordered_tiers(hero_df)
-    preferred_tier = st.session_state.get("detail_tier", "Gold")
-    selected_tier = icon_selectbox(
-        "티어",
-        tier_options,
-        "tiersel",
-        index=get_initial_index(tier_options, preferred_tier),
-        format_func=tier_option_label,
-        placeholder="티어 선택",
-    )
+selected_tier = resolve_tier(get_ordered_tiers(hero_df))
 
 tier_df = hero_df[hero_df["data_tier"].astype(str) == selected_tier].copy()
 
 map_options = sorted(tier_df["map"].dropna().astype(str).unique().tolist())
 if "all-maps" in map_options:
     map_options = ["all-maps"] + [m for m in map_options if m != "all-maps"]
-selected_map = st.selectbox(
-    "전장",
-    map_options,
-    index=0,
-    format_func=lambda value: format_map_option(value, tier_df),
-    placeholder="전장 선택",
-)
+with _controls[1]:
+    selected_map = st.selectbox(
+        "전장",
+        map_options,
+        index=0,
+        format_func=lambda value: format_map_option(value, tier_df),
+        placeholder="전장 선택",
+    )
 
 map_df = tier_df[tier_df["map"].astype(str) == selected_map].copy()
 available_metrics = [
@@ -374,7 +360,7 @@ st.markdown(
 )
 
 # 지시서 STEP 4: st.metric 은 숫자 크기 제어가 어려워 커스텀 HTML 로 간다.
-_art_col, _kpi_col = st.columns([1, 2.6], gap="large")
+_art_col, _kpi_col = st.columns(COLS_ART_KPI, gap=GAP)
 
 with _art_col:
     render_hero_portrait_card(
@@ -490,3 +476,5 @@ with st.expander("스냅샷 원본 표"):
             "밴률": st.column_config.NumberColumn(format="%.1f%%"),
         },
     )
+
+_shell.__exit__(None, None, None)

@@ -23,8 +23,16 @@ from app_data import (
     translate_tier_name,
 )
 from ui import (
+    COLS_ART_KPI,
+    COLS_FILTER_WIDE,
+    COLS_MAIN_SIDE,
+    FILTER_DEFAULTS,
+    GAP,
+    page_shell,
+    resolve_tier,
+    section,
+    selected_role as selected_role_value,
     icon_selectbox,
-    _latest_data_date,
     rank_badge,
     GLOBAL_BG_COLOR,
     GLOBAL_BORDER_COLOR,
@@ -34,7 +42,6 @@ from ui import (
     GLOBAL_DANGER_COLOR,
     GLOBAL_SURFACE_COLOR,
     GLOBAL_TEXT_COLOR,
-    apply_global_theme,
     render_rotating_card_groups,
     render_hero_scroller,
     render_hero_showcase,
@@ -42,26 +49,18 @@ from ui import (
     render_meta_score_card,
     render_rail_rows,
     render_rank_rail,
-    render_page_hero,
-    render_sidebar_navigation,
 )
 
 # -------------------------------------------------
 # 1. 페이지 설정
 # -------------------------------------------------
-st.set_page_config(
-    page_title="오버워치 2 경쟁전 메타 분석기",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
-apply_global_theme()
-render_page_hero(
-    "오버워치 2 경쟁전 메타 센터", "",
+_shell = page_shell(
+    page_key="main",
+    title="오버워치 2 경쟁전 메타 센터",
+    subtitle="",
     badge="Live Competitive Meta",
-    live_label=_latest_data_date(),
 )
-render_sidebar_navigation("main")
-st.markdown("<div style='height: 0.25rem;'></div>", unsafe_allow_html=True)
+_shell.__enter__()
 
 
 def _as_list(value):
@@ -348,34 +347,15 @@ def render_metric_card(title, value, accent_color="#0b69ff"):
     </div>
     """
 
-if "selected_tier" not in st.session_state:
-    st.session_state.selected_tier = "Gold"
-if "selected_role" not in st.session_state:
-    st.session_state.selected_role = "All"
-if "search_hero" not in st.session_state:
-    st.session_state.search_hero = ""
-
-
 def reset_filters():
-    st.session_state.selected_tier = "Gold"
-    st.session_state.selected_role = "All"
-    st.session_state.sort_col = "total_score"
-    st.session_state.sort_desc = True
-    st.session_state.search_hero = ""
+    for key, value in FILTER_DEFAULTS.items():
+        st.session_state[key] = value
 
-# 2차 지시서 D-2: 드롭다운 4개 + 라디오 1개 -> 컨트롤 3개.
-# 티어는 순서가 있는 값이라 드롭다운에 넣으면 현재 위치가 안 보인다. 세그먼트로.
-# 티어/포지션은 드롭다운으로. 목록에는 "{아이콘} 골드" 형식의 라벨을 쓴다.
-_t_col, _r_col, _s_col = st.columns([1, 1, 1.4], gap="small")
-with _t_col:
-    selected_tier = icon_selectbox(
-        "티어", tiers, "tiersel", key="selected_tier", format_func=tier_option_label
-    )
-with _r_col:
-    selected_role = icon_selectbox(
-        "포지션", ["All"] + roles, "rolesel",
-        key="selected_role", format_func=role_option_label
-    )
+# 티어/포지션은 사이드바 전역 필터로 올라갔다(4개 페이지가 같은 선택을 공유한다).
+# 본문에는 이 페이지 고유 필터인 검색만 남는다.
+selected_tier = resolve_tier(tiers)
+selected_role = selected_role_value()
+_s_col, _ = st.columns(COLS_FILTER_WIDE, gap=GAP)
 with _s_col:
     search_hero = st.text_input("영웅 검색", key="search_hero", placeholder="영웅 이름")
 
@@ -530,7 +510,7 @@ def render_rank_table_html(df):
         hero = html.escape(hero_name)
         hero_query = urllib.parse.quote(hero_name, safe="")
         hero_link = (
-            f"<a href='?hero={hero_query}' target='_self' "
+            f"<a href='?hero={hero_query}&tier={selected_tier}' target='_self' "
             f"style='color:{GLOBAL_TEXT_COLOR}; text-decoration: underline; text-underline-offset: 3px;'>"
             f"{hero}</a>"
         )
@@ -671,7 +651,7 @@ def _build_top_cards(metric_col, label, top_df, metric_color, limit=4):
             "sub": f"{label} {i + 1}위 · {translate_role_name(str(row.get('role', '')))}",
             "rank": str(row.get("rank", "")),
             "rank_color": rank_color_map.get(str(row.get("rank", "")), GLOBAL_TEXT_COLOR),
-            "href": f"?hero={urllib.parse.quote(hero_name, safe='')}",
+            "href": f"?hero={urllib.parse.quote(hero_name, safe='')}&tier={selected_tier}",
         })
     return cards
 
@@ -724,7 +704,7 @@ if display_df.empty:
 
 # 지시서 STEP 2: 사이드바(메뉴) + 메인 + 우측 레일. 지시서의 left 컬럼은 사이드바와
 # 역할이 겹쳐 두지 않는다.
-_main_col, _rail_col2 = st.columns([3.4, 1.5], gap="large")
+_main_col, _rail_col2 = st.columns(COLS_MAIN_SIDE, gap=GAP)
 
 with _main_col:
     _top = display_df.iloc[0]
@@ -887,3 +867,5 @@ if hero_from_query:
         st.session_state.detail_source = "main"
         if hasattr(st, "switch_page"):
             st.switch_page("pages/3_hero_detail.py")
+
+_shell.__exit__(None, None, None)

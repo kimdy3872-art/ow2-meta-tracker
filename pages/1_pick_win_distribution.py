@@ -2,9 +2,6 @@ import streamlit as st
 import plotly.express as px
 import pandas as pd
 from app_data import (
-    role_option_label,
-    tier_option_label,
-    get_initial_index,
     get_ordered_roles,
     get_ordered_tiers,
     load_latest_stats,
@@ -12,44 +9,26 @@ from app_data import (
     translate_tier_name,
 )
 from ui import (
-    icon_selectbox,
+    COLS_HALF,
+    GAP,
+    page_shell,
+    resolve_tier,
+    selected_role as selected_role_value,
     GLOBAL_GOOD_COLOR,
     GLOBAL_INFO_COLOR,
     GLOBAL_DANGER_COLOR,
     GLOBAL_RANK_COLORS,
-    apply_global_theme,
-    render_page_hero,
-    render_sidebar_navigation,
     style_chart,
 )
 
-st.set_page_config(page_title="픽률/승률 분포", layout="wide", initial_sidebar_state="expanded")
-apply_global_theme()
+_shell = page_shell(
+    page_key="pick_win",
+    title="픽률 · 승률 · 밴률 3D 분포",
+    badge="Meta Positioning 3D",
+)
+_shell.__enter__()
 
 
-def get_selected_tier(df):
-    tier_options = get_ordered_tiers(df)
-    default_tier = "Gold" if "Gold" in tier_options else tier_options[0]
-    return icon_selectbox(
-        "티어",
-        tier_options,
-        "tiersel",
-        index=get_initial_index(tier_options, default_tier),
-        format_func=tier_option_label,
-        placeholder="티어 선택",
-    )
-
-
-def get_selected_role(df):
-    valid_roles = get_ordered_roles(df)
-    return icon_selectbox(
-        "포지션",
-        valid_roles,
-        "rolesel",
-        index=0,
-        format_func=role_option_label,
-        placeholder="포지션 선택",
-    )
 
 
 def extract_selected_hero(event_data):
@@ -76,20 +55,13 @@ def extract_selected_hero(event_data):
     return None
 
 
-render_page_hero(
-    "픽률 · 승률 · 밴률 3D 분포", "",
-    badge="Meta Positioning 3D",
-)
-render_sidebar_navigation("pick_win")
-st.markdown("<div style='height: 0.25rem;'></div>", unsafe_allow_html=True)
-
 raw_df = load_latest_stats()
 
-f1, f2 = st.columns([1.0, 1.0])
-with f1:
-    selected_tier = get_selected_tier(raw_df)
-with f2:
-    selected_role = get_selected_role(raw_df)
+# 티어/포지션은 사이드바 전역 필터를 그대로 쓴다(페이지 간 선택이 유지된다).
+selected_tier = resolve_tier(get_ordered_tiers(raw_df))
+selected_role = selected_role_value()
+if selected_role not in get_ordered_roles(raw_df):
+    selected_role = "All"
 
 filtered_df = raw_df[(raw_df["data_tier"] == selected_tier) & (raw_df["map"] == "all-maps")].copy()
 
@@ -254,7 +226,7 @@ fig.update_layout(
 )
 
 # 지시서 STEP 3: 2D 와 3D 를 세로로 쌓지 않고 나란히.
-_c2d, _c3d = st.columns([1.15, 1], gap="large")
+_c2d, _c3d = st.columns(COLS_HALF, gap=GAP)
 with _c2d:
     st.markdown("<div class='eyebrow'>판단용 2D · 픽률 x 승률</div>", unsafe_allow_html=True)
     st.plotly_chart(fig_2d, key="pick_win_scatter_2d",
@@ -279,3 +251,5 @@ if selected_hero:
     st.session_state.detail_source = "pick_win"
     if hasattr(st, "switch_page"):
         st.switch_page("pages/3_hero_detail.py")
+
+_shell.__exit__(None, None, None)

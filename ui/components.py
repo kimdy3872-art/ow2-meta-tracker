@@ -30,6 +30,17 @@ def _one_line(markup: str) -> str:
     return "".join(line.strip() for line in markup.splitlines())
 
 
+def _tier_qs() -> str:
+    """영웅 링크에 붙일 &tier=. 링크 클릭은 전체 리로드라 세션이 새로 뜨는데,
+    URL 로 넘기지 않으면 전역 티어 선택이 기본값으로 돌아간다."""
+    try:
+        from .filters import selected_tier
+
+        return f"&tier={urllib.parse.quote(selected_tier(), safe='')}"
+    except Exception:
+        return ""
+
+
 def _glow(accent: str, alpha: float = 0.45) -> str:
     """영웅 색을 림라이트용 rgba 로. 아트를 어두운 배너 위로 띄우는 데 쓴다.
 
@@ -142,7 +153,8 @@ def _latest_data_date() -> str:
     return ""
 
 
-def render_sidebar_navigation(current_page: str, data_date: str | None = None) -> None:
+def render_sidebar_navigation(current_page: str, data_date: str | None = None,
+                              filters=("tier", "role")) -> None:
     """좌측 아이콘 네비게이션.
 
     Streamlit 기본 페이지 목록(stSidebarNav)은 숨기고 page_link 로 직접 구성한다.
@@ -177,6 +189,10 @@ def render_sidebar_navigation(current_page: str, data_date: str | None = None) -
                 '<span class="ow-nav-standalone-dot"></span>영웅 상세 리포트</div>',
                 unsafe_allow_html=True,
             )
+
+        # 전역 필터는 메뉴와 DATA 사이에 온다. 페이지가 바뀌어도 같은 자리다.
+        from .filters import render_global_filters
+        render_global_filters(filters)
 
         if data_date:
             st.markdown(
@@ -306,7 +322,7 @@ def render_hero_scroller(cards, favorites=None) -> None:
         items.append(
             f"<div class='hero-tile'>"
             f"<a class='hero-tile-link' target='_self' "
-            f"href='?hero={urllib.parse.quote(name, safe='')}'>{art}"
+            f"href='?hero={urllib.parse.quote(name, safe='')}{_tier_qs()}'>{art}"
             f"<div class='hero-tile-body'>"
             f"<div class='hero-tile-metric nowrap' style=\"color:{card.get('metric_color', '#fff')};\">"
             f"{html.escape(str(card.get('metric', '-')))}</div>"
@@ -354,7 +370,7 @@ def render_rail_rows(title: str, rows, empty_text: str = "") -> None:
     else:
         body = "".join(
             f"<a class='rail-row' target='_self' "
-            f"href='?hero={urllib.parse.quote(str(name), safe='')}'>"
+            f"href='?hero={urllib.parse.quote(str(name), safe='')}{_tier_qs()}'>"
             + (f"<img class='rail-row-img' src='{html.escape(str(img), quote=True)}' alt=''>"
                if img else "<div class='rail-row-img'></div>")
             + f"<div class='rail-row-name nowrap'>{html.escape(str(name))}</div>"
