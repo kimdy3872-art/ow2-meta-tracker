@@ -43,6 +43,8 @@ MANIFEST_PATH = ROOT / "data" / "hero_art_manifest.json"
 
 OVERFAST_BASE = "https://overfast-api.tekrop.fr"
 WIKI_API = "https://overwatch.fandom.com/api.php"
+# focal 추정은 카드 배경(2600 스플래시) 기준이어야 한다.
+FOCAL_SIZE = "2600"
 
 # Fandom 은 기본 User-Agent 를 차단한다. 식별 가능한 UA 를 붙인다.
 UA = {"User-Agent": "ow2meta-art-fetch/1.0 (https://github.com/kimdy3872-art/ow2-meta-tracker)"}
@@ -102,6 +104,26 @@ def wiki_render_url(name):
     if not pages:
         return None
     return ((pages[0].get("original") or {}).get("source")) or None
+
+
+def focal_x(im):
+    """스플래시 안에서 캐릭터의 가로 위치를 추정한다(0~1).
+
+    전신 렌더 자체에는 필요 없다(정면 정중앙이라 항상 0.5). 하지만 카드 그리드와
+    가로 스크롤러는 여전히 스플래시를 cover 로 크롭해서 쓰고, 그때 이 값이
+    background-position 이 된다. 0.5 로 고정하면 인물이 프레임 밖으로 밀린다.
+
+    캐릭터는 선명하고 배경은 블러라는 성질을 이용해, 컬럼별 그래디언트 에너지의
+    무게중심을 잡는다.
+    """
+    a = np.asarray(im.convert("L").resize((400, 190)), dtype=np.float32)
+    gx = np.abs(np.diff(a, axis=1, prepend=a[:, :1]))
+    gy = np.abs(np.diff(a, axis=0, prepend=a[:1, :]))
+    col = (gx + gy).sum(axis=0)
+    col = np.maximum(col - np.percentile(col, 55), 0)
+    if col.sum() == 0:
+        return 0.5
+    return round(float((col * np.arange(col.size)).sum() / col.sum()) / col.size, 3)
 
 
 def mask_luma(rgba):
@@ -180,19 +202,30 @@ def build(keys=None):
 
             detail = fetch_json(f"{OVERFAST_BASE}/heroes/{key}")
             backgrounds = [b.get("url") for b in (detail.get("backgrounds") or []) if b.get("url")]
+            splash = {s: next((u for u in backgrounds if f"/{s}_" in u), None)
+                      for s in ("960", "1600", "2600")}
+
+            # focal 은 2600 스플래시 기준으로 뽑는다. 이 값을 쓰는 곳(카드 그리드,
+            # 스크롤러)이 전부 스플래시를 크롭해서 쓰기 때문이다.
+            focal = 0.5
+            if splash.get(FOCAL_SIZE):
+                try:
+                    focal = focal_x(fetch_image(splash[FOCAL_SIZE]))
+                except Exception as exc:
+                    print(f"{tag}: focal 추정 실패({exc}) - 0.5 사용")
 
             manifest[key] = {
                 "name": name,
                 "role": hero.get("role"),
                 "portrait": hero.get("portrait"),
-                # 배너 배경 블러 레이어가 계속 쓴다.
-                "splash": {s: next((u for u in backgrounds if f"/{s}_" in u), None)
-                           for s in ("960", "1600", "2600")},
+                # 배너 배경 블러 레이어와 카드 그리드가 계속 쓴다.
+                "splash": splash,
                 "art_source": art_url,
                 "cutout_path": f"{ART_REPO_PATH}/{key}.webp",
                 "cutout_size": list(cut.size),
-                # 전신 렌더는 정면 정중앙이라 초점 보정이 필요 없다.
-                "focal_x": 0.5,
+                # 스플래시를 크롭해 쓰는 곳(카드 그리드/스크롤러) 전용.
+                # 전신 렌더 자체는 정면 정중앙이라 이 값을 쓰지 않는다.
+                "focal_x": focal,
                 "luma": {
                     "before": round(luma_before, 1),
                     "after": round(luma_after, 1),
