@@ -229,6 +229,15 @@ header[data-testid="stHeader"],
     border-top: 1px solid rgba(255, 255, 255, 0.07);
 }
 
+.ow-nav-legal {
+    margin-top: 14px;
+    padding: 10px 8px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    color: rgba(155, 162, 196, 0.66);
+    font-size: 0.66rem;
+    line-height: 1.5;
+}
+
 .ow-nav-foot-value {
     color: #e6e8f7;
     font-family: var(--app-display-font);
@@ -734,9 +743,9 @@ body [data-baseweb="popover"] ::-webkit-scrollbar-track {
     transform: scale(1.12);
 }
 
-/* 컷아웃 bbox 에는 뻗은 무기까지 들어가 가로가 길다. contain 으로 두면 폭 제약에
-   걸려 인물이 작아지므로 박스를 넉넉히 주고 우측 하단에 붙인다. 좌측으로 뻗는
-   무기는 마스크로 부드럽게 날려 텍스트와 충돌하지 않게 한다. */
+/* 위키 전신 렌더는 무기가 옆으로 길게 뻗지 않아 폭이 좁다. contain + 우측 하단
+   정렬로 전신을 다 보여준다(잘리면 안 된다). 좌측 페이드는 텍스트와 겹치는 부분만
+   부드럽게 날릴 정도인 12% 면 충분하다. */
 .ow-hero-cutout {
     position: absolute;
     right: -10px;
@@ -744,13 +753,43 @@ body [data-baseweb="popover"] ::-webkit-scrollbar-track {
     bottom: 0;
     height: 100%;
     width: auto;
-    max-width: 66%;
+    max-width: 46%;
     object-fit: contain;
     object-position: bottom right;
     pointer-events: none;
-    filter: drop-shadow(0 16px 26px rgba(2, 6, 23, 0.5));
-    -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 22%);
-    mask-image: linear-gradient(to right, transparent 0%, #000 22%);
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 12%);
+    mask-image: linear-gradient(to right, transparent 0%, #000 12%);
+}
+
+/* 전신 렌더를 카드 안쪽 레이어로 깐다. 카드가 overflow:hidden 이라 밖으로 새지
+   않는다. 배경 이미지가 아니라 별도 레이어인 이유는, drop-shadow 가 실루엣을
+   따라가려면 알파를 가진 자기 박스가 필요해서다(배경으로 넣으면 필터가 카드
+   전체에 걸려 텍스트까지 번진다). */
+.hero-showcase-art {
+    position: absolute;
+    right: 4%;
+    top: 0;
+    bottom: 0;
+    width: 44%;
+    z-index: 1;
+    background-repeat: no-repeat;
+    background-position: right bottom;
+    background-size: contain;
+    pointer-events: none;
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 12%);
+    mask-image: linear-gradient(to right, transparent 0%, #000 12%);
+}
+
+/* 어두운 그림자만 있으면 어두운 배너 위에서 인물이 배경에 먹힌다. 영웅 색
+   림라이트를 깔아야 확실히 떠오른다. --hero-glow 는 hero_colors.json 값을
+   ui/components.py 가 인라인으로 넘긴다. */
+.ow-hero-cutout,
+.hero-showcase-art,
+.portrait-card-art {
+    filter:
+        drop-shadow(0 0 22px var(--hero-glow, rgba(255, 122, 140, 0.45)))
+        drop-shadow(0 16px 26px rgba(2, 6, 23, 0.55))
+        saturate(1.05);
 }
 
 .ow-hero-banner-num {
@@ -1005,7 +1044,7 @@ body [data-baseweb="popover"] ::-webkit-scrollbar-track {
 @media (max-width: 900px) {
     .ow-hero-banner { padding-top: 0; }
     .ow-hero-banner-body { max-width: 100%; }
-    .ow-hero-cutout { display: none; }
+    .ow-hero-cutout, .hero-showcase-art { display: none; }
     .ow-hero-banner-num { right: 6%; opacity: 0.7; }
 }
 
@@ -1104,7 +1143,10 @@ body [data-baseweb="popover"] ::-webkit-scrollbar-track {
 
 .hero-showcase-card {
     position: relative;
-    min-height: 260px;
+    /* 전신 렌더가 contain 으로 다 들어가야 해서 세로 여유가 필요하다. 세로가
+       인물 크기를 정하므로(전신은 세로로 길어 폭이 아니라 높이에 걸린다)
+       260px 에서는 우표만 해진다. */
+    min-height: 400px;
     border-radius: var(--r-hero);
     overflow: hidden;
     padding: 26px 30px;

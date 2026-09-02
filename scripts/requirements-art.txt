@@ -1,6 +1,8 @@
 # 히어로 아트 생성 전용 (scripts/fetch_hero_art.py).
 # 빌드 타임에만 필요하므로 루트 requirements.txt 에는 절대 넣지 않는다.
 # Streamlit Cloud 런타임은 결과물(WebP + 매니페스트)만 읽는다.
-rembg[cpu]>=2.0.60
+#
+# 아트 소스가 위키 전신 렌더(원본부터 투명 PNG)로 바뀌면서 배경 제거가 사라졌다.
+# rembg / onnxruntime(birefnet 973MB) 는 더 이상 필요 없다.
 pillow>=10.0
 numpy>=1.24

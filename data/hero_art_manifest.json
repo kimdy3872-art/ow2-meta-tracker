@@ -8,15 +8,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltf8e9415141b0ec36/631a8b65e7bdcf0dd996c8e1/1600_Dva.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltcd4bcf30a5794639/631a8b65f581050de0035df6/2600_Dva.jpg"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/1/1a/OW2_Dva.png/revision/latest?cb=20241108201346",
   "cutout_path": "static/hero_art/dva.webp",
   "cutout_size": [
-   1358,
-   760
+   673,
+   695
   ],
-  "focal_x": 0.774,
-  "health": {
-   "solid_ratio": 0.716,
-   "width_ratio": 0.522
+  "focal_x": 0.5,
+  "luma": {
+   "before": 98.7,
+   "after": 115.4,
+   "gamma": 0.794
   },
   "use_cutout": true
  },
@@ -29,15 +31,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt74033e83230dc856/631a8b34f581050de0035df2/1600_Kiriko.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt09d0b0474ed8053b/631a8b345f39a30d9cedbac4/2600_Kiriko.jpg"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/1/16/OW2_Kiriko.png/revision/latest?cb=20241102132938",
   "cutout_path": "static/hero_art/kiriko.webp",
   "cutout_size": [
-   642,
-   729
+   496,
+   1400
   ],
-  "focal_x": 0.694,
-  "health": {
-   "solid_ratio": 0.472,
-   "width_ratio": 0.247
+  "focal_x": 0.5,
+  "luma": {
+   "before": 100.8,
+   "after": 115.9,
+   "gamma": 0.812
   },
   "use_cutout": true
  },
@@ -50,15 +54,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt97ec60cf959e81f3/631a8babe337fa0dc7263beb/1600_Ana.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt76ab9c7b4d291756/631a8bab636d390da7825df5/2600_Ana.jpg"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/5/5e/OW2_Ana.png/revision/latest?cb=20241102141052",
   "cutout_path": "static/hero_art/ana.webp",
   "cutout_size": [
-   852,
-   704
+   603,
+   1400
   ],
-  "focal_x": 0.708,
-  "health": {
-   "solid_ratio": 0.51,
-   "width_ratio": 0.328
+  "focal_x": 0.5,
+  "luma": {
+   "before": 82.3,
+   "after": 107.4,
+   "gamma": 0.72
   },
   "use_cutout": true
  },
@@ -71,15 +77,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltad4c1a0ddfe03d0f/69d6e1078d465d09974c5e98/1600_Anran.png",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt9b7863b08388e81f/69d6e0fa369d00815f7d8ccc/2600_Anran.png"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/0/07/OW2_Anran.png/revision/latest?cb=20260611085803",
   "cutout_path": "static/hero_art/anran.webp",
   "cutout_size": [
-   1639,
-   1431
+   603,
+   997
   ],
-  "focal_x": 0.691,
-  "health": {
-   "solid_ratio": 0.447,
-   "width_ratio": 0.427
+  "focal_x": 0.5,
+  "luma": {
+   "before": 127.2,
+   "after": 120.1,
+   "gamma": 1.083
   },
   "use_cutout": true
  },
@@ -92,15 +100,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt83273c22d0b94966/631a8ba0636d390da7825df1/1600_Ashe.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt3fc10a3baca12db5/631a8ba0a633280e74dc25cd/2600_Ashe.jpg"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/8/89/OW2_Ashe.png/revision/latest?cb=20250329135344",
   "cutout_path": "static/hero_art/ashe.webp",
   "cutout_size": [
-   707,
-   718
+   720,
+   1173
   ],
-  "focal_x": 0.69,
-  "health": {
-   "solid_ratio": 0.535,
-   "width_ratio": 0.272
+  "focal_x": 0.5,
+  "luma": {
+   "before": 64.7,
+   "after": 91.4,
+   "gamma": 0.72
   },
   "use_cutout": true
  },
@@ -113,15 +123,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt7409943072f0d44c/631a8b99f581050de0035dfa/1600_Baptiste.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt5ef4dacade9780da/631a8b99e337fa0dc7263be7/2600_Baptiste.jpg"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/0/00/OW2_Baptiste.png/revision/latest?cb=20241108201237",
   "cutout_path": "static/hero_art/baptiste.webp",
   "cutout_size": [
-   855,
-   689
+   659,
+   1331
   ],
-  "focal_x": 0.702,
-  "health": {
-   "solid_ratio": 0.556,
-   "width_ratio": 0.329
+  "focal_x": 0.5,
+  "luma": {
+   "before": 107.3,
+   "after": 117.1,
+   "gamma": 0.87
   },
   "use_cutout": true
  },
@@ -134,15 +146,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltcd0d5eb4b44d35f1/631a8b92e7bdcf0dd996c8e5/1600_Bastion.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltac77c0e793cedb9d/631a8b923ab6f40dd2a906b1/2600_Bastion.jpg"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/4/47/OW2-Bastion.png/revision/latest?cb=20241108201208",
   "cutout_path": "static/hero_art/bastion.webp",
   "cutout_size": [
-   1286,
-   700
+   862,
+   1334
   ],
-  "focal_x": 0.684,
-  "health": {
-   "solid_ratio": 0.591,
-   "width_ratio": 0.495
+  "focal_x": 0.5,
+  "luma": {
+   "before": 140.2,
+   "after": 122.5,
+   "gamma": 1.26
   },
   "use_cutout": true
  },
@@ -155,15 +169,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltf362dee5d41929be/631a8b7feef3ae0e03c743b6/1600_Brigitte.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt985b7156ca9b6e62/631a8b7f5f39a30d9cedbacc/2600_Brigitte.jpg"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/8/83/OW2_Brigitte.png/revision/latest?cb=20220930191642",
   "cutout_path": "static/hero_art/brigitte.webp",
   "cutout_size": [
-   1067,
-   715
+   312,
+   667
   ],
-  "focal_x": 0.726,
-  "health": {
-   "solid_ratio": 0.607,
-   "width_ratio": 0.41
+  "focal_x": 0.5,
+  "luma": {
+   "before": 92.0,
+   "after": 116.5,
+   "gamma": 0.74
   },
   "use_cutout": true
  },
@@ -176,15 +192,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt242e79efb1e27251/631a8b791566e20e82f30288/1600_Cassidy.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt4bb4c31f6849c25b/631a8b781613910e6926bfd4/2600_Cassidy.jpg"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/a/a0/OW2_Cassidy.png/revision/latest?cb=20241108201305",
   "cutout_path": "static/hero_art/cassidy.webp",
   "cutout_size": [
-   899,
-   697
+   674,
+   1242
   ],
-  "focal_x": 0.673,
-  "health": {
-   "solid_ratio": 0.554,
-   "width_ratio": 0.346
+  "focal_x": 0.5,
+  "luma": {
+   "before": 84.4,
+   "after": 110.0,
+   "gamma": 0.72
   },
   "use_cutout": true
  },
@@ -197,15 +215,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltd3c87960c2414bdd/6a73d89ef42b958b982fa771/1600_Dmon.png",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt2543b5c043d434ed/6a73d8971bb9c51a0d6bc682/2600_Dmon.png"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/d/dc/OW2_DMonBeast.png/revision/latest?cb=20260812012011",
   "cutout_path": "static/hero_art/dmon.webp",
   "cutout_size": [
-   2341,
-   1513
+   2071,
+   1400
   ],
-  "focal_x": 0.736,
-  "health": {
-   "solid_ratio": 0.6,
-   "width_ratio": 0.61
+  "focal_x": 0.5,
+  "luma": {
+   "before": 107.8,
+   "after": 116.8,
+   "gamma": 0.876
   },
   "use_cutout": true
  },
@@ -218,15 +238,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltd95bdd9d3b5bf26f/6981752219662433bbaefd7d/1600_Domina.png",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt5522a118520166f8/6981752246798a3f5135fce2/2600_Domina.png"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/d/d7/OW2_Domina.png/revision/latest?cb=20260213022447",
   "cutout_path": "static/hero_art/domina.webp",
   "cutout_size": [
-   2560,
-   1341
+   1185,
+   1400
   ],
-  "focal_x": 0.758,
-  "health": {
-   "solid_ratio": 0.509,
-   "width_ratio": 0.667
+  "focal_x": 0.5,
+  "luma": {
+   "before": 119.0,
+   "after": 118.6,
+   "gamma": 0.989
   },
   "use_cutout": true
  },
@@ -239,15 +261,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt3f24de1ac73c318b/631a8b6ba633280e74dc25c9/1600_Doomfist.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blteaa58e824d1fc399/631a8b6b0e1b4f0e7b89a538/2600_Doomfist.jpg"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/1/1e/OW2_Doomfist_render.png/revision/latest?cb=20241102135923",
   "cutout_path": "static/hero_art/doomfist.webp",
   "cutout_size": [
-   1235,
-   697
+   891,
+   1396
   ],
-  "focal_x": 0.705,
-  "health": {
-   "solid_ratio": 0.566,
-   "width_ratio": 0.475
+  "focal_x": 0.5,
+  "luma": {
+   "before": 79.8,
+   "after": 106.2,
+   "gamma": 0.72
   },
   "use_cutout": true
  },
@@ -260,15 +284,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt5f4efcfb6dd8d23a/631a98f5f581050de0035e00/1600_Echo.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt6a6dc9da49d17b95/631a8b5feef3ae0e03c743ae/2600_Echo.jpg"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/b/bd/OW_Echo.png/revision/latest?cb=20241102150435",
   "cutout_path": "static/hero_art/echo.webp",
   "cutout_size": [
-   555,
-   720
+   321,
+   788
   ],
-  "focal_x": 0.689,
-  "health": {
-   "solid_ratio": 0.531,
-   "width_ratio": 0.213
+  "focal_x": 0.5,
+  "luma": {
+   "before": 177.7,
+   "after": 161.7,
+   "gamma": 1.3
   },
   "use_cutout": true
  },
@@ -281,15 +307,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt6a5edb14ffdf9a6c/698cfe6d30e8580fb0cc4dc9/1600_Emre.png",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltb3519446b8ce60de/698cfe5dfa5dc9748c88fc81/2600_Emre.png"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/c/c7/OW2_Emre.png/revision/latest?cb=20260213003055",
   "cutout_path": "static/hero_art/emre.webp",
   "cutout_size": [
-   1864,
-   1425
+   466,
+   1023
   ],
-  "focal_x": 0.672,
-  "health": {
-   "solid_ratio": 0.421,
-   "width_ratio": 0.485
+  "focal_x": 0.5,
+  "luma": {
+   "before": 72.2,
+   "after": 98.6,
+   "gamma": 0.72
   },
   "use_cutout": true
  },
@@ -302,15 +330,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt8793fc472f3e5896/67ec5f24d23f4982e2d031cc/1600_Freja.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltfd88f7e9b2d383ab/67ec5f176a1a262c61c31bf7/2600_Freja.jpg"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/3/31/OW2_Freja.png/revision/latest?cb=20250322151231",
   "cutout_path": "static/hero_art/freja.webp",
   "cutout_size": [
-   902,
-   733
+   841,
+   1400
   ],
-  "focal_x": 0.66,
-  "health": {
-   "solid_ratio": 0.518,
-   "width_ratio": 0.347
+  "focal_x": 0.5,
+  "luma": {
+   "before": 116.6,
+   "after": 118.5,
+   "gamma": 0.964
   },
   "use_cutout": true
  },
@@ -323,15 +353,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt22836a6cfd1c3335/631a8b576d5f7a0df8d92798/1600_Genji.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltb6d5cb702c3e2476/631a8b57e7bdcf0dd996c8dd/2600_Genji.jpg"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/1/17/OW2_Genji.png/revision/latest?cb=20241102133634",
   "cutout_path": "static/hero_art/genji.webp",
   "cutout_size": [
-   832,
-   751
+   521,
+   1227
   ],
-  "focal_x": 0.697,
-  "health": {
-   "solid_ratio": 0.456,
-   "width_ratio": 0.32
+  "focal_x": 0.5,
+  "luma": {
+   "before": 104.2,
+   "after": 117.1,
+   "gamma": 0.842
   },
   "use_cutout": true
  },
@@ -344,15 +376,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt94cbaa8364b60dc7/631a8b50eef3ae0e03c743aa/1600_Hanzo.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt6ea101bee04bc99e/631a8b505f39a30d9cedbac8/2600_Hanzo.jpg"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/6/66/OW2_Hanzo.png/revision/latest?cb=20260616073741",
   "cutout_path": "static/hero_art/hanzo.webp",
   "cutout_size": [
-   567,
-   710
+   518,
+   1400
   ],
-  "focal_x": 0.724,
-  "health": {
-   "solid_ratio": 0.557,
-   "width_ratio": 0.218
+  "focal_x": 0.5,
+  "luma": {
+   "before": 72.9,
+   "after": 99.5,
+   "gamma": 0.72
   },
   "use_cutout": true
  },
@@ -365,15 +399,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt858312851ab13877/671ac1914210e8458b19bd67/1600_Hazard.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltd748c1f5f124ef06/671ac189ef1216fa37bf67e3/2600_Hazard.jpg"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/6/63/OW2_Hazard.png/revision/latest?cb=20241124152149",
   "cutout_path": "static/hero_art/hazard.webp",
   "cutout_size": [
-   971,
-   655
+   947,
+   1400
   ],
-  "focal_x": 0.712,
-  "health": {
-   "solid_ratio": 0.696,
-   "width_ratio": 0.373
+  "focal_x": 0.5,
+  "luma": {
+   "before": 81.8,
+   "after": 107.6,
+   "gamma": 0.72
   },
   "use_cutout": true
  },
@@ -386,15 +422,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt37638ea14bd0c85f/64c03bd64d4d9e27e4296283/1600_Illari.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt9562c18014520536/64c03bd68365f5881905c8b4/2600_Illari.jpg"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/2/2b/OW2_Illari.png/revision/latest?cb=20260304090158",
   "cutout_path": "static/hero_art/illari.webp",
   "cutout_size": [
-   757,
-   682
+   777,
+   1400
   ],
-  "focal_x": 0.665,
-  "health": {
-   "solid_ratio": 0.564,
-   "width_ratio": 0.291
+  "focal_x": 0.5,
+  "luma": {
+   "before": 87.9,
+   "after": 113.7,
+   "gamma": 0.72
   },
   "use_cutout": true
  },
@@ -407,15 +445,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt034eb85ea8ae467d/6998f14663c7d6868014bc4b/1600_Jetpack_Cat.png",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt10ffe80a3102f50a/6998f13b163d10141b723b9d/2600_Jetpack_Cat.png"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/2/27/OW2_Jetpack_Cat.png/revision/latest?cb=20260206154545",
   "cutout_path": "static/hero_art/jetpack-cat.webp",
   "cutout_size": [
-   1762,
-   1253
+   937,
+   718
   ],
-  "focal_x": 0.713,
-  "health": {
-   "solid_ratio": 0.511,
-   "width_ratio": 0.459
+  "focal_x": 0.5,
+  "luma": {
+   "before": 126.9,
+   "after": 120.1,
+   "gamma": 1.08
   },
   "use_cutout": true
  },
@@ -428,15 +468,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt7621ddcf8e25d478/631a8b49be2fcf0db5eea4c4/1600_Junker_Queen.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt3a1be33596e910c4/631a8b49a0ff920e11e791bc/2600_Junker_Queen.jpg"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/5/50/OW2_JunkerQueen.png/revision/latest?cb=20241101134259",
   "cutout_path": "static/hero_art/junker-queen.webp",
   "cutout_size": [
-   896,
-   760
+   560,
+   1400
   ],
-  "focal_x": 0.68,
-  "health": {
-   "solid_ratio": 0.54,
-   "width_ratio": 0.345
+  "focal_x": 0.5,
+  "luma": {
+   "before": 83.8,
+   "after": 110.4,
+   "gamma": 0.72
   },
   "use_cutout": true
  },
@@ -449,15 +491,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltf1d3568684bc383f/631a8b430e1b4f0e7b89a530/1600_Junkrat.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt413418f41eeb64fd/631a8b4385af980dae7a2ef2/2600_Junkrat.jpg"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/f/f2/OW2_Junkrat.png/revision/latest?cb=20260214122743",
   "cutout_path": "static/hero_art/junkrat.webp",
   "cutout_size": [
-   867,
-   716
+   596,
+   1068
   ],
-  "focal_x": 0.704,
-  "health": {
-   "solid_ratio": 0.498,
-   "width_ratio": 0.333
+  "focal_x": 0.5,
+  "luma": {
+   "before": 81.8,
+   "after": 108.5,
+   "gamma": 0.72
   },
   "use_cutout": true
  },
@@ -470,15 +514,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blte81ec81f23dbb109/668daea468915426bc7774a7/1600_Juno.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltbc59ec946d1bfeaa/668dae9d839db28999d3657d/2600_Juno.jpg"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/2/21/OW2_Juno.png/revision/latest?cb=20260213110336",
   "cutout_path": "static/hero_art/juno.webp",
   "cutout_size": [
-   818,
-   694
+   646,
+   1400
   ],
-  "focal_x": 0.674,
-  "health": {
-   "solid_ratio": 0.566,
-   "width_ratio": 0.315
+  "focal_x": 0.5,
+  "luma": {
+   "before": 126.5,
+   "after": 120.2,
+   "gamma": 1.076
   },
   "use_cutout": true
  },
@@ -491,15 +537,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt94961e7349cf1d7c/641243e4b624bd69a0f705ae/1600_Lifeweaver.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltec463c7444135f68/641243e41839f965bff26773/2600_Lifeweaver.jpg"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/7/7e/OW2_Lifeweaver.png/revision/latest?cb=20241123123936",
   "cutout_path": "static/hero_art/lifeweaver.webp",
   "cutout_size": [
-   1122,
-   756
+   845,
+   1400
   ],
-  "focal_x": 0.655,
-  "health": {
-   "solid_ratio": 0.485,
-   "width_ratio": 0.432
+  "focal_x": 0.5,
+  "luma": {
+   "before": 116.8,
+   "after": 118.4,
+   "gamma": 0.965
   },
   "use_cutout": true
  },
@@ -512,15 +560,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt77c5cddf632a67d7/631a8b2bf581050de0035dee/1600_Lucio.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt1193d24377ff3b38/631a8b2b1613910e6926bfd0/2600_Lucio.jpg"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/4/44/OW2_L%C3%BAcio.png/revision/latest?cb=20241102140611",
   "cutout_path": "static/hero_art/lucio.webp",
   "cutout_size": [
-   557,
-   719
+   455,
+   1149
   ],
-  "focal_x": 0.709,
-  "health": {
-   "solid_ratio": 0.523,
-   "width_ratio": 0.214
+  "focal_x": 0.5,
+  "luma": {
+   "before": 96.5,
+   "after": 116.1,
+   "gamma": 0.776
   },
   "use_cutout": true
  },
@@ -533,15 +583,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt52d14924e3880c39/654d7d2d02f5a2701444f840/1600_Mauga.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt5449cd196343e5cc/654d7d436864f761cb9116fc/2600_Mauga.jpg"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/7/78/OW2_Mauga.png/revision/latest?cb=20260304093509",
   "cutout_path": "static/hero_art/mauga.webp",
   "cutout_size": [
-   1300,
-   733
+   2024,
+   1400
   ],
-  "focal_x": 0.726,
-  "health": {
-   "solid_ratio": 0.555,
-   "width_ratio": 0.5
+  "focal_x": 0.5,
+  "luma": {
+   "before": 91.6,
+   "after": 115.8,
+   "gamma": 0.736
   },
   "use_cutout": true
  },
@@ -554,15 +606,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltd0eb5529be69efbc/633773a6f87c00687e8ef21a/1600_Mei_02.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt1040e5bd61b0ba3a/633773a61ccd046877c0e4db/2600_Mei_02.jpg"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/7/7e/OW2_Mei.png/revision/latest?cb=20241102134134",
   "cutout_path": "static/hero_art/mei.webp",
   "cutout_size": [
-   803,
-   738
+   595,
+   1144
   ],
-  "focal_x": 0.702,
-  "health": {
-   "solid_ratio": 0.628,
-   "width_ratio": 0.309
+  "focal_x": 0.5,
+  "luma": {
+   "before": 106.1,
+   "after": 116.5,
+   "gamma": 0.86
   },
   "use_cutout": true
  },
@@ -575,15 +629,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blta556d4020266a6db/631a8b1eeef3ae0e03c743a2/1600_Mercy.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltc7021b63955d7b54/631a8b1e3ab6f40dd2a906a5/2600_Mercy.jpg"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/1/11/OW2_Mercy.png/revision/latest?cb=20241102143122",
   "cutout_path": "static/hero_art/mercy.webp",
   "cutout_size": [
-   997,
-   760
+   505,
+   1184
   ],
-  "focal_x": 0.678,
-  "health": {
-   "solid_ratio": 0.599,
-   "width_ratio": 0.383
+  "focal_x": 0.5,
+  "luma": {
+   "before": 137.0,
+   "after": 122.4,
+   "gamma": 1.213
   },
   "use_cutout": true
  },
@@ -596,15 +652,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt238ff23dff0963b7/698e2db73bdb1652a583ca89/1600_Mizuki.png",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt5950c03caf5c3ee8/698e2da530e8581778cc4fba/2600_Mizuki.png"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/8/83/OW2_Mizuki.png/revision/latest?cb=20260215135742",
   "cutout_path": "static/hero_art/mizuki.webp",
   "cutout_size": [
-   1502,
-   1256
+   1090,
+   1400
   ],
-  "focal_x": 0.7,
-  "health": {
-   "solid_ratio": 0.544,
-   "width_ratio": 0.391
+  "focal_x": 0.5,
+  "luma": {
+   "before": 88.2,
+   "after": 114.5,
+   "gamma": 0.72
   },
   "use_cutout": true
  },
@@ -617,15 +675,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt8188c6691a334d73/631a8b17be2fcf0db5eea4bc/1600_Moira.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt0556ab9582933672/631a8b176d5f7a0df8d92794/2600_Moira.jpg"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/5/5a/OW2_Moira.png/revision/latest?cb=20240404082150",
   "cutout_path": "static/hero_art/moira.webp",
   "cutout_size": [
-   1013,
-   701
+   491,
+   876
   ],
-  "focal_x": 0.679,
-  "health": {
-   "solid_ratio": 0.465,
-   "width_ratio": 0.39
+  "focal_x": 0.5,
+  "luma": {
+   "before": 94.1,
+   "after": 115.4,
+   "gamma": 0.756
   },
   "use_cutout": true
  },
@@ -638,15 +698,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt24fd76394a4111f7/631a8b0ba633280e74dc25c5/1600_Orisa.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt2a3558a604095f57/631a8b0b0e1b4f0e7b89a52c/2600_Orisa.jpg"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/7/75/OW2-Orisa.png/revision/latest?cb=20241126124432",
   "cutout_path": "static/hero_art/orisa.webp",
   "cutout_size": [
-   1202,
-   686
+   992,
+   1243
   ],
-  "focal_x": 0.703,
-  "health": {
-   "solid_ratio": 0.515,
-   "width_ratio": 0.462
+  "focal_x": 0.5,
+  "luma": {
+   "before": 99.6,
+   "after": 116.3,
+   "gamma": 0.802
   },
   "use_cutout": true
  },
@@ -659,15 +721,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blte7cef1a9a6df49eb/631a8af2a0ff920e11e791b8/1600_Pharah.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltae2251cef8936b19/631a8af2636d390da7825dd7/2600_Pharah.jpg"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/b/b3/OW2_Pharah.png/revision/latest?cb=20241108201144",
   "cutout_path": "static/hero_art/pharah.webp",
   "cutout_size": [
-   1032,
-   760
+   637,
+   1270
   ],
-  "focal_x": 0.682,
-  "health": {
-   "solid_ratio": 0.617,
-   "width_ratio": 0.397
+  "focal_x": 0.5,
+  "luma": {
+   "before": 109.9,
+   "after": 117.7,
+   "gamma": 0.896
   },
   "use_cutout": true
  },
@@ -680,15 +744,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt7cedd97f624c058d/637da2d146a48b0e063e4aad/1600_Ramattra.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt3ea4802af2023c58/637da2d1d44c1b0e1f0e8bc0/2600_Ramattra.jpg"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/e/ef/OW2_Ramattra.png/revision/latest?cb=20260304093912",
   "cutout_path": "static/hero_art/ramattra.webp",
   "cutout_size": [
-   1247,
-   760
+   694,
+   1400
   ],
-  "focal_x": 0.704,
-  "health": {
-   "solid_ratio": 0.564,
-   "width_ratio": 0.48
+  "focal_x": 0.5,
+  "luma": {
+   "before": 80.5,
+   "after": 106.7,
+   "gamma": 0.72
   },
   "use_cutout": true
  },
@@ -701,15 +767,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt2c301b09e7e28f15/631a8af9e7bdcf0dd996c8d1/1600_Reaper.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt205f5d2e64729af4/631a8af90e1b4f0e7b89a528/2600_Reaper.jpg"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/8/8c/OW2_Reaper.png/revision/latest?cb=20241108201455",
   "cutout_path": "static/hero_art/reaper.webp",
   "cutout_size": [
-   1063,
-   722
+   739,
+   1298
   ],
-  "focal_x": 0.733,
-  "health": {
-   "solid_ratio": 0.52,
-   "width_ratio": 0.409
+  "focal_x": 0.5,
+  "luma": {
+   "before": 65.7,
+   "after": 91.7,
+   "gamma": 0.72
   },
   "use_cutout": true
  },
@@ -722,15 +790,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt8215ad99f856a606/631a8b03636d390da7825ddb/1600_Reinhardt.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltbbe906442602f70b/631a8b03a633280e74dc25c1/2600_Reinhardt.jpg"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/2/27/OW2_Reinhardt.png/revision/latest?cb=20220409014723",
   "cutout_path": "static/hero_art/reinhardt.webp",
   "cutout_size": [
-   1011,
-   627
+   1040,
+   1340
   ],
-  "focal_x": 0.746,
-  "health": {
-   "solid_ratio": 0.761,
-   "width_ratio": 0.389
+  "focal_x": 0.5,
+  "luma": {
+   "before": 115.8,
+   "after": 118.6,
+   "gamma": 0.955
   },
   "use_cutout": true
  },
@@ -743,15 +813,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt39930f17f179a7bd/631a8ae5eef3ae0e03c7439e/1600_Roadhog.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt53bec63947a5bd1f/631a8ae585af980dae7a2eee/2600_Roadhog.jpg"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/3/34/OW2_Roadhog.png/revision/latest?cb=20260213114356",
   "cutout_path": "static/hero_art/roadhog.webp",
   "cutout_size": [
-   1186,
-   753
+   1354,
+   1400
   ],
-  "focal_x": 0.711,
-  "health": {
-   "solid_ratio": 0.632,
-   "width_ratio": 0.456
+  "focal_x": 0.5,
+  "luma": {
+   "before": 91.4,
+   "after": 115.8,
+   "gamma": 0.735
   },
   "use_cutout": true
  },
@@ -764,15 +836,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt8a44cee96c28a435/6a28a8e3f1f5dd6cddd650b4/1600_Shion.png",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt26a62724a8a3587e/6a28a8d9d8658f40b63c9335/2600_Shion.png"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/8/8a/OW2_Shion.png/revision/latest?cb=20260630073141",
   "cutout_path": "static/hero_art/shion.webp",
   "cutout_size": [
-   1358,
-   1314
+   515,
+   996
   ],
-  "focal_x": 0.711,
-  "health": {
-   "solid_ratio": 0.607,
-   "width_ratio": 0.354
+  "focal_x": 0.5,
+  "luma": {
+   "before": 151.9,
+   "after": 134.9,
+   "gamma": 1.3
   },
   "use_cutout": true
  },
@@ -785,15 +859,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltf61dc39ad92dec50/69d6dabdc843ea442ebf069a/1600_Sierra.png",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltbfeb25b49ede0408/69d6dab0ffc7dd7d06813993/2600_Sierra.png"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/1/1c/OW2_Sierra.png/revision/latest?cb=20260415005653",
   "cutout_path": "static/hero_art/sierra.webp",
   "cutout_size": [
-   1588,
-   1385
+   754,
+   1400
   ],
-  "focal_x": 0.71,
-  "health": {
-   "solid_ratio": 0.421,
-   "width_ratio": 0.414
+  "focal_x": 0.5,
+  "luma": {
+   "before": 88.6,
+   "after": 114.9,
+   "gamma": 0.72
   },
   "use_cutout": true
  },
@@ -806,15 +882,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt429c1784d8b446a4/631a8adbf581050de0035de6/1600_Sigma.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltcd6803238893c4ee/631a8adb6d5f7a0df8d92790/2600_Sigma.jpg"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/c/c9/OW2_Sigma.png/revision/latest?cb=20240404193956",
   "cutout_path": "static/hero_art/sigma.webp",
   "cutout_size": [
-   1097,
-   640
+   710,
+   1007
   ],
-  "focal_x": 0.721,
-  "health": {
-   "solid_ratio": 0.6,
-   "width_ratio": 0.422
+  "focal_x": 0.5,
+  "luma": {
+   "before": 116.8,
+   "after": 118.7,
+   "gamma": 0.966
   },
   "use_cutout": true
  },
@@ -827,15 +905,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt4e7eea062ae71ec8/631a8ad36d5f7a0df8d9278c/1600_Sojourn.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt074d60a0c1b22e57/631a8ad3a633280e74dc25b9/2600_Sojourn.jpg"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/a/ae/OW2_Sojourn.png/revision/latest?cb=20240928162620",
   "cutout_path": "static/hero_art/sojourn.webp",
   "cutout_size": [
-   586,
-   704
+   590,
+   1400
   ],
-  "focal_x": 0.648,
-  "health": {
-   "solid_ratio": 0.522,
-   "width_ratio": 0.225
+  "focal_x": 0.5,
+  "luma": {
+   "before": 101.1,
+   "after": 115.5,
+   "gamma": 0.815
   },
   "use_cutout": true
  },
@@ -848,15 +928,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltaa73ebe257f75710/631a8ac985af980dae7a2eea/1600_Soldier_76.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt1fdfbf1c51e0c05d/631a8ac9a0ff920e11e791b4/2600_Soldier_76.jpg"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/b/bf/OW2_S76.png/revision/latest?cb=20260208153542",
   "cutout_path": "static/hero_art/soldier-76.webp",
   "cutout_size": [
-   1010,
-   686
+   368,
+   823
   ],
-  "focal_x": 0.693,
-  "health": {
-   "solid_ratio": 0.565,
-   "width_ratio": 0.388
+  "focal_x": 0.5,
+  "luma": {
+   "before": 80.9,
+   "after": 108.0,
+   "gamma": 0.72
   },
   "use_cutout": true
  },
@@ -869,15 +951,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt73c08ba684761b8a/631a8ac1f581050de0035de2/1600_Sombra.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt668912e757ec1b56/631a8ac11566e20e82f30280/2600_Sombra.jpg"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/d/d7/OW2_Sombra.png/revision/latest?cb=20241108201559",
   "cutout_path": "static/hero_art/sombra.webp",
   "cutout_size": [
-   1099,
-   715
+   426,
+   1254
   ],
-  "focal_x": 0.684,
-  "health": {
-   "solid_ratio": 0.409,
-   "width_ratio": 0.423
+  "focal_x": 0.5,
+  "luma": {
+   "before": 104.2,
+   "after": 117.4,
+   "gamma": 0.842
   },
   "use_cutout": true
  },
@@ -890,15 +974,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt8bcd4a477c648ec3/631a8ab9a0ff920e11e791b0/1600_Symmetra.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt98ba3e34b8d7c3c7/631a8ab9636d390da7825dd3/2600_Symmetra.jpg"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/7/72/OW2-Symmetra.png/revision/latest?cb=20241101134020",
   "cutout_path": "static/hero_art/symmetra.webp",
   "cutout_size": [
-   735,
-   676
+   559,
+   1400
   ],
-  "focal_x": 0.711,
-  "health": {
-   "solid_ratio": 0.428,
-   "width_ratio": 0.283
+  "focal_x": 0.5,
+  "luma": {
+   "before": 104.5,
+   "after": 116.8,
+   "gamma": 0.845
   },
   "use_cutout": true
  },
@@ -911,15 +997,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt8af1bdb781ba7048/631a8ab1eef3ae0e03c7439a/1600_Torbjorn.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt6704d0e1812cb068/631a8ab1a0ff920e11e791ac/2600_Torbjorn.jpg"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/d/d7/OW2_Torbj%C3%B6rn.png/revision/latest?cb=20260321080029",
   "cutout_path": "static/hero_art/torbjorn.webp",
   "cutout_size": [
-   1152,
-   760
+   944,
+   1279
   ],
-  "focal_x": 0.689,
-  "health": {
-   "solid_ratio": 0.535,
-   "width_ratio": 0.443
+  "focal_x": 0.5,
+  "luma": {
+   "before": 106.3,
+   "after": 116.7,
+   "gamma": 0.861
   },
   "use_cutout": true
  },
@@ -932,15 +1020,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltb9e273d8483050b8/631a8aab3ab6f40dd2a90699/1600_Tracer.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt9a87fc6f2249d9c8/631a8aaba633280e74dc25b5/2600_Tracer.jpg"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/6/63/OW2_Tracer.png/revision/latest?cb=20241102134907",
   "cutout_path": "static/hero_art/tracer.webp",
   "cutout_size": [
-   754,
-   748
+   424,
+   1206
   ],
-  "focal_x": 0.685,
-  "health": {
-   "solid_ratio": 0.478,
-   "width_ratio": 0.29
+  "focal_x": 0.5,
+  "luma": {
+   "before": 131.7,
+   "after": 121.3,
+   "gamma": 1.141
   },
   "use_cutout": true
  },
@@ -953,15 +1043,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blte69be4a8be101414/692f5b152575e140c24161e5/1600_Vendetta.png",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt22bd880e78e94c03/692f5b1c6da5309b6107b257/2600_Vendetta.png"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/9/96/OW2_Vendetta.png/revision/latest?cb=20260304090759",
   "cutout_path": "static/hero_art/vendetta.webp",
   "cutout_size": [
-   1601,
-   1520
+   1143,
+   1400
   ],
-  "focal_x": 0.735,
-  "health": {
-   "solid_ratio": 0.564,
-   "width_ratio": 0.417
+  "focal_x": 0.5,
+  "luma": {
+   "before": 102.4,
+   "after": 115.2,
+   "gamma": 0.826
   },
   "use_cutout": true
  },
@@ -974,15 +1066,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltdf3ffc4ee1a1d6b1/65e7a113e38ce3428689fade/1600_Venture.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blte622280f74e18bd7/65e7a10b31e2488e2e63ae8e/2600_Venture.jpg"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/c/c7/OW2_Venture.png/revision/latest?cb=20241102122834",
   "cutout_path": "static/hero_art/venture.webp",
   "cutout_size": [
-   1011,
-   679
+   704,
+   1400
   ],
-  "focal_x": 0.719,
-  "health": {
-   "solid_ratio": 0.625,
-   "width_ratio": 0.389
+  "focal_x": 0.5,
+  "luma": {
+   "before": 99.8,
+   "after": 115.8,
+   "gamma": 0.803
   },
   "use_cutout": true
  },
@@ -995,15 +1089,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltf1291f31fd38e28b/631a8a981613910e6926bfc8/1600_Widowmaker.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt86d1bcba4c0d4730/631a8a98eef3ae0e03c74392/2600_Widowmaker.jpg"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/a/ab/OW2_Widowmaker.png/revision/latest?cb=20241108201530",
   "cutout_path": "static/hero_art/widowmaker.webp",
   "cutout_size": [
-   387,
-   703
+   547,
+   1314
   ],
-  "focal_x": 0.715,
-  "health": {
-   "solid_ratio": 0.716,
-   "width_ratio": 0.149
+  "focal_x": 0.5,
+  "luma": {
+   "before": 89.8,
+   "after": 115.5,
+   "gamma": 0.722
   },
   "use_cutout": true
  },
@@ -1016,15 +1112,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltf9557fb8c51d1c43/631a8aa4eef3ae0e03c74396/1600_Winston.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltf6c81bc8f3db2ce9/631a8aa4636d390da7825dcb/2600_Winston.jpg"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/3/39/OW2_Winston.png/revision/latest?cb=20241102142153",
   "cutout_path": "static/hero_art/winston.webp",
   "cutout_size": [
-   966,
-   735
+   852,
+   1294
   ],
-  "focal_x": 0.651,
-  "health": {
-   "solid_ratio": 0.741,
-   "width_ratio": 0.372
+  "focal_x": 0.5,
+  "luma": {
+   "before": 127.7,
+   "after": 120.6,
+   "gamma": 1.091
   },
   "use_cutout": true
  },
@@ -1037,15 +1135,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt55cca804cba3d52e/631a8a691566e20e82f30278/1600_Wrecking_Ball.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt3ca77f61db745988/631a8a691613910e6926bfc4/2600_Wrecking_Ball.jpg"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/0/03/OW2_Wrecking_Ball.png/revision/latest?cb=20260304093441",
   "cutout_path": "static/hero_art/wrecking-ball.webp",
   "cutout_size": [
-   588,
-   335
+   1564,
+   1400
   ],
-  "focal_x": 0.746,
-  "health": {
-   "solid_ratio": 0.476,
-   "width_ratio": 0.226
+  "focal_x": 0.5,
+  "luma": {
+   "before": 101.7,
+   "after": 116.8,
+   "gamma": 0.82
   },
   "use_cutout": true
  },
@@ -1058,15 +1158,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt4e9a801cc106755c/689bc8e2acf3ac2a464b9ef0/1600_Aqua.png",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltcdc9b5b3bfdd9e2c/689bc8d6a9c1ad3fc9bcb61e/2600_Aqua.png"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/d/d4/OW2_Wuyang.png/revision/latest?cb=20260305234200",
   "cutout_path": "static/hero_art/wuyang.webp",
   "cutout_size": [
-   725,
-   760
+   676,
+   963
   ],
-  "focal_x": 0.724,
-  "health": {
-   "solid_ratio": 0.609,
-   "width_ratio": 0.279
+  "focal_x": 0.5,
+  "luma": {
+   "before": 103.1,
+   "after": 116.3,
+   "gamma": 0.832
   },
   "use_cutout": true
  },
@@ -1079,15 +1181,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltde66354cc09d1bb6/631a8a60be2fcf0db5eea4b4/1600_Zarya.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltb73df6ce7e29a4f4/631a8a606d5f7a0df8d92784/2600_Zarya.jpg"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/0/02/OW2_Zarya.png/revision/latest?cb=20241108201623",
   "cutout_path": "static/hero_art/zarya.webp",
   "cutout_size": [
-   1013,
-   684
+   646,
+   1245
   ],
-  "focal_x": 0.722,
-  "health": {
-   "solid_ratio": 0.492,
-   "width_ratio": 0.39
+  "focal_x": 0.5,
+  "luma": {
+   "before": 109.2,
+   "after": 117.6,
+   "gamma": 0.889
   },
   "use_cutout": true
  },
@@ -1100,15 +1204,17 @@
    "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt31b9997e4476de74/631a8a57eef3ae0e03c7438a/1600_Zenyatta.jpg",
    "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltaed6928bd9793d05/631a8a573ab6f40dd2a90691/2600_Zenyatta.jpg"
   },
+  "art_source": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/4/44/OW2_Zenyatta.png/revision/latest?cb=20260324055645",
   "cutout_path": "static/hero_art/zenyatta.webp",
   "cutout_size": [
-   1112,
-   733
+   1218,
+   1400
   ],
-  "focal_x": 0.686,
-  "health": {
-   "solid_ratio": 0.461,
-   "width_ratio": 0.428
+  "focal_x": 0.5,
+  "luma": {
+   "before": 105.7,
+   "after": 117.1,
+   "gamma": 0.856
   },
   "use_cutout": true
  }

@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import colorsys
 import html
 import urllib.parse
 
@@ -27,6 +28,25 @@ def _one_line(markup: str) -> str:
     블록으로 파싱해 HTML 이 화면에 그대로 노출된다. 이 함수를 거치면 그 경우가 사라진다.
     """
     return "".join(line.strip() for line in markup.splitlines())
+
+
+def _glow(accent: str, alpha: float = 0.45) -> str:
+    """영웅 색을 림라이트용 rgba 로. 아트를 어두운 배너 위로 띄우는 데 쓴다.
+
+    hero_colors.json 의 대표색은 그대로 쓰면 안 된다. 아나(#473727)나 리퍼처럼
+    어두운 영웅은 대표색도 어두워서, 어두운 배너 위에 깔면 빛나지 않고 그냥
+    사라진다. 색상은 유지한 채 명도와 채도만 끌어올린다.
+    """
+    raw = str(accent or "").lstrip("#")
+    if len(raw) != 6:
+        return f"rgba(255, 122, 140, {alpha})"
+    try:
+        r, g, b = (int(raw[i:i + 2], 16) / 255 for i in (0, 2, 4))
+    except ValueError:
+        return f"rgba(255, 122, 140, {alpha})"
+    h, s, v = colorsys.rgb_to_hsv(r, g, b)
+    r, g, b = colorsys.hsv_to_rgb(h, max(s, 0.55), max(v, 0.92))
+    return f"rgba({round(r * 255)}, {round(g * 255)}, {round(b * 255)}, {alpha})"
 
 
 
@@ -291,6 +311,17 @@ def render_sidebar_navigation(current_page: str, data_date: str | None = None) -
                 unsafe_allow_html=True,
             )
 
+        # 영웅 아트는 Overwatch Wiki(Fandom, CC BY-NC-SA)에서 받아 저장소에 미러링한 것이고
+        # 원화 저작권은 블리자드에 있다. 비공식 사이트임을 밝혀 둔다.
+        st.markdown(
+            '<div class="ow-nav-legal">'
+            'Blizzard Entertainment와 무관한 비공식 사이트입니다.<br>'
+            'Overwatch®는 Blizzard Entertainment, Inc.의 상표입니다.<br>'
+            '영웅 아트 출처: Overwatch Wiki (CC BY-NC-SA).'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+
 
 # ---------------------------------------------------------------------------
 # 지시서 STEP 2 - 랭크 순위표 페이지 컴포넌트
@@ -315,24 +346,32 @@ def render_hero_showcase(
     splash = art.get("splash_url")
     focal = art.get("focal_x") or 0.66
 
-    # 2차 지시서 D-4: 아트를 <img> 로 카드 밖에 띄우지 않는다. 배경 레이어로 넣고
-    # overflow:hidden 으로 잘라 겹침을 원천 차단한다. 아트가 없어도 그라디언트 +
+    # 2차 지시서 D-4: 아트를 <img> 로 카드 밖에 띄우지 않는다. 카드는 overflow:hidden
+    # 이고 아트는 그 안쪽 레이어라 밖으로 새지 않는다. 아트가 없어도 그라디언트 +
     # 워터마크만으로 성립해야 한다(검은 빈 칸 금지).
     base = f"linear-gradient(115deg, {accent} 0%, #2a1440 58%, #140d24 100%)"
     scrim = ("linear-gradient(100deg, rgba(10,12,18,0.96) 0%, "
              "rgba(10,12,18,0.75) 42%, transparent 78%)")
-    art_url = cutout or splash
-    if art_url:
-        safe = html.escape(str(art_url), quote=True)
-        pos = "right center" if cutout else f"{min(max(focal * 100, 55), 88):.0f}% 26%"
-        size = "auto 118%" if cutout else "cover"
+    bg_style = f"background-image:{scrim},{base};background-size:cover,cover;"
+    art_html = ""
+
+    if cutout:
+        # 전신 렌더는 카드 배경이 아니라 별도 레이어로 깐다. drop-shadow 림라이트가
+        # 실루엣을 따라가려면 알파를 가진 자기 박스가 있어야 하는데, 배경 이미지로
+        # 넣으면 필터가 카드 전체에 걸려서 텍스트까지 번진다.
+        art_html = (
+            f"<div class='hero-showcase-art' style=\"background-image:url('"
+            f"{html.escape(str(cutout), quote=True)}');--hero-glow:{_glow(accent)};\"></div>"
+        )
+    elif splash:
+        # 컷아웃이 없는 영웅만 스플래시로 대체한다. 이때는 인물 위치를 모르므로
+        # focal_x 로 초점을 우측으로 당긴다.
+        safe = html.escape(str(splash), quote=True)
+        pos = f"{min(max(focal * 100, 55), 88):.0f}% 26%"
         bg_style = (f"background-image:{scrim},url('{safe}'),{base};"
                     f"background-position:center,{pos},center;"
-                    f"background-size:cover,{size},cover;"
+                    "background-size:cover,cover,cover;"
                     "background-repeat:no-repeat,no-repeat,no-repeat;")
-    else:
-        bg_style = f"background-image:{scrim},{base};background-size:cover,cover;"
-    art_html = ""
 
     stat_html = "".join(
         "<div class='hero-showcase-stat'>"
@@ -349,6 +388,7 @@ def render_hero_showcase(
         _one_line(f"""
         <section class="hero-showcase">
             <div class="hero-showcase-card" style="{bg_style}">
+                {art_html}
                 <div class="hero-showcase-num">{html.escape(watermark)}</div>
                 <div class="hero-showcase-left">
                     <span class="eyebrow">{html.escape(eyebrow)}</span>
@@ -357,7 +397,6 @@ def render_hero_showcase(
                     <div class="hero-showcase-stats">{stat_html}</div>
                 </div>
             </div>
-            {art_html}
         </section>
         """),
         unsafe_allow_html=True,
@@ -481,6 +520,7 @@ def render_hero_portrait_card(hero_name: str, art: dict | None, accent: str, cap
     if art.get("cutout_url"):
         inner = (
             f"<img class='portrait-card-art' alt='' aria-hidden='true' "
+            f"style='--hero-glow:{_glow(accent)}' "
             f"onerror=\"this.style.display='none'\" "
             f"src='{html.escape(art['cutout_url'], quote=True)}'>"
         )
