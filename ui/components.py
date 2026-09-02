@@ -49,8 +49,6 @@ def _glow(accent: str, alpha: float = 0.45) -> str:
     return f"rgba({round(r * 255)}, {round(g * 255)}, {round(b * 255)}, {alpha})"
 
 
-
-
 def render_page_hero(title: str, subtitle: str, badge: str = "Overwatch 2 Meta",
                      live_label: str = "") -> None:
     live = (f"<span class='live-dot' title='마지막 갱신'><i></i>"
@@ -62,80 +60,6 @@ def render_page_hero(title: str, subtitle: str, badge: str = "Overwatch 2 Meta",
         f"<div class='ow-hero-badge'>{html.escape(badge)}</div>{live}"
         f"<h1 class='ow-hero-title'>{html.escape(title)}</h1>{sub}"
         f"</section>",
-        unsafe_allow_html=True,
-    )
-
-
-def render_hero_banner(
-    hero_name: str,
-    art: dict | None,
-    stats,
-    headline: str = "",
-    kicker: str = "Top Meta Hero",
-    meta: str = "",
-) -> None:
-    """레퍼런스(Valorant 트래커) 스타일의 히어로 배너.
-
-    art 는 app_data.get_hero_banner_art() 의 반환값. None 이면 아트 없이 렌더링한다.
-    stats 는 [(라벨, 값), ...].
-    """
-    art = art or {}
-    splash_url = art.get("splash_url")
-    cutout_url = art.get("cutout_url")
-    focal_x = art.get("focal_x") or 0.7
-
-    bg_style = ""
-    if splash_url:
-        # 컷아웃이 없으면 캐릭터가 보이도록 초점 위치를 우측으로 당겨서 배치한다.
-        pos = 50 if cutout_url else min(max(focal_x * 100, 55), 88)
-        bg_style = (
-            f"background-image:url('{html.escape(splash_url, quote=True)}');"
-            f"background-position:{pos:.0f}% center;"
-        )
-
-    cutout_html = ""
-    if cutout_url:
-        # 컷아웃은 Streamlit 정적 서빙(/app/static/...)에서 온다. 배포 환경이 base URL
-        # 경로를 붙이면 이 절대 경로가 어긋날 수 있어, 실패 시 깨진 이미지 아이콘 대신
-        # 조용히 사라지게 한다(배경 아트만 남아 배너는 그대로 성립).
-        cutout_html = (
-            f"<img class='ow-hero-cutout' alt='' aria-hidden='true' "
-            f"onerror=\"this.style.display='none'\" "
-            f"src='{html.escape(cutout_url, quote=True)}'>"
-        )
-
-    headline_html = ""
-    if headline:
-        headline_html = f"<div class='ow-hero-banner-num'>{html.escape(headline)}</div>"
-
-    meta_html = ""
-    if meta:
-        meta_html = f"<div class='ow-hero-banner-meta'>{html.escape(meta)}</div>"
-
-    stats_html = "".join(
-        "<div>"
-        f"<div class='ow-hero-banner-stat-label'>{html.escape(str(label))}</div>"
-        f"<div class='ow-hero-banner-stat-value'>{html.escape(str(value))}</div>"
-        "</div>"
-        for label, value in stats
-    )
-
-    st.markdown(
-        _one_line(f"""
-        <section class="ow-hero-banner{' has-cutout' if cutout_url else ''}">
-            <div class="ow-hero-banner-card">
-                <div class="ow-hero-banner-bg" style="{bg_style}"></div>
-                {headline_html}
-                <div class="ow-hero-banner-body">
-                    <div class="ow-hero-banner-kicker">{html.escape(kicker)}</div>
-                    <div class="ow-hero-banner-name">{html.escape(hero_name)}</div>
-                    {meta_html}
-                    <div class="ow-hero-banner-stats">{stats_html}</div>
-                </div>
-            </div>
-            {cutout_html}
-        </section>
-        """),
         unsafe_allow_html=True,
     )
 
@@ -169,56 +93,6 @@ def _hero_card_markup(card, featured: bool = False) -> str:
         return (f"<a class='{classes}' target='_self' "
                 f"href='{html.escape(str(href), quote=True)}'>{art}{rank_html}{body}</a>")
     return f"<div class='{classes}'>{art}{rank_html}{body}</div>"
-
-
-def render_hero_card_grid(cards) -> None:
-    """영웅 아트 카드 그리드.
-
-    cards 는 dict 리스트: name, art_url, focal_x, metric, metric_color, sub, rank,
-    rank_color, href. 첫 카드는 강조 처리한다.
-    """
-    items = []
-    for index, card in enumerate(cards):
-        art = ""
-        if card.get("art_url"):
-            # focal_x 는 fetch_hero_art.py 가 산출한 캐릭터 가로 위치. 세로형으로 crop 될 때
-            # 인물이 잘리지 않게 이 지점을 기준으로 맞춘다.
-            pos = min(max(float(card.get("focal_x") or 0.6) * 100, 25), 85)
-            art = (
-                f"<div class='ow-card-art' style=\"background-image:url('"
-                f"{html.escape(str(card['art_url']), quote=True)}');"
-                f"background-position:{pos:.0f}% 28%;\"></div>"
-            )
-        else:
-            art = "<div class='ow-card-art' style='background:#1b1e2e;'></div>"
-
-        rank_html = ""
-        if card.get("rank"):
-            rank_html = (
-                f"<div class='ow-card-rank' style=\"color:{card.get('rank_color', '#fff')};\">"
-                f"{html.escape(str(card['rank']))}</div>"
-            )
-
-        body = (
-            f"<div class='ow-card-body'>"
-            f"<div class='ow-card-metric' style=\"color:{card.get('metric_color', '#fff')};\">"
-            f"{html.escape(str(card.get('metric', '-')))}</div>"
-            f"<div class='ow-card-name'>{html.escape(str(card.get('name', '-')))}</div>"
-            f"<div class='ow-card-sub'>{html.escape(str(card.get('sub', '')))}</div>"
-            f"</div>"
-        )
-
-        classes = "ow-card featured" if index == 0 else "ow-card"
-        href = card.get("href")
-        if href:
-            items.append(
-                f"<a class='{classes}' target='_self' "
-                f"href='{html.escape(str(href), quote=True)}'>{art}{rank_html}{body}</a>"
-            )
-        else:
-            items.append(f"<div class='{classes}'>{art}{rank_html}{body}</div>")
-
-    st.markdown(f"<div class='ow-card-grid'>{''.join(items)}</div>", unsafe_allow_html=True)
 
 
 def render_rank_rail(title: str, rows, footnote: str = "") -> None:

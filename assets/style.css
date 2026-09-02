@@ -269,20 +269,16 @@ header[data-testid="stHeader"],
 
 h1, h2, h3, h4, p, span, div, label, li, a, summary, input, select, button, table, th, td {
     font-family: var(--app-font) !important;
-}
-
-/* 디스플레이 타이포. 위 blanket 규칙보다 뒤에 와야 이긴다(동일 명시도, 나중 선언 승). */
-h1, h2, h3,
+}/* 디스플레이 타이포. 위 blanket 규칙보다 뒤에 와야 이긴다(동일 명시도,
+나중 선언 승). */
+h1,
+h2,
+h3,
 .ow-hero-title,
 .ow-hero-badge,
-.ow-control-title,
-.ow-hero-banner-name,
-.ow-hero-banner-num,
-.ow-hero-banner-kicker,
-.ow-hero-banner-stat-value,
 .overwatch-table th,
 .rank-pill,
-[data-testid="stMetricValue"] {
+[data-testid="stMetricValue"]{
     font-family: var(--app-display-font) !important;
 }
 
@@ -562,53 +558,6 @@ body [data-baseweb="popover"] ::-webkit-scrollbar-track {
     border: 2px solid #ffe3e8 !important;
 }
 
-.ow-filter-action-spacer {
-    height: 1.52rem;
-}
-
-.ow-control-band {
-    border: 1px solid rgba(92, 86, 132, 0.7);
-    border-radius: var(--app-radius-lg);
-    background:
-        linear-gradient(180deg, rgba(26, 24, 44, 0.84), rgba(14, 13, 24, 0.9));
-    padding: 13px 14px 10px;
-    margin: 0 0 12px;
-}
-
-.ow-control-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    margin-bottom: 9px;
-}
-
-.ow-control-title {
-    color: var(--app-text);
-    font-size: 0.84rem;
-    font-weight: 850;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-}
-
-.ow-control-meta {
-    color: var(--app-muted);
-    font-size: 0.78rem;
-    font-weight: 680;
-}
-
-.ow-soft-divider {
-    height: 1px;
-    background: rgba(92, 86, 132, 0.42);
-    margin: 10px 0 12px;
-}
-
-.ow-panel-card {
-    border: 1px solid var(--app-border);
-    border-radius: var(--app-radius-lg);
-    background: linear-gradient(180deg, var(--app-surface) 0%, #13121f 100%);
-}
-
 [data-testid="stExpander"] > details {
     border: 1px solid var(--app-border) !important;
     border-radius: var(--app-radius-lg) !important;
@@ -687,80 +636,6 @@ body [data-baseweb="popover"] ::-webkit-scrollbar-track {
     font-size: 0.95rem;
 }
 
-/* --- 히어로 배너 -------------------------------------------------
-   컷아웃이 카드 위쪽으로 넘쳐야 해서 래퍼에 상단 패딩을 주고
-   카드는 그 안에서 overflow: visible 로 둔다. */
-.ow-hero-banner {
-    position: relative;
-    padding-top: 46px;
-    margin: 0 0 18px;
-}
-
-/* 컷아웃이 없으면 위로 넘칠 것도 없으므로 여백을 남기지 않는다 */
-.ow-hero-banner:not(.has-cutout) {
-    padding-top: 0;
-}
-
-.ow-hero-banner-card {
-    position: relative;
-    border-radius: 22px;
-    min-height: 236px;
-    padding: 26px 30px 24px;
-    overflow: hidden;
-    isolation: isolate;
-}
-
-/* 배경: 스플래시 아트를 우측에 앉히고 좌->우 스크림으로 덮는다 */
-.ow-hero-banner-bg {
-    position: absolute;
-    inset: 0;
-    z-index: -2;
-    background-size: cover;
-    background-repeat: no-repeat;
-    filter: saturate(1.05);
-}
-
-/* 스크림. 우측 끝을 투명하게 두면 밝은 배경 아트가 그대로 드러나
-   어두운 페이지 위에서 카드만 떠 보인다. 우측도 어둡게 닫아준다. */
-.ow-hero-banner-card::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    background: linear-gradient(
-        100deg,
-        rgba(146, 18, 66, 0.98) 0%,
-        rgba(150, 22, 72, 0.92) 32%,
-        rgba(110, 20, 68, 0.58) 58%,
-        rgba(44, 12, 38, 0.62) 82%,
-        rgba(18, 10, 26, 0.80) 100%
-    );
-}
-
-/* 컷아웃이 있을 때는 배경 아트를 강하게 블러 + 감광해 인물 중복을 피한다 */
-.ow-hero-banner.has-cutout .ow-hero-banner-bg {
-    filter: blur(26px) saturate(1.05) brightness(0.42);
-    transform: scale(1.12);
-}
-
-/* 위키 전신 렌더는 무기가 옆으로 길게 뻗지 않아 폭이 좁다. contain + 우측 하단
-   정렬로 전신을 다 보여준다(잘리면 안 된다). 좌측 페이드는 텍스트와 겹치는 부분만
-   부드럽게 날릴 정도인 12% 면 충분하다. */
-.ow-hero-cutout {
-    position: absolute;
-    right: -10px;
-    top: 0;
-    bottom: 0;
-    height: 100%;
-    width: auto;
-    max-width: 46%;
-    object-fit: contain;
-    object-position: bottom right;
-    pointer-events: none;
-    -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 12%);
-    mask-image: linear-gradient(to right, transparent 0%, #000 12%);
-}
-
 /* 전신 렌더를 카드 안쪽 레이어로 깐다. 카드가 overflow:hidden 이라 밖으로 새지
    않는다. 배경 이미지가 아니라 별도 레이어인 이유는, drop-shadow 가 실루엣을
    따라가려면 알파를 가진 자기 박스가 필요해서다(배경으로 넣으면 필터가 카드
@@ -778,82 +653,12 @@ body [data-baseweb="popover"] ::-webkit-scrollbar-track {
     pointer-events: none;
     -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 12%);
     mask-image: linear-gradient(to right, transparent 0%, #000 12%);
-}
-
-/* 어두운 그림자만 있으면 어두운 배너 위에서 인물이 배경에 먹힌다. 영웅 색
-   림라이트를 깔아야 확실히 떠오른다. --hero-glow 는 hero_colors.json 값을
-   ui/components.py 가 인라인으로 넘긴다. */
-.ow-hero-cutout,
-.hero-showcase-art,
-.portrait-card-art {
+}.hero-showcase-art,
+.portrait-card-art{
     filter:
         drop-shadow(0 0 22px var(--hero-glow, rgba(255, 122, 140, 0.45)))
         drop-shadow(0 16px 26px rgba(2, 6, 23, 0.55))
         saturate(1.05);
-}
-
-.ow-hero-banner-num {
-    position: absolute;
-    right: 40%;
-    top: -2px;
-    font-size: clamp(6rem, 4rem + 9vw, 12rem);
-    font-weight: 900;
-    line-height: 1;
-    letter-spacing: -0.03em;
-    color: rgba(255, 255, 255, 0.15);
-    pointer-events: none;
-    user-select: none;
-}
-
-.ow-hero-banner-body {
-    position: relative;
-    max-width: 62%;
-}
-
-.ow-hero-banner-kicker {
-    color: rgba(255, 214, 226, 0.94);
-    font-size: 0.74rem;
-    font-weight: 850;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-}
-
-.ow-hero-banner-name {
-    margin: 2px 0 4px;
-    color: #ffffff;
-    font-size: clamp(2rem, 1.3rem + 2.6vw, 3.4rem);
-    font-weight: 900;
-    line-height: 1.02;
-    letter-spacing: -0.02em;
-}
-
-.ow-hero-banner-meta {
-    color: rgba(255, 200, 216, 0.9);
-    font-size: 0.82rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-}
-
-.ow-hero-banner-stats {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 26px;
-    margin-top: 20px;
-}
-
-.ow-hero-banner-stat-label {
-    color: rgba(255, 190, 210, 0.88);
-    font-size: 0.7rem;
-    font-weight: 850;
-    letter-spacing: 0.11em;
-    text-transform: uppercase;
-}
-
-.ow-hero-banner-stat-value {
-    color: #ffffff;
-    font-size: 1.45rem;
-    font-weight: 880;
-    line-height: 1.2;
 }
 
 /* --- 영웅 카드 그리드 -------------------------------------------
@@ -1041,25 +846,14 @@ body [data-baseweb="popover"] ::-webkit-scrollbar-track {
     .ow-card, .ow-rail {height: 160px;}
 }
 
-@media (max-width: 900px) {
-    .ow-hero-banner { padding-top: 0; }
-    .ow-hero-banner-body { max-width: 100%; }
-    .ow-hero-cutout, .hero-showcase-art { display: none; }
-    .ow-hero-banner-num { right: 6%; opacity: 0.7; }
+@media (max-width: 900px) {.hero-showcase-art{ display: none; }
 }
 
 @media (max-width: 900px) {
     .block-container {
         padding-top: 1.2rem !important;
     }
-    .ow-control-head {
-        display: block;
-    }
-    .ow-control-meta {
-        margin-top: 3px;
-    }
 }
-
 
 /* ---------------------------------------------------------------------------
    지시서 STEP 1 - 공통 유틸리티
@@ -1084,10 +878,6 @@ body [data-baseweb="popover"] ::-webkit-scrollbar-track {
     line-height: 0.9;
 }
 
-.num-xl { font-size: 72px; }
-.num-lg { font-size: 48px; }
-.num-md { font-size: 32px; }
-
 /* 숫자와 단위가 갈라져 줄바꿈되는 것을 막는다 (지시서 [6] / STEP 5) */
 .unit {
     font-size: 0.45em;
@@ -1100,9 +890,7 @@ body [data-baseweb="popover"] ::-webkit-scrollbar-track {
 .unit,
 .eyebrow {
     white-space: nowrap;
-}
-
-/* ---------------------------------------------------------------------------
+}/* ---------------------------------------------------------------------------
    지시서 [6] - 한글이 한 글자씩 세로로 깨지는 문제
    포지션 칩·메타 유형 배지·랭크 필처럼 짧은 라벨은 절대 줄바꿈되면 안 된다.
    --------------------------------------------------------------------------- */
@@ -1118,10 +906,8 @@ body [data-baseweb="popover"] ::-webkit-scrollbar-track {
 .rank-pill,
 .ow-card-name,
 .ow-card-sub,
-.ow-hero-banner-stat-label,
-.ow-hero-banner-stat-value,
 .ow-rail-title,
-.ow-nav-brand-title {
+.ow-nav-brand-title{
     white-space: nowrap;
 }
 
@@ -1604,7 +1390,6 @@ body [data-baseweb="popover"] ::-webkit-scrollbar-track {
     flex-shrink: 0;
 }
 
-
 /* ---------------------------------------------------------------------------
    2차 지시서 D-1 - 전역 정리
    --------------------------------------------------------------------------- */
@@ -1619,9 +1404,7 @@ h1, h2, h3, h4,
     text-shadow: none !important;
     filter: none !important;
     color: var(--app-text);
-}
-
-/* 카드는 테두리만. 그림자는 HERO 하나뿐이다. */
+}/* 카드는 테두리만. 그림자는 HERO 하나뿐이다. */
 .card,
 .rail-card,
 .ow-rail,
@@ -1629,24 +1412,19 @@ h1, h2, h3, h4,
 .hero-tile,
 .map-card,
 .ow-card,
-.ow-panel-card,
-.ow-control-band,
 .patch-intel-wrap,
 [data-testid="stMetric"],
-[data-testid="stExpander"] > details {
+[data-testid="stExpander"] > details{
     border: 1px solid var(--app-line) !important;
     background: var(--app-card) !important;
     border-radius: var(--r-card) !important;
 }
 
-.hero-showcase-card { border-radius: var(--r-hero) !important; }
-
-.ow-hero-badge,
+.hero-showcase-card { border-radius: var(--r-hero) !important; }.ow-hero-badge,
 .patch-hero-badge,
 .meta-type-badge,
 .low-pick-badge,
-.hero-score-pill,
-.stMultiSelect [data-baseweb="tag"] {
+.stMultiSelect [data-baseweb="tag"]{
     border-radius: var(--r-chip) !important;
 }
 
@@ -1776,9 +1554,6 @@ h1, h2, h3, h4,
     color: var(--app-warn);
 }
 
-/* D-2 상단 컨트롤바 + 정렬 헤더 */
-.topbar { margin-bottom: 4px; }
-
 [data-testid="stSegmentedControl"] button {
     border-radius: var(--r-chip) !important;
 }
@@ -1828,7 +1603,6 @@ h1, h2, h3, h4,
     border: 1px solid var(--app-accent) !important;
     color: var(--app-text) !important;
 }
-
 
 /* D-6: 좌측 아트 카드와 우측 KPI 의 높이를 맞춘다 */
 [data-testid="stHorizontalBlock"]:has(.portrait-card) {
@@ -1954,34 +1728,6 @@ h1, h2, h3, h4,
     transform: none;
 }
 
-/* ---------------------------------------------------------------------------
-   랭크 뱃지
-   --------------------------------------------------------------------------- */
-
-.rank-badge {
-    position: relative;
-    display: inline-grid;
-    place-items: center;
-    width: 30px;
-    height: 30px;
-    flex-shrink: 0;
-}
-
-.rank-badge svg {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-}
-
-.rank-badge b {
-    position: relative;
-    font-family: var(--app-num-font);
-    font-size: 14px;
-    line-height: 1;
-    font-weight: 400;
-}
-
 .ow-card-rank {
     background: rgba(10, 8, 20, 0.55);
     border: 0;
@@ -2010,11 +1756,7 @@ h1, h2, h3, h4,
 [data-testid="stSelectbox"] label,
 [data-testid="stTextInput"] label {
     white-space: nowrap;
-}
-
-/* badges.py 통합: SVG 뱃지는 자체 크기를 가지므로 래퍼는 자리만 잡는다 */
-.rank-badge,
-.ow-card-rank {
+}.ow-card-rank{
     display: inline-flex;
     align-items: center;
     justify-content: center;

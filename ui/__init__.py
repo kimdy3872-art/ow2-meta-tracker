@@ -10,18 +10,12 @@ from .badges import (  # noqa: F401
     delta_arrow,
     heart_icon,
     rank_badge,
-    role_icon_for,
-    tier_badge_for,
-    tier_pip_for,
 )
 from .theme import apply_global_theme, inject_css  # noqa: F401
 from .plotly_theme import style_chart  # noqa: F401
 from .components import (  # noqa: F401
     _latest_data_date,
-    NAV_ITEMS,
     icon_selectbox,
-    render_hero_banner,
-    render_hero_card_grid,
     render_rotating_card_groups,
     render_hero_scroller,
     render_hero_portrait_card,
