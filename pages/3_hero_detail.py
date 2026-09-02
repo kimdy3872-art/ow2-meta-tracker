@@ -21,6 +21,7 @@ from app_data import (
     translate_tier_name,
 )
 from ui import (
+    icon_selectbox,
     GLOBAL_BORDER_COLOR,
     GLOBAL_FONT_FAMILY,
     GLOBAL_GOOD_COLOR,
@@ -234,9 +235,10 @@ default_tier = query_tier if query_tier in tier_candidates else ("Gold" if "Gold
 
 tier_col, _ = st.columns([1.25, 3.75])
 with tier_col:
-    selected_tier = st.selectbox(
+    selected_tier = icon_selectbox(
         "티어",
         tier_candidates,
+        "tiersel",
         index=tier_candidates.index(default_tier),
         format_func=tier_option_label,
         placeholder="티어 선택",

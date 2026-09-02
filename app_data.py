@@ -123,27 +123,6 @@ TIER_LABELS = {
 # 에메랄드는 2026-08-12 신설 티어. 데이터가 들어오기 시작하면 자동으로 노출된다.
 TIER_ORDER = ["All", "Bronze", "Silver", "Gold", "Platinum", "Emerald",
               "Diamond", "Master", "Grandmaster", "Champion"]
-# 드롭다운 목록에 붙일 표식. selectbox 옵션은 평문만 받아서 SVG/이미지를 못 넣는다.
-# 티어 색과 맞춘 컬러 원으로 대신한다.
-TIER_ICONS = {
-    "All": "⚫",
-    "Bronze": "🟤",
-    "Silver": "⚪",
-    "Gold": "🟡",
-    "Platinum": "🟢",
-    "Emerald": "🟩",
-    "Diamond": "🔵",
-    "Master": "🟠",
-    "Grandmaster": "🔴",
-    "Champion": "🟣",
-}
-ROLE_ICONS = {
-    "All": "⬜",
-    "Tank": "🛡️",
-    "Damage": "⚔️",
-    "Support": "➕",
-    "Unknown": "❔",
-}
 ROLE_ORDER = ["All", "Tank", "Damage", "Support"]
 NUMERIC_STATS_COLUMNS = [
     "win_rate",
@@ -375,12 +354,12 @@ def translate_subrole_name(subrole_name):
 
 
 def tier_option_label(tier):
-    """드롭다운 표시용 "{아이콘} 골드" 라벨."""
-    return f"{TIER_ICONS.get(tier, '⚫')} {translate_tier_name(tier)}"
+    """드롭다운 표시용 라벨. 뱃지 그림은 ui.icon_selectbox 가 CSS 로 얹는다."""
+    return translate_tier_name(tier)
 
 
 def role_option_label(role):
-    return f"{ROLE_ICONS.get(role, '❔')} {translate_role_name(role)}"
+    return translate_role_name(role)
 
 
 def translate_tier_name(tier_name):

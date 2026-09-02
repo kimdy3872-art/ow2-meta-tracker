@@ -21,6 +21,7 @@ from app_data import (
     translate_tier_name,
 )
 from ui import (
+    icon_selectbox,
     GLOBAL_BORDER_COLOR,
     GLOBAL_MUTED_TEXT_COLOR,
     GLOBAL_SURFACE_COLOR,
@@ -240,9 +241,10 @@ st.markdown(
 controls_1 = st.columns([1.0, 1.0, 1.4])
 with controls_1[0]:
     role_options = get_ordered_roles(history_df)
-    selected_role = st.selectbox(
+    selected_role = icon_selectbox(
         "포지션",
         role_options,
+        "rolesel",
         index=get_initial_index(role_options, "All"),
         format_func=role_option_label,
         placeholder="포지션 선택",
@@ -282,9 +284,10 @@ hero_df = role_df[role_df["hero"].astype(str) == selected_hero].copy()
 with controls_1[2]:
     tier_options = get_ordered_tiers(hero_df)
     preferred_tier = st.session_state.get("detail_tier", "Gold")
-    selected_tier = st.selectbox(
+    selected_tier = icon_selectbox(
         "티어",
         tier_options,
+        "tiersel",
         index=get_initial_index(tier_options, preferred_tier),
         format_func=tier_option_label,
         placeholder="티어 선택",

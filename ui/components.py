@@ -10,7 +10,13 @@ import urllib.parse
 
 import streamlit as st
 
-from .badges import delta_arrow, heart_icon, rank_badge  # noqa: F401
+from .badges import (  # noqa: F401
+    delta_arrow,
+    heart_icon,
+    option_list_icon_css,
+    rank_badge,
+    selected_value_icon_css,
+)
 from .tokens import *  # noqa: F401,F403
 
 # 인라인 SVG 아이콘. 참고 목업의 이모지 개수는 0개다.
@@ -530,3 +536,26 @@ def render_rotating_card_groups(groups, interval: int = 6) -> None:
         f"<div class='rot-dots'>{dots}</div></div>",
         unsafe_allow_html=True,
     )
+
+
+def icon_selectbox(label, options, scope, **kwargs):
+    """실제 게임 뱃지를 붙인 selectbox.
+
+    st.selectbox 의 옵션은 평문만 받아서 마크업을 넣을 수 없다. 그래서 라벨은
+    평문 그대로 두고 그림은 CSS 로 얹는다. 열린 목록과 닫힌 상태는 DOM 상
+    전혀 다른 곳에 그려져서 규칙도 따로 만들어야 한다(ui/badges.py 참고).
+
+    scope 는 닫힌 상태를 잡을 때 쓰는 컨테이너 key 접두사다.
+    """
+    if "key" in kwargs and kwargs["key"] in st.session_state:
+        current = st.session_state[kwargs["key"]]
+    else:
+        current = options[kwargs.get("index", 0)] if options else ""
+
+    st.markdown(
+        f"<style>{option_list_icon_css(list(options))}"
+        f"{selected_value_icon_css(scope, str(current))}</style>",
+        unsafe_allow_html=True,
+    )
+    with st.container(key=f"{scope}-{current}"):
+        return st.selectbox(label, options, **kwargs)

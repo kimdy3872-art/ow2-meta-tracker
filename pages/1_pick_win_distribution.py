@@ -12,6 +12,7 @@ from app_data import (
     translate_tier_name,
 )
 from ui import (
+    icon_selectbox,
     GLOBAL_GOOD_COLOR,
     GLOBAL_INFO_COLOR,
     GLOBAL_DANGER_COLOR,
@@ -29,9 +30,10 @@ apply_global_theme()
 def get_selected_tier(df):
     tier_options = get_ordered_tiers(df)
     default_tier = "Gold" if "Gold" in tier_options else tier_options[0]
-    return st.selectbox(
+    return icon_selectbox(
         "티어",
         tier_options,
+        "tiersel",
         index=get_initial_index(tier_options, default_tier),
         format_func=tier_option_label,
         placeholder="티어 선택",
@@ -40,9 +42,10 @@ def get_selected_tier(df):
 
 def get_selected_role(df):
     valid_roles = get_ordered_roles(df)
-    return st.selectbox(
+    return icon_selectbox(
         "포지션",
         valid_roles,
+        "rolesel",
         index=0,
         format_func=role_option_label,
         placeholder="포지션 선택",

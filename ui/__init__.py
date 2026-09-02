@@ -19,6 +19,7 @@ from .plotly_theme import style_chart  # noqa: F401
 from .components import (  # noqa: F401
     _latest_data_date,
     NAV_ITEMS,
+    icon_selectbox,
     render_hero_banner,
     render_hero_card_grid,
     render_rotating_card_groups,

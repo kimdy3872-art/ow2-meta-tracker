@@ -23,6 +23,7 @@ from app_data import (
     translate_tier_name,
 )
 from ui import (
+    icon_selectbox,
     _latest_data_date,
     rank_badge,
     GLOBAL_BG_COLOR,
@@ -367,12 +368,13 @@ def reset_filters():
 # 티어/포지션은 드롭다운으로. 목록에는 "{아이콘} 골드" 형식의 라벨을 쓴다.
 _t_col, _r_col, _s_col = st.columns([1, 1, 1.4], gap="small")
 with _t_col:
-    selected_tier = st.selectbox(
-        "티어", tiers, key="selected_tier", format_func=tier_option_label
+    selected_tier = icon_selectbox(
+        "티어", tiers, "tiersel", key="selected_tier", format_func=tier_option_label
     )
 with _r_col:
-    selected_role = st.selectbox(
-        "포지션", ["All"] + roles, key="selected_role", format_func=role_option_label
+    selected_role = icon_selectbox(
+        "포지션", ["All"] + roles, "rolesel",
+        key="selected_role", format_func=role_option_label
     )
 with _s_col:
     search_hero = st.text_input("영웅 검색", key="search_hero", placeholder="영웅 이름")

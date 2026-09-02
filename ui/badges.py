@@ -253,3 +253,73 @@ def tier_pip_for(tier_key: str, **kwargs) -> str:
 
 def role_icon_for(role_key: str, **kwargs) -> str:
     return role_icon(_ROLE_KO.get(role_key, role_key), **kwargs)
+
+
+# ── 6. 실제 게임 뱃지(assets/ranks) ───────────────────────────────────────────
+#
+# 섹션 1~4 는 손으로 그린 SVG 다. 아래는 Blizzard 가 실제로 쓰는 아트를 받아
+# assets/ranks/ 에 커밋해 둔 것이다. 원본은 해시가 파일명에 박힌 CDN 경로라
+# (Rank_EmeraldTier.d82e76cb....png) 재배포될 때마다 URL 이 죽는다. 실제로
+# damage 역할 아이콘과 TierDivision_2 는 이미 403 이다. 그래서 런타임에 물지
+# 않고 받아서 커밋했다. 표시 크기 22px 의 2배인 44px 로 줄여 12개 합쳐 21KB.
+
+import base64
+from functools import lru_cache
+from pathlib import Path
+
+_RANK_ART_DIR = Path(__file__).resolve().parent.parent / "assets" / "ranks"
+
+
+@lru_cache(maxsize=None)
+def rank_art_uri(name: str) -> str:
+    """assets/ranks/<name> 을 data URI 로. 없으면 빈 문자열."""
+    for ext, mime in (("webp", "image/webp"), ("svg", "image/svg+xml")):
+        path = _RANK_ART_DIR / f"{name}.{ext}"
+        if path.exists():
+            encoded = base64.b64encode(path.read_bytes()).decode("ascii")
+            return f"data:{mime};base64,{encoded}"
+    return ""
+
+
+def _icon_rule(selector: str, uri: str, width: int = 30) -> str:
+    if not uri:
+        return ""
+    return (
+        f'{selector}::before{{content:"";flex:0 0 {width}px;height:22px;'
+        f"margin-right:8px;background:url('{uri}') left center/contain no-repeat;}}"
+    )
+
+
+def option_list_icon_css(options: list[str]) -> str:
+    """열린 드롭다운 목록에 실제 뱃지를 붙이는 CSS.
+
+    옵션 li 는 셀렉트박스 밖 포털에 그려져서 위젯 단위로 스코프를 못 건다.
+    대신 nth-child 와 nth-last-child 를 겹쳐 "N개짜리 목록의 i번째"를 집는다.
+    티어(9개)와 포지션(4개)은 길이가 달라 서로를 침범하지 않는다.
+
+    # ponytail: 길이가 같아지면 두 목록의 규칙이 겹쳐 아이콘이 섞인다. 포지션은
+    # 항상 4개고 티어는 전체+수집된 티어라, 한 영웅이 딱 3개 티어에만 존재해야
+    # 충돌한다. 현재 데이터는 모든 영웅이 9개 티어에 다 있어 도달 불가.
+    # 실제로 겹치기 시작하면 열린 목록을 st.popover 로 직접 그리는 수밖에 없다.
+
+    li 가 display:flex 라 ::before 를 그냥 두면 폭이 0 으로 찌그러진다.
+    flex 를 고정해야 보인다.
+    """
+    total = len(options)
+    css = ['li[role="option"]{align-items:center;}']
+    for i, name in enumerate(options):
+        selector = (
+            f'li[role="option"]:nth-child({i + 1}):nth-last-child({total - i})'
+        )
+        css.append(_icon_rule(selector, rank_art_uri(name)))
+    return "".join(css)
+
+
+def selected_value_icon_css(scope: str, name: str) -> str:
+    """닫힌 셀렉트박스(선택된 값)에 뱃지를 붙이는 CSS.
+
+    선택값 div 는 난독화된 st-* 클래스뿐이라 직접 못 잡는다. 현재 값을
+    st.container(key=...) 에 실어 .st-key-<scope>-<값> 으로 우회한다.
+    """
+    selector = f'.st-key-{scope}-{name} [data-baseweb="select"] > div:first-child'
+    return _icon_rule(selector, rank_art_uri(name), width=26)
