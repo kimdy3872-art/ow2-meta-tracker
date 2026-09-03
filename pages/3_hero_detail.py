@@ -4,12 +4,9 @@ import html
 import os
 import re
 from app_data import (
-    role_option_label,
-    tier_option_label,
     DATA_CACHE_TTL,
     get_hero_banner_art,
     get_hero_color,
-    get_hero_image_url,
     get_hero_subrole,
     get_map_image_url,
     load_latest_balance_patch_note,
@@ -24,17 +21,15 @@ from ui import (
     COLS_ART_KPI,
     GAP,
     page_shell,
+    section,
     resolve_tier,
-    GLOBAL_BORDER_COLOR,
-    GLOBAL_FONT_FAMILY,
     GLOBAL_GOOD_COLOR,
     GLOBAL_INFO_COLOR,
     GLOBAL_DANGER_COLOR,
     GLOBAL_MUTED_TEXT_COLOR,
-    GLOBAL_SURFACE_COLOR,
-    GLOBAL_TEXT_COLOR,
     GLOBAL_WARN_COLOR,
     render_hero_showcase,
+    MINOR_PERK_COLOR,
 )
 
 _shell = page_shell(
@@ -44,117 +39,6 @@ _shell = page_shell(
     filters=("tier",),
 )
 _shell.__enter__()
-st.markdown(
-    """
-    <style>
-    .perk-card {
-        position: relative;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        background: rgba(15, 23, 42, 0.72);
-        border: 1px solid #334155;
-        border-radius: 10px;
-        padding: 6px 8px;
-        margin-top: 6px;
-        cursor: help;
-        outline: none;
-        transition: border-color 150ms ease, background 150ms ease, transform 150ms ease;
-    }
-    [data-testid="stHorizontalBlock"]:has(.perk-card) {
-        position: relative;
-        overflow: visible;
-    }
-    [data-testid="stColumn"]:has(.perk-card) {
-        position: relative;
-        z-index: 20;
-        overflow: visible;
-    }
-    [data-testid="stColumn"]:has(.perk-card:hover),
-    [data-testid="stColumn"]:has(.perk-card:focus-visible) {
-        z-index: 10000;
-    }
-    [data-testid="stColumn"]:has(.perk-card) [data-testid="stVerticalBlock"],
-    [data-testid="stColumn"]:has(.perk-card) [data-testid="stMarkdownContainer"] {
-        overflow: visible;
-    }
-    .perk-card:hover,
-    .perk-card:focus-visible {
-        border-color: rgba(255, 122, 140, 0.7);
-        background: rgba(30, 41, 59, 0.96);
-        transform: translateY(-1px);
-    }
-    .perk-tooltip {
-        position: absolute;
-        left: calc(100% + 12px);
-        top: 50%;
-        z-index: 10001;
-        width: min(360px, 46vw);
-        padding: 14px;
-        color: #e2e8f0;
-        background: linear-gradient(145deg, rgba(15, 31, 49, 0.99), rgba(17, 24, 39, 0.99));
-        border: 2px solid #ff4d6a;
-        border-radius: 10px;
-        box-shadow: 0 18px 45px rgba(2, 6, 23, 0.72), 0 0 18px rgba(255, 77, 106, 0.22);
-        opacity: 0;
-        visibility: hidden;
-        pointer-events: none;
-        transform: translate(8px, -50%);
-        transition: opacity 140ms ease, transform 140ms ease, visibility 140ms ease;
-    }
-    .perk-card:hover .perk-tooltip,
-    .perk-card:focus-visible .perk-tooltip {
-        opacity: 1;
-        visibility: visible;
-        transform: translate(0, -50%);
-    }
-    .perk-tooltip-head {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-    .perk-tooltip-icon {
-        width: 42px;
-        height: 42px;
-        object-fit: contain;
-        flex-shrink: 0;
-    }
-    .perk-tooltip-name {
-        flex: 1;
-        color: #a5f3fc;
-        font-size: 1rem;
-        font-weight: 800;
-        line-height: 1.25;
-    }
-    .perk-tooltip-rate {
-        color: #ff9db0;
-        font-size: 1.18rem;
-        font-weight: 900;
-    }
-    .perk-tooltip-description {
-        margin-top: 10px;
-        color: #cbd5e1;
-        font-size: 0.88rem;
-        line-height: 1.55;
-        word-break: keep-all;
-    }
-    @media (max-width: 900px) {
-        .perk-tooltip {
-            left: 0;
-            top: calc(100% + 8px);
-            width: min(360px, 82vw);
-            transform: translateY(8px);
-        }
-        .perk-card:hover .perk-tooltip,
-        .perk-card:focus-visible .perk-tooltip {
-            transform: translateY(0);
-        }
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
 PERK_DATA_PATH = os.path.join("data", "latest", "latest_perks.parquet")
 DEFAULT_PERK_IMAGE_URL = "https://dummyimage.com/48x48/1f2937/94a3b8.png&text=Perk"
 
@@ -322,21 +206,12 @@ with left_col:
         sentence = html.escape(str(hero_ai_rows[0][1].get("display_sentence") or hero_ai_rows[0][1].get("reason") or ""))
         group_label = html.escape(hero_ai_rows[0][0])
         st.markdown(
-            f"""
-            <div style="
-                margin-top:14px;
-                border:1px solid rgba(255,122,140,0.30);
-                border-radius:12px;
-                background:linear-gradient(180deg,rgba(15,23,42,0.94) 0%,rgba(12,20,34,0.98) 100%);
-                padding:12px 13px;
-                font-family:{GLOBAL_FONT_FAMILY};
-            ">
-                <div style="color:#93c5fd;font-size:0.74rem;font-weight:850;letter-spacing:0.05em;text-transform:uppercase;margin-bottom:5px;">AI Hero Note</div>
-                <div style="color:#f8fafc;font-size:0.9rem;font-weight:850;margin-bottom:5px;">최근 밸런스 패치 요약 · {group_label}</div>
-                <div style="color:#94a3b8;font-size:0.74rem;line-height:1.45;margin-bottom:7px;">{patch_title} · {phase}</div>
-                <div style="color:#dbeafe;font-size:0.86rem;line-height:1.55;">{sentence}</div>
-            </div>
-            """,
+            f'<div class="hero-ai-note">'
+            f'<div class="hero-ai-kicker">AI Hero Note</div>'
+            f'<div class="hero-ai-title">최근 밸런스 패치 요약 · {group_label}</div>'
+            f'<div class="hero-ai-meta">{patch_title} · {phase}</div>'
+            f'<div class="hero-ai-body">{sentence}</div>'
+            f'</div>',
             unsafe_allow_html=True,
         )
 
@@ -345,7 +220,7 @@ with left_col:
     def render_perk_line(perks, line_title, accent_color):
         if not perks:
             return (
-                f'<div style="margin-top:10px;padding:8px 10px;border:1px dashed #334155;border-radius:10px;color:#94a3b8;font-size:0.8rem;">'
+                f'<div class="perk-empty">'
                 f'{line_title}: 특전 데이터 없음'
                 f'</div>'
             )
@@ -383,7 +258,7 @@ with left_col:
                 f'<div class="perk-bar"><span style="width:{min(max(bar_width, 0), 100):.0f}%;'
                 f'background:{accent_color if is_best else "rgba(255,255,255,0.28)"};"></span></div>'
                 f'</div>'
-                f'<div class="perk-rate nowrap" style="color:{accent_color if is_best else "#9ba2c4"};">{perk_rate_text}</div>'
+                f'<div class="perk-rate nowrap" style="color:{accent_color if is_best else GLOBAL_MUTED_TEXT_COLOR};">{perk_rate_text}</div>'
                 f'<div class="perk-tooltip" role="tooltip">'
                 f'<div class="perk-tooltip-head">'
                 f'<img class="perk-tooltip-icon" src="{perk_image_url}" alt="" />'
@@ -404,14 +279,14 @@ with left_col:
 
     perk_html = (
         '<div style="margin-top:12px;">'
-        + render_perk_line(perk_rows["minor"], "Minor Perks", "#ff9db0")
-        + render_perk_line(perk_rows["major"], "Major Perks", "#fbbf24")
+        + render_perk_line(perk_rows["minor"], "Minor Perks", MINOR_PERK_COLOR)
+        + render_perk_line(perk_rows["major"], "Major Perks", GLOBAL_WARN_COLOR)
         + '</div>'
     )
     st.markdown(perk_html, unsafe_allow_html=True)
 
 with right_col:
-    st.subheader("전장별 승률")
+    section("전장별 승률", "이 영웅이 강한 전장과 약한 전장")
 
     hero_map_df = df_raw[
         (df_raw["hero"].astype(str) == hero_name)
@@ -422,28 +297,28 @@ with right_col:
     if hero_map_df.empty:
         st.info("이 티어의 전장별 데이터가 없습니다.")
     else:
-        def make_map_card(row, badge_label=None, badge_color="#34d399"):
+        def make_map_card(row, badge_label=None, badge_color=GLOBAL_GOOD_COLOR):
             m_id = str(row["map"])
             m_name = html.escape(str(row.get("map_name", m_id)))
             w_rate = float(row["win_rate"])
             p_rate = float(row["pick_rate"])
-            rate_color = "#34d399" if w_rate >= 50 else "#f87171"
+            rate_color = GLOBAL_GOOD_COLOR if w_rate >= 50 else GLOBAL_DANGER_COLOR
             bg_image = html.escape(get_map_image_url(m_id))
             badge = (
-                f'<div style="position:absolute;top:8px;right:100px;background:{badge_color}22;border:1px solid {badge_color}88;border-radius:999px;padding:2px 8px;color:{badge_color};font-size:0.68rem;font-weight:700;letter-spacing:0.05em;">{badge_label}</div>'
+                f'<div class="hmap-badge" style="background:{badge_color}22;border-color:{badge_color}88;color:{badge_color};">{badge_label}</div>'
                 if badge_label else ""
             )
             return (
-                f'<div style="position:relative;width:100%;height:72px;border-radius:10px;background-image:url(\'{bg_image}\');background-size:cover;background-position:center;margin-bottom:10px;box-shadow:0 4px 10px rgba(0,0,0,0.4);overflow:hidden;">'
-                f'<div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(15,23,42,0.95) 0%,rgba(15,23,42,0.55) 55%,rgba(15,23,42,0.82) 100%);"></div>'
+                f'<div class="hmap-card" style="background-image:url(\'{bg_image}\');">'
+                f'<div class="hmap-scrim"></div>'
                 f'{badge}'
-                f'<div style="position:absolute;top:50%;left:18px;transform:translateY(-50%);">'
-                f'<div style="color:#f8fafc;font-size:1.05rem;font-weight:700;letter-spacing:0.01em;line-height:1.2;">{m_name}</div>'
-                f'<div style="color:#94a3b8;font-size:0.78rem;margin-top:2px;">픽률 {p_rate:.1f}%</div>'
+                f'<div class="hmap-left">'
+                f'<div class="hmap-name">{m_name}</div>'
+                f'<div class="hmap-sub">픽률 {p_rate:.1f}%</div>'
                 f'</div>'
-                f'<div style="position:absolute;top:50%;right:18px;transform:translateY(-50%);text-align:right;">'
-                f'<div style="color:{rate_color};font-size:1.35rem;font-weight:800;line-height:1.1;">{w_rate:.1f}%</div>'
-                f'<div style="color:#94a3b8;font-size:0.75rem;margin-top:2px;">승률</div>'
+                f'<div class="hmap-right">'
+                f'<div class="hmap-rate" style="color:{rate_color};">{w_rate:.1f}%</div>'
+                f'<div class="hmap-sub">승률</div>'
                 f'</div></div>'
             )
 
@@ -452,13 +327,13 @@ with right_col:
 
         st.markdown("**Top Winrate**")
         st.markdown(
-            "".join(make_map_card(row, "TOP WIN", "#34d399") for _, row in top_win_df.iterrows()),
+            "".join(make_map_card(row, "TOP WIN", GLOBAL_GOOD_COLOR) for _, row in top_win_df.iterrows()),
             unsafe_allow_html=True,
         )
 
         st.markdown("**Top Pickrate**")
         st.markdown(
-            "".join(make_map_card(row, "TOP PICK", "#60a5fa") for _, row in top_pick_df.iterrows()),
+            "".join(make_map_card(row, "TOP PICK", GLOBAL_INFO_COLOR) for _, row in top_pick_df.iterrows()),
             unsafe_allow_html=True,
         )
 

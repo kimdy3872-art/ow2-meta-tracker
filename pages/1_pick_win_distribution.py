@@ -6,17 +6,16 @@ from app_data import (
     get_ordered_tiers,
     load_latest_stats,
     translate_role_name,
-    translate_tier_name,
 )
 from ui import (
     COLS_HALF,
     GAP,
     page_shell,
+    section,
     resolve_tier,
     selected_role as selected_role_value,
-    GLOBAL_GOOD_COLOR,
-    GLOBAL_INFO_COLOR,
-    GLOBAL_DANGER_COLOR,
+    GLOBAL_CHART_HILITE_COLOR,
+    GLOBAL_CHART_LABEL_COLOR,
     GLOBAL_RANK_COLORS,
     style_chart,
 )
@@ -158,7 +157,7 @@ fig_2d.update_traces(
         "밴률: %{customdata[4]:.2f}%<extra></extra>"
     ),
     textposition="top center",
-    textfont=dict(size=10, color="#e2e8f0"),
+    textfont=dict(size=10, color=GLOBAL_CHART_LABEL_COLOR),
     marker=dict(line=dict(width=1, color="rgba(226,232,240,0.55)")),
 )
 style_chart(fig_2d, height=460)
@@ -195,7 +194,7 @@ fig.update_traces(
         "승률: %{y:.2f}%<br>"
         "밴률: %{customdata[4]:.2f}%<extra></extra>"
     ),
-    textfont=dict(size=10, color="#e2e8f0"),
+    textfont=dict(size=10, color=GLOBAL_CHART_LABEL_COLOR),
 )
 
 for trace in fig.data:
@@ -203,7 +202,7 @@ for trace in fig.data:
     line_colors = []
     for cd in customdata:
         meta_type = str(cd[3]) if len(cd) > 3 else "보통"
-        line_colors.append("#f8fafc" if meta_type != "보통" else "rgba(148,163,184,0.25)")
+        line_colors.append(GLOBAL_CHART_HILITE_COLOR if meta_type != "보통" else "rgba(148,163,184,0.25)")
     trace.marker.line = dict(width=1, color=line_colors)
 
 style_chart(fig, height=460, scene=True)
@@ -228,11 +227,11 @@ fig.update_layout(
 # 지시서 STEP 3: 2D 와 3D 를 세로로 쌓지 않고 나란히.
 _c2d, _c3d = st.columns(COLS_HALF, gap=GAP)
 with _c2d:
-    st.markdown("<div class='eyebrow'>판단용 2D · 픽률 x 승률</div>", unsafe_allow_html=True)
+    section("판단용 2D", "픽률 x 승률")
     st.plotly_chart(fig_2d, key="pick_win_scatter_2d",
                     config={"displayModeBar": False}, use_container_width=True)
 with _c3d:
-    st.markdown("<div class='eyebrow'>탐색용 3D · 픽률 x 승률 x 밴률</div>", unsafe_allow_html=True)
+    section("탐색용 3D", "픽률 x 승률 x 밴률")
     event = st.plotly_chart(
         fig,
         key="pick_win_scatter_3d",

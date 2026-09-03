@@ -4,7 +4,6 @@ import urllib.parse
 import html
 from app_data import (
     ROLE_ORDER,
-    TIER_ORDER,
     get_ordered_tiers,
     get_hero_banner_art,
     get_hero_color,
@@ -17,13 +16,10 @@ from app_data import (
     load_latest_patch_note,
     load_latest_stats,
     clean_patch_note_content,
-    role_option_label,
-    tier_option_label,
     translate_role_name,
     translate_tier_name,
 )
 from ui import (
-    COLS_ART_KPI,
     COLS_FILTER_WIDE,
     COLS_MAIN_SIDE,
     FILTER_DEFAULTS,
@@ -32,18 +28,13 @@ from ui import (
     resolve_tier,
     section,
     selected_role as selected_role_value,
-    icon_selectbox,
     rank_badge,
-    GLOBAL_BG_COLOR,
-    GLOBAL_BORDER_COLOR,
-    GLOBAL_FONT_FAMILY,
     GLOBAL_GOOD_COLOR,
     GLOBAL_INFO_COLOR,
     GLOBAL_DANGER_COLOR,
-    GLOBAL_SURFACE_COLOR,
+    GLOBAL_RANK_COLORS,
     GLOBAL_TEXT_COLOR,
     render_rotating_card_groups,
-    render_hero_scroller,
     render_hero_showcase,
     render_map_cards,
     render_meta_score_card,
@@ -141,111 +132,6 @@ def render_patch_intelligence_block():
 """
 
     card_html = "\n".join(line.lstrip() for line in f"""
-        <style>
-        .patch-intel-wrap {{
-            border: 1px solid {GLOBAL_BORDER_COLOR};
-            border-radius: 8px;
-            background: linear-gradient(180deg, {GLOBAL_SURFACE_COLOR} 0%, #12111f 100%);
-            padding: 16px 18px;
-            margin: 4px 0 14px;
-        }}
-        .patch-intel-top {{
-            display: flex;
-            justify-content: space-between;
-            gap: 16px;
-            align-items: flex-start;
-        }}
-        .patch-kicker {{
-            color: #ff8da0;
-            font-size: 0.76rem;
-            font-weight: 800;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-            margin-bottom: 5px;
-        }}
-        .patch-title {{
-            color: {GLOBAL_TEXT_COLOR};
-            font-size: 1.04rem;
-            font-weight: 850;
-            line-height: 1.35;
-            margin-bottom: 6px;
-        }}
-        .patch-summary {{
-            color: #cbd5e1;
-            font-size: 0.92rem;
-            line-height: 1.55;
-        }}
-        .patch-meta {{
-            color: #94a3b8;
-            font-size: 0.82rem;
-            white-space: nowrap;
-            text-align: right;
-        }}
-        .patch-link {{
-            display: inline-block;
-            margin-top: 8px;
-            color: #ff9db0;
-            font-weight: 800;
-            text-decoration: none;
-            border-bottom: 1px solid rgba(255, 157, 176, 0.5);
-        }}
-        .patch-hero-row {{
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            margin-top: 12px;
-        }}
-        .patch-hero-badge {{
-            color: #ffd2db;
-            background: rgba(255, 77, 106, 0.13);
-            border: 1px solid rgba(255, 122, 140, 0.28);
-            border-radius: 999px;
-            padding: 3px 9px;
-            font-size: 0.76rem;
-            font-weight: 750;
-        }}
-        .patch-hero-badge.muted {{
-            color: #cbd5e1;
-            background: rgba(148, 163, 184, 0.1);
-            border-color: rgba(148, 163, 184, 0.22);
-        }}
-        .patch-ai-box {{
-            margin-top: 12px;
-            padding-top: 12px;
-            border-top: 1px solid rgba(90, 84, 128, 0.55);
-        }}
-        .patch-ai-title {{
-            color: #f8fafc;
-            font-size: 0.9rem;
-            font-weight: 850;
-            margin-bottom: 5px;
-        }}
-        .patch-ai-sub {{
-            color: #94a3b8;
-            font-size: 0.78rem;
-            line-height: 1.45;
-            margin-bottom: 6px;
-        }}
-        .patch-ai-summary {{
-            color: #dfe0f0;
-            font-size: 0.92rem;
-            line-height: 1.55;
-        }}
-        .patch-ai-list {{
-            color: #cbd5e1;
-            font-size: 0.88rem;
-            line-height: 1.55;
-            margin: 8px 0 0 18px;
-            padding: 0;
-        }}
-        .patch-ai-list li {{
-            margin: 3px 0;
-        }}
-        @media (max-width: 760px) {{
-            .patch-intel-top {{display: block;}}
-            .patch-meta {{text-align: left; margin-top: 8px; white-space: normal;}}
-        }}
-        </style>
         <section class="patch-intel-wrap">
             <div class="patch-intel-top">
                 <div>
@@ -313,39 +199,6 @@ roles = [role for role in ROLE_ORDER if role != "All"]
 tiers = get_ordered_tiers(df_raw)
 
 
-def render_metric_card(title, value, accent_color="#0b69ff"):
-    safe_title = html.escape(str(title))
-    safe_value = html.escape(str(value))
-    return f"""
-    <div style="
-        background: linear-gradient(180deg, {GLOBAL_SURFACE_COLOR} 0%, #0f1b31 100%);
-        border: 1px solid {GLOBAL_BORDER_COLOR};
-        border-radius: 12px;
-        padding: 16px 18px;
-        min-height: 122px;
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
-    ">
-        <div style="
-            display: inline-block;
-            padding: 6px 10px;
-            border-radius: 999px;
-            background: rgba(255, 77, 106, 0.13);
-            border: 1px solid rgba(255, 122, 140, 0.3);
-            color: #ffd2db;
-            font-size: 0.78rem;
-            font-weight: 700;
-            letter-spacing: 0.03em;
-            margin-bottom: 12px;
-        ">{safe_title}</div>
-        <div style="
-            color: {accent_color};
-            font-size: 1.62rem;
-            font-weight: 800;
-            line-height: 1.2;
-            word-break: keep-all;
-        ">{safe_value}</div>
-    </div>
-    """
 
 def reset_filters():
     for key, value in FILTER_DEFAULTS.items():
@@ -442,68 +295,9 @@ def _sort_header(key, label):
 
 
 def render_rank_table_html(df):
-    rank_color_map = {
-        "S": "#ef4444",
-        "A": "#f59e0b",
-        "B": "#22c55e",
-        "C": "#60a5fa",
-        "D": "#94a3b8",
-    }
+    rank_color_map = GLOBAL_RANK_COLORS
 
-    styles = """
-    <style>
-    .overwatch-table {border-collapse: separate; border-spacing: 0; width: 100%; font-family: __GLOBAL_FONT_FAMILY__; overflow: hidden; border: 1px solid __GLOBAL_BORDER_COLOR__; border-radius: 12px; background-color: __GLOBAL_BG_COLOR__;}
-    .overwatch-table th, .overwatch-table td {border-bottom: 1px solid __GLOBAL_BORDER_COLOR__; padding: 9px 12px; vertical-align: middle; color: __GLOBAL_TEXT_COLOR__; font-size: 0.9rem;}
-    .overwatch-table th:not(:last-child), .overwatch-table td:not(:last-child) {border-right: 1px solid rgba(43, 63, 99, 0.72);}
-    .overwatch-table tbody tr:last-child td {border-bottom: 0;}
-    .overwatch-table th {background-color: __GLOBAL_SURFACE_COLOR__; color: #f8fafc; font-weight: 700; font-size: 0.9rem; letter-spacing: 0.03em; text-transform: uppercase;}
-    .overwatch-table tbody tr:hover {background-color: #111827;}
-    .overwatch-table .portrait-cell {width: 76px; text-align: center;}
-    .overwatch-table .portrait-cell img {border-radius: 10px; width: 54px; height: 54px; object-fit: cover;}
-    .overwatch-table .hero-cell {text-align: left; font-weight: 700; color: __GLOBAL_TEXT_COLOR__;}
-    .overwatch-table .role-cell {text-align: center; color: __GLOBAL_TEXT_COLOR__;}
-    .overwatch-table .rate-cell {text-align: left; min-width: 152px;}
-    .overwatch-table .score-cell {text-align: center; font-weight: 800; min-width: 92px; color: #fbbf24;}
-    .overwatch-table .rank-cell {text-align: center; padding: 4px 8px;}
-    .rank-pill {display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:30px;border-radius:999px;font-weight:900;font-size:1.05rem;border:1px solid currentColor;background:rgba(255,255,255,0.05);}
-    .meta-type-badge {display: inline-block; margin-left: 8px; padding: 2px 7px; border-radius: 999px; font-size: 0.68rem; font-weight: 850; letter-spacing: 0.02em; vertical-align: middle;}
-    .meta-dominant {background: rgba(250, 204, 21, 0.14); color: #fde68a; border: 1px solid rgba(250, 204, 21, 0.36);}
-    .meta-overheated {background: rgba(249, 115, 22, 0.14); color: #fdba74; border: 1px solid rgba(251, 146, 60, 0.42);}
-    .meta-ban-pressure {background: rgba(248, 113, 113, 0.14); color: #fecaca; border: 1px solid rgba(248, 113, 113, 0.42);}
-    .meta-underrated {background: rgba(16, 185, 129, 0.14); color: #86efac; border: 1px solid rgba(52, 211, 153, 0.42);}
-    .meta-expert {background: rgba(20, 184, 166, 0.13); color: #99f6e4; border: 1px solid rgba(45, 212, 191, 0.38);}
-    .meta-niche {background: rgba(148, 163, 184, 0.10); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.28);}
-    .low-pick-badge {display: inline-block; margin-left: 6px; padding: 2px 7px; border-radius: 999px; font-size: 0.68rem; font-weight: 800; vertical-align: middle; color: #fed7aa; background: rgba(249, 115, 22, 0.12); border: 1px solid rgba(251, 146, 60, 0.35);}
-    .rate-line {display:flex;align-items:center;gap:9px;}
-    .rate-bar {flex:1;background: #1f2937; border-radius: 999px; height: 8px; overflow: hidden;}
-    .rate-fill {height: 100%; border-radius: 999px;}
-    .rate-fill.pick {background: #60a5fa;}
-    .rate-fill.win {background: #34d399;}
-    .rate-fill.ban {background: #f87171;}
-    .rate-text {width:48px;text-align:right;font-size: 0.84rem; color: __GLOBAL_TEXT_COLOR__; font-weight:700;}
-    .header-note {font-size: 0.9rem; color: #cbd5e1; margin-bottom: 8px;}
-    @media (max-width: 860px) {
-        .overwatch-table {border: 0; background: transparent;}
-        .overwatch-table thead {display:none;}
-        .overwatch-table, .overwatch-table tbody, .overwatch-table tr, .overwatch-table td {display:block;width:100%;}
-        .overwatch-table tr {border:1px solid __GLOBAL_BORDER_COLOR__;border-radius:12px;margin-bottom:10px;background:rgba(15,23,42,0.82);overflow:hidden;}
-        .overwatch-table td {border-right:0!important;padding:8px 12px;}
-        .overwatch-table td[data-label]::before {content:attr(data-label);display:block;color:#8fa7cc;font-size:0.72rem;font-weight:850;letter-spacing:0.05em;text-transform:uppercase;margin-bottom:5px;}
-        .overwatch-table .portrait-cell {width:100%;text-align:left;}
-        .overwatch-table .role-cell,.overwatch-table .score-cell,.overwatch-table .rank-cell {text-align:left;}
-        .overwatch-table .rate-cell {min-width:0;}
-        .overwatch-table .rate-cell::before {display:inline-flex!important;align-items:center;gap:6px;margin-bottom:7px;}
-        .overwatch-table .rate-cell.win::before {content:"승률";}
-        .overwatch-table .rate-cell.pick::before {content:"픽률";}
-        .overwatch-table .rate-cell.ban::before {content:"밴률";}
-    }
-    </style>
-    """
-    styles = styles.replace("__GLOBAL_BG_COLOR__", GLOBAL_BG_COLOR)
-    styles = styles.replace("__GLOBAL_TEXT_COLOR__", GLOBAL_TEXT_COLOR)
-    styles = styles.replace("__GLOBAL_BORDER_COLOR__", GLOBAL_BORDER_COLOR)
-    styles = styles.replace("__GLOBAL_SURFACE_COLOR__", GLOBAL_SURFACE_COLOR)
-    styles = styles.replace("__GLOBAL_FONT_FAMILY__", GLOBAL_FONT_FAMILY)
+    styles = ""  # 표 스타일은 assets/style.css 에 있다
     rows = []
     for _, row in df.iterrows():
         hero_name = str(row["hero"])
@@ -566,7 +360,7 @@ def render_rank_table_html(df):
                 f"<div class='rate-text'>{ban_rate_str}</div></div>"
             )
         else:
-            ban_html = "<div class='rate-text' style='color:#6b7280;'>-</div>"
+            ban_html = "<div class='rate-text muted'>-</div>"
         low_html = f"<span class='cell-warn'>{html.escape(low_pick_warning)}</span>" if low_pick_warning else ""
         sub_bits = [role]
         if meta_type:
@@ -634,7 +428,7 @@ def _format_metric(metric_col, value):
 
 def _build_top_cards(metric_col, label, top_df, metric_color, limit=4):
     """상위 영웅을 아트 카드로. 배너와 같은 스플래시 아트 + 초점 좌표를 재사용한다."""
-    rank_color_map = {"S": "#ef4444", "A": "#f59e0b", "B": "#22c55e", "C": GLOBAL_INFO_COLOR, "D": "#94a3b8"}
+    rank_color_map = GLOBAL_RANK_COLORS
     cards = []
     for i in range(min(limit, len(top_df))):
         row = top_df.iloc[i]
@@ -657,7 +451,7 @@ def _build_top_cards(metric_col, label, top_df, metric_color, limit=4):
 
 
 def _rank_distribution_rows(df):
-    rank_color_map = {"S": "#ef4444", "A": "#f59e0b", "B": "#22c55e", "C": GLOBAL_INFO_COLOR, "D": "#94a3b8"}
+    rank_color_map = GLOBAL_RANK_COLORS
     counts = df["rank"].astype(str).value_counts()
     return [(key, int(counts.get(key, 0)), rank_color_map[key]) for key in ["S", "A", "B", "C", "D"]]
 
@@ -753,7 +547,7 @@ with _main_col:
         st.markdown("<div class='eyebrow'>Top Maps</div>", unsafe_allow_html=True)
         render_map_cards(_maps)
 
-    st.markdown("<h3 class='section-title'>영웅 랭크 순위표</h3>", unsafe_allow_html=True)
+    section("영웅 랭크 순위표", "픽률·승률·밴률을 합친 종합 점수 순")
     st.caption("영웅 이름을 클릭하면 상세 페이지로 이동합니다. 헤더를 눌러 정렬합니다.")
     st.markdown(render_rank_table_html(display_df), unsafe_allow_html=True)
 

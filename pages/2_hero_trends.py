@@ -6,8 +6,6 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from app_data import (
-    role_option_label,
-    tier_option_label,
     DATA_CACHE_TTL,
     get_hero_banner_art,
     get_hero_color,
@@ -17,7 +15,6 @@ from app_data import (
     get_ordered_tiers,
     list_data_files,
     read_data_parquet,
-    translate_role_name,
     translate_tier_name,
 )
 from ui import (
@@ -27,9 +24,12 @@ from ui import (
     page_shell,
     resolve_tier,
     selected_role as selected_role_value,
-    GLOBAL_BORDER_COLOR,
-    GLOBAL_MUTED_TEXT_COLOR,
-    GLOBAL_SURFACE_COLOR,
+    GLOBAL_CHART_LABEL_COLOR,
+    GLOBAL_DANGER_COLOR,
+    GLOBAL_GOOD_COLOR,
+    GLOBAL_INFO_COLOR,
+    GLOBAL_RANK_COLORS,
+    GLOBAL_WARN_COLOR,
     GLOBAL_TEXT_COLOR,
     render_hero_portrait_card,
     render_kpi_row,
@@ -44,10 +44,10 @@ _shell = page_shell(
 _shell.__enter__()
 
 METRIC_CONFIG = {
-    "win_rate": {"label": "승률", "color": "#34d399", "suffix": "%"},
-    "pick_rate": {"label": "픽률", "color": "#60a5fa", "suffix": "%"},
-    "ban_rate": {"label": "밴률", "color": "#f87171", "suffix": "%"},
-    "total_score": {"label": "종합 점수", "color": "#fbbf24", "suffix": ""},
+    "win_rate": {"label": "승률", "color": GLOBAL_GOOD_COLOR, "suffix": "%"},
+    "pick_rate": {"label": "픽률", "color": GLOBAL_INFO_COLOR, "suffix": "%"},
+    "ban_rate": {"label": "밴률", "color": GLOBAL_DANGER_COLOR, "suffix": "%"},
+    "total_score": {"label": "종합 점수", "color": GLOBAL_WARN_COLOR, "suffix": ""},
 }
 
 
@@ -70,13 +70,7 @@ def format_metric_value(value, suffix):
 
 
 def rank_color(rank):
-    return {
-        "S": "#ef4444",
-        "A": "#f59e0b",
-        "B": "#22c55e",
-        "C": "#60a5fa",
-        "D": "#94a3b8",
-    }.get(str(rank), GLOBAL_TEXT_COLOR)
+    return GLOBAL_RANK_COLORS.get(str(rank), GLOBAL_TEXT_COLOR)
 
 
 @st.cache_data(ttl=DATA_CACHE_TTL)
@@ -152,90 +146,6 @@ history_df = load_history_data()
 if history_df.empty:
     st.warning("시계열로 표시할 데이터가 없습니다.")
     st.stop()
-
-st.markdown(
-    f"""
-    <style>
-    .trend-context {{
-        border: 1px solid {GLOBAL_BORDER_COLOR};
-        border-radius: 12px;
-        background: linear-gradient(135deg, {GLOBAL_SURFACE_COLOR} 0%, #0f1b31 100%);
-        padding: 10px 14px;
-        color: {GLOBAL_MUTED_TEXT_COLOR};
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        margin-bottom: 12px;
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
-    }}
-    .trend-context img,
-    .trend-context .portrait-fallback {{
-        width: 54px;
-        height: 54px;
-        border-radius: 10px;
-        object-fit: cover;
-        flex-shrink: 0;
-        border: 1px solid rgba(148, 163, 184, 0.35);
-        background: #1f2937;
-    }}
-    .trend-context-main {{
-        flex: 1;
-        min-width: 220px;
-    }}
-    .trend-context-badge {{
-        display: inline-block;
-        padding: 2px 7px;
-        border-radius: 999px;
-        background: rgba(59,130,246,0.12);
-        border: 1px solid rgba(59,130,246,0.3);
-        color: #bfdbfe;
-        font-size: 0.7rem;
-        font-weight: 800;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        margin-bottom: 4px;
-    }}
-    .trend-context-title {{
-        color: {GLOBAL_TEXT_COLOR};
-        font-size: 1.06rem;
-        font-weight: 800;
-        line-height: 1.25;
-    }}
-    .trend-context-sub {{
-        color: {GLOBAL_MUTED_TEXT_COLOR};
-        font-size: 0.86rem;
-        margin-top: 2px;
-    }}
-    .trend-context-rank {{
-        color: {GLOBAL_MUTED_TEXT_COLOR};
-        font-size: 0.78rem;
-        font-weight: 800;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-        text-align: right;
-        flex-shrink: 0;
-    }}
-    .trend-context-rank strong {{
-        display: block;
-        color: {GLOBAL_TEXT_COLOR};
-        font-size: 1.7rem;
-        line-height: 1;
-        margin-top: 3px;
-    }}
-    @media (max-width: 700px) {{
-        .trend-context {{
-            align-items: flex-start;
-        }}
-        .trend-context-rank {{
-            width: 100%;
-            text-align: left;
-            padding-left: 68px;
-        }}
-    }}
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
 
 # 티어/포지션은 사이드바 전역 필터. 본문에는 이 페이지 고유 필터(영웅·전장)만
 # 한 줄로 둔다. 전장 목록이 영웅·티어에 의존해서, 열만 먼저 잡고 나중에 채운다.
@@ -411,7 +321,7 @@ def render_metric_chart(metric, chart_df):
             name=cfg["label"],
             customdata=chart_df[["rank", "period_label"]],
             line=dict(color=cfg["color"], width=3),
-            marker=dict(size=9, line=dict(width=1, color="#e2e8f0")),
+            marker=dict(size=9, line=dict(width=1, color=GLOBAL_CHART_LABEL_COLOR)),
             hovertemplate=(
                 "<b>%{customdata[1]}</b><br>"
                 f"{cfg['label']}: %{{y:.2f}}{suffix}<br>"

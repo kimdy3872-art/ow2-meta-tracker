@@ -23,9 +23,14 @@ GLOBAL_GOOD_COLOR = "#34d399"
 GLOBAL_INFO_COLOR = "#60a5fa"
 GLOBAL_DANGER_COLOR = "#f87171"
 GLOBAL_WARN_COLOR = "#fbbf24"
+# 특전 라인 구분색. Minor 는 액센트 계열, Major 는 경고 계열(WARN)을 쓴다.
+MINOR_PERK_COLOR = "#ff9db0"
 
 # 차트용 토큰. 앱 프레임이 그라데이션이라 차트 배경을 단색으로 칠하면 그 부분만 판때기처럼
 # 떠 보인다. paper 는 투명으로 두고 플롯 영역만 아주 옅게 띄운다.
+# 차트 위 텍스트/마커. 본문 텍스트보다 한 단계 밝게 둬야 플롯 배경에서 읽힌다.
+GLOBAL_CHART_LABEL_COLOR = "#e2e8f0"
+GLOBAL_CHART_HILITE_COLOR = "#f8fafc"
 GLOBAL_CHART_PLOT_BG = "rgba(255, 255, 255, 0.022)"
 GLOBAL_CHART_GRID_COLOR = "rgba(148, 150, 190, 0.15)"
 GLOBAL_CHART_AXIS_COLOR = "rgba(148, 150, 190, 0.34)"

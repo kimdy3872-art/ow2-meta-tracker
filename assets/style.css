@@ -1586,11 +1586,25 @@ h1, h2, h3, h4,
 .sort-caret { width: 9px; height: 6px; }
 .caret-wrap.flip { display: inline-flex; transform: rotate(180deg); }
 
-.section-title {
+/* 섹션 제목. 예전에는 h3.section-title / st.subheader / eyebrow 세 방식이
+   섞여 있어서 폰트와 여백이 페이지마다 달랐다. ui.section() 하나로 통일한다.
+   부제 슬롯은 비워둘 수 있다. */
+.ow-section {
+    margin: 22px 0 8px;
+}
+
+.ow-section-title {
     font-family: var(--app-display-font);
     font-size: 1.35rem;
-    margin: 22px 0 2px;
+    margin: 0;
     color: var(--app-text);
+}
+
+.ow-section-sub {
+    margin: 2px 0 0;
+    color: var(--app-muted);
+    font-size: 0.84rem;
+    font-weight: 600;
 }
 
 /* D-2 상단바 sticky. absolute/fixed 는 쓰지 않는다. */
@@ -1788,4 +1802,465 @@ h1, h2, h3, h4,
     border-radius: var(--r-chip);
     padding: 2px;
     backdrop-filter: blur(3px);
+}
+
+/* ---------------------------------------------------------------------------
+   랭크 순위표. main.py 인라인 <style> 에서 옮겨왔다.
+   --------------------------------------------------------------------------- */
+.overwatch-table {border-collapse: separate; border-spacing: 0; width: 100%; font-family: var(--font); overflow: hidden; border: 1px solid var(--border); border-radius: 12px; background-color: var(--bg);}
+.overwatch-table th, .overwatch-table td {border-bottom: 1px solid var(--border); padding: 9px 12px; vertical-align: middle; color: var(--text); font-size: 0.9rem;}
+.overwatch-table th:not(:last-child), .overwatch-table td:not(:last-child) {border-right: 1px solid rgba(43, 63, 99, 0.72);}
+.overwatch-table tbody tr:last-child td {border-bottom: 0;}
+.overwatch-table th {background-color: var(--surface); color: #f8fafc; font-weight: 700; font-size: 0.9rem; letter-spacing: 0.03em; text-transform: uppercase;}
+.overwatch-table tbody tr:hover {background-color: #111827;}
+.overwatch-table .portrait-cell {width: 76px; text-align: center;}
+.overwatch-table .portrait-cell img {border-radius: 10px; width: 54px; height: 54px; object-fit: cover;}
+.overwatch-table .hero-cell {text-align: left; font-weight: 700; color: var(--text);}
+.overwatch-table .role-cell {text-align: center; color: var(--text);}
+.overwatch-table .rate-cell {text-align: left; min-width: 152px;}
+.overwatch-table .score-cell {text-align: center; font-weight: 800; min-width: 92px; color: #fbbf24;}
+.overwatch-table .rank-cell {text-align: center; padding: 4px 8px;}
+.rank-pill {display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:30px;border-radius:999px;font-weight:900;font-size:1.05rem;border:1px solid currentColor;background:rgba(255,255,255,0.05);}
+.meta-type-badge {display: inline-block; margin-left: 8px; padding: 2px 7px; border-radius: 999px; font-size: 0.68rem; font-weight: 850; letter-spacing: 0.02em; vertical-align: middle;}
+.meta-dominant {background: rgba(250, 204, 21, 0.14); color: #fde68a; border: 1px solid rgba(250, 204, 21, 0.36);}
+.meta-overheated {background: rgba(249, 115, 22, 0.14); color: #fdba74; border: 1px solid rgba(251, 146, 60, 0.42);}
+.meta-ban-pressure {background: rgba(248, 113, 113, 0.14); color: #fecaca; border: 1px solid rgba(248, 113, 113, 0.42);}
+.meta-underrated {background: rgba(16, 185, 129, 0.14); color: #86efac; border: 1px solid rgba(52, 211, 153, 0.42);}
+.meta-expert {background: rgba(20, 184, 166, 0.13); color: #99f6e4; border: 1px solid rgba(45, 212, 191, 0.38);}
+.meta-niche {background: rgba(148, 163, 184, 0.10); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.28);}
+.low-pick-badge {display: inline-block; margin-left: 6px; padding: 2px 7px; border-radius: 999px; font-size: 0.68rem; font-weight: 800; vertical-align: middle; color: #fed7aa; background: rgba(249, 115, 22, 0.12); border: 1px solid rgba(251, 146, 60, 0.35);}
+.rate-line {display:flex;align-items:center;gap:9px;}
+.rate-bar {flex:1;background: #1f2937; border-radius: 999px; height: 8px; overflow: hidden;}
+.rate-fill {height: 100%; border-radius: 999px;}
+.rate-fill.pick {background: #60a5fa;}
+.rate-fill.win {background: #34d399;}
+.rate-fill.ban {background: #f87171;}
+.rate-text {width:48px;text-align:right;font-size: 0.84rem; color: var(--text); font-weight:700;}
+.header-note {font-size: 0.9rem; color: #cbd5e1; margin-bottom: 8px;}
+@media (max-width: 860px) {
+    .overwatch-table {border: 0; background: transparent;}
+    .overwatch-table thead {display:none;}
+    .overwatch-table, .overwatch-table tbody, .overwatch-table tr, .overwatch-table td {display:block;width:100%;}
+    .overwatch-table tr {border:1px solid var(--border);border-radius:12px;margin-bottom:10px;background:rgba(15,23,42,0.82);overflow:hidden;}
+    .overwatch-table td {border-right:0!important;padding:8px 12px;}
+    .overwatch-table td[data-label]::before {content:attr(data-label);display:block;color:#8fa7cc;font-size:0.72rem;font-weight:850;letter-spacing:0.05em;text-transform:uppercase;margin-bottom:5px;}
+    .overwatch-table .portrait-cell {width:100%;text-align:left;}
+    .overwatch-table .role-cell,.overwatch-table .score-cell,.overwatch-table .rank-cell {text-align:left;}
+    .overwatch-table .rate-cell {min-width:0;}
+    .overwatch-table .rate-cell::before {display:inline-flex!important;align-items:center;gap:6px;margin-bottom:7px;}
+    .overwatch-table .rate-cell.win::before {content:"승률";}
+    .overwatch-table .rate-cell.pick::before {content:"픽률";}
+    .overwatch-table .rate-cell.ban::before {content:"밴률";}
+}
+
+/* ---------------------------------------------------------------------------
+   패치 노트 카드. main.py 인라인 <style> 에서 옮겨왔다.
+   --------------------------------------------------------------------------- */
+.patch-intel-wrap {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: linear-gradient(180deg, var(--surface) 0%, #12111f 100%);
+    padding: 16px 18px;
+    margin: 4px 0 14px;
+}
+.patch-intel-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: flex-start;
+}
+.patch-kicker {
+    color: #ff8da0;
+    font-size: 0.76rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+}
+.patch-title {
+    color: var(--text);
+    font-size: 1.04rem;
+    font-weight: 850;
+    line-height: 1.35;
+    margin-bottom: 6px;
+}
+.patch-summary {
+    color: #cbd5e1;
+    font-size: 0.92rem;
+    line-height: 1.55;
+}
+.patch-meta {
+    color: #94a3b8;
+    font-size: 0.82rem;
+    white-space: nowrap;
+    text-align: right;
+}
+.patch-link {
+    display: inline-block;
+    margin-top: 8px;
+    color: #ff9db0;
+    font-weight: 800;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(255, 157, 176, 0.5);
+}
+.patch-hero-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 12px;
+}
+.patch-hero-badge {
+    color: #ffd2db;
+    background: rgba(255, 77, 106, 0.13);
+    border: 1px solid rgba(255, 122, 140, 0.28);
+    border-radius: 999px;
+    padding: 3px 9px;
+    font-size: 0.76rem;
+    font-weight: 750;
+}
+.patch-hero-badge.muted {
+    color: #cbd5e1;
+    background: rgba(148, 163, 184, 0.1);
+    border-color: rgba(148, 163, 184, 0.22);
+}
+.patch-ai-box {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(90, 84, 128, 0.55);
+}
+.patch-ai-title {
+    color: #f8fafc;
+    font-size: 0.9rem;
+    font-weight: 850;
+    margin-bottom: 5px;
+}
+.patch-ai-sub {
+    color: #94a3b8;
+    font-size: 0.78rem;
+    line-height: 1.45;
+    margin-bottom: 6px;
+}
+.patch-ai-summary {
+    color: #dfe0f0;
+    font-size: 0.92rem;
+    line-height: 1.55;
+}
+.patch-ai-list {
+    color: #cbd5e1;
+    font-size: 0.88rem;
+    line-height: 1.55;
+    margin: 8px 0 0 18px;
+    padding: 0;
+}
+.patch-ai-list li {
+    margin: 3px 0;
+}
+@media (max-width: 760px) {
+    .patch-intel-top {display: block;}
+    .patch-meta {text-align: left; margin-top: 8px; white-space: normal;}
+}
+
+/* ---------------------------------------------------------------------------
+   2_hero_trends.py 인라인 <style> 에서 옮겨왔다.
+   --------------------------------------------------------------------------- */
+.trend-context {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--surface) 0%, #0f1b31 100%);
+    padding: 10px 14px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 12px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+}
+.trend-context img,
+.trend-context .portrait-fallback {
+    width: 54px;
+    height: 54px;
+    border-radius: 10px;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    background: #1f2937;
+}
+.trend-context-main {
+    flex: 1;
+    min-width: 220px;
+}
+.trend-context-badge {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: rgba(59,130,246,0.12);
+    border: 1px solid rgba(59,130,246,0.3);
+    color: #bfdbfe;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+.trend-context-title {
+    color: var(--text);
+    font-size: 1.06rem;
+    font-weight: 800;
+    line-height: 1.25;
+}
+.trend-context-sub {
+    color: var(--muted);
+    font-size: 0.86rem;
+    margin-top: 2px;
+}
+.trend-context-rank {
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    text-align: right;
+    flex-shrink: 0;
+}
+.trend-context-rank strong {
+    display: block;
+    color: var(--text);
+    font-size: 1.7rem;
+    line-height: 1;
+    margin-top: 3px;
+}
+@media (max-width: 700px) {
+    .trend-context {
+        align-items: flex-start;
+    }
+    .trend-context-rank {
+        width: 100%;
+        text-align: left;
+        padding-left: 68px;
+    }
+}
+
+/* ---------------------------------------------------------------------------
+   3_hero_detail.py 인라인 <style> 에서 옮겨왔다.
+   --------------------------------------------------------------------------- */
+.perk-card {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(15, 23, 42, 0.72);
+    border: 1px solid #334155;
+    border-radius: 10px;
+    padding: 6px 8px;
+    margin-top: 6px;
+    cursor: help;
+    outline: none;
+    transition: border-color 150ms ease, background 150ms ease, transform 150ms ease;
+}
+[data-testid="stHorizontalBlock"]:has(.perk-card) {
+    position: relative;
+    overflow: visible;
+}
+[data-testid="stColumn"]:has(.perk-card) {
+    position: relative;
+    z-index: 20;
+    overflow: visible;
+}
+[data-testid="stColumn"]:has(.perk-card:hover),
+[data-testid="stColumn"]:has(.perk-card:focus-visible) {
+    z-index: 10000;
+}
+[data-testid="stColumn"]:has(.perk-card) [data-testid="stVerticalBlock"],
+[data-testid="stColumn"]:has(.perk-card) [data-testid="stMarkdownContainer"] {
+    overflow: visible;
+}
+.perk-card:hover,
+.perk-card:focus-visible {
+    border-color: rgba(255, 122, 140, 0.7);
+    background: rgba(30, 41, 59, 0.96);
+    transform: translateY(-1px);
+}
+.perk-tooltip {
+    position: absolute;
+    left: calc(100% + 12px);
+    top: 50%;
+    z-index: 10001;
+    width: min(360px, 46vw);
+    padding: 14px;
+    color: #e2e8f0;
+    background: linear-gradient(145deg, rgba(15, 31, 49, 0.99), rgba(17, 24, 39, 0.99));
+    border: 2px solid #ff4d6a;
+    border-radius: 10px;
+    box-shadow: 0 18px 45px rgba(2, 6, 23, 0.72), 0 0 18px rgba(255, 77, 106, 0.22);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translate(8px, -50%);
+    transition: opacity 140ms ease, transform 140ms ease, visibility 140ms ease;
+}
+.perk-card:hover .perk-tooltip,
+.perk-card:focus-visible .perk-tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(0, -50%);
+}
+.perk-tooltip-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.perk-tooltip-icon {
+    width: 42px;
+    height: 42px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+.perk-tooltip-name {
+    flex: 1;
+    color: #a5f3fc;
+    font-size: 1rem;
+    font-weight: 800;
+    line-height: 1.25;
+}
+.perk-tooltip-rate {
+    color: #ff9db0;
+    font-size: 1.18rem;
+    font-weight: 900;
+}
+.perk-tooltip-description {
+    margin-top: 10px;
+    color: #cbd5e1;
+    font-size: 0.88rem;
+    line-height: 1.55;
+    word-break: keep-all;
+}
+@media (max-width: 900px) {
+    .perk-tooltip {
+        left: 0;
+        top: calc(100% + 8px);
+        width: min(360px, 82vw);
+        transform: translateY(8px);
+    }
+    .perk-card:hover .perk-tooltip,
+    .perk-card:focus-visible .perk-tooltip {
+        transform: translateY(0);
+    }
+}
+
+.rate-text.muted { color: var(--muted); }
+
+/* ---------------------------------------------------------------------------
+   영웅 상세. pages/3_hero_detail.py 인라인 style= 에서 옮겨왔다.
+   --------------------------------------------------------------------------- */
+.hero-ai-note {
+    margin-top: 14px;
+    border: 1px solid rgba(255, 122, 140, 0.30);
+    border-radius: var(--radius-lg, 12px);
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.94) 0%, rgba(12, 20, 34, 0.98) 100%);
+    padding: 12px 13px;
+    font-family: var(--font);
+}
+
+.hero-ai-kicker {
+    color: var(--info);
+    font-size: 0.74rem;
+    font-weight: 850;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+}
+
+.hero-ai-title {
+    color: var(--text);
+    font-size: 0.9rem;
+    font-weight: 850;
+    margin-bottom: 5px;
+}
+
+.hero-ai-meta {
+    color: var(--muted);
+    font-size: 0.74rem;
+    line-height: 1.45;
+    margin-bottom: 7px;
+}
+
+.hero-ai-body {
+    color: var(--text);
+    font-size: 0.86rem;
+    line-height: 1.55;
+}
+
+.perk-empty {
+    margin-top: 10px;
+    padding: 8px 10px;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-md);
+    color: var(--muted);
+    font-size: 0.8rem;
+}
+
+.hmap-card {
+    position: relative;
+    width: 100%;
+    height: 72px;
+    border-radius: var(--radius-md);
+    background-size: cover;
+    background-position: center;
+    margin-bottom: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    overflow: hidden;
+}
+
+.hmap-scrim {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgba(15, 23, 42, 0.95) 0%,
+                rgba(15, 23, 42, 0.55) 55%, rgba(15, 23, 42, 0.82) 100%);
+}
+
+.hmap-badge {
+    position: absolute;
+    top: 8px;
+    right: 100px;
+    border: 1px solid;
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+}
+
+.hmap-left {
+    position: absolute;
+    top: 50%;
+    left: 18px;
+    transform: translateY(-50%);
+}
+
+.hmap-right {
+    position: absolute;
+    top: 50%;
+    right: 18px;
+    transform: translateY(-50%);
+    text-align: right;
+}
+
+.hmap-name {
+    color: var(--text);
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    line-height: 1.2;
+}
+
+.hmap-sub {
+    color: var(--muted);
+    font-size: 0.78rem;
+    margin-top: 2px;
+}
+
+.hmap-rate {
+    font-size: 1.35rem;
+    font-weight: 800;
+    line-height: 1.1;
 }
