@@ -340,6 +340,14 @@ MAP_ID_ALIAS = {
     "esperança": "esperanca",
 }
 
+# OverFast 가 전장 목록에는 올렸지만 스크린샷은 아직 없는 경우가 있다
+# (neon-junction 은 /static/maps/neon-junction.jpg 가 404). 그대로 두면 카드가
+# 깨진 이미지로 뜨므로, 받아서 저장소에 커밋해 둔 것을 대신 쓴다.
+# OverFast 에 스크린샷이 올라오면 이 줄만 지우면 된다.
+MAP_IMAGE_OVERRIDES = {
+    "neon-junction": "static/map_art/neon-junction.webp",
+}
+
 
 def translate_role_name(role_name):
     return ROLE_LABELS.get(str(role_name), str(role_name))
@@ -774,6 +782,9 @@ def load_map_image_map():
 def get_map_image_url(map_id):
     map_id = str(map_id)
     alias = MAP_ID_ALIAS.get(map_id, map_id)
+    override = MAP_IMAGE_OVERRIDES.get(alias) or MAP_IMAGE_OVERRIDES.get(map_id)
+    if override:
+        return _remote_url(override)
     image_map = load_map_image_map()
     url = image_map.get(alias) or image_map.get(map_id)
     if url:

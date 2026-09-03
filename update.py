@@ -39,7 +39,7 @@ role_dict = {
     'D.VA': 'Tank', '라인하르트': 'Tank', '윈스턴': 'Tank', '자리야': 'Tank', 
     '오리사': 'Tank', '로드호그': 'Tank', '시그마': 'Tank', '레킹볼': 'Tank', 
     '둠피스트': 'Tank', '라마트라': 'Tank', '마우가': 'Tank', '도미나': 'Tank',
-    '정커퀸': 'Tank', '해저드': 'Tank',
+    '정커퀸': 'Tank', '해저드': 'Tank', 'D.MON': 'Tank',
     '겐지': 'Damage', '트레이서': 'Damage', '리퍼': 'Damage', '파라': 'Damage', 
     '캐서디': 'Damage', '애쉬': 'Damage', '솔저: 76': 'Damage', '솜브라': 'Damage', 
     '위도우메이커': 'Damage', '한조': 'Damage', '메이': 'Damage', '정크랫': 'Damage', 
@@ -62,7 +62,7 @@ map_dict = {
 
     # 푸시
     "colosseo": "콜로세오",
-    "esperanca": "에스페란사",
+    "esperanca": "이스페란사",
     "runasapi": "루나사피",
     "new-queen-street": "뉴 퀸 스트리트",
 
@@ -74,6 +74,7 @@ map_dict = {
     "blizzard-world": "블리자드 월드",
     "midtown": "미드타운",
     "numbani": "눔바니",
+    "neon-junction": "네온 교차로",
 
     # 플래시포인트
     "aatlis": "아틀리스",
@@ -82,7 +83,7 @@ map_dict = {
 
     # 호위
     "havana": "하바나",
-    "junkertown": "정크타운",
+    "junkertown": "쓰레기촌",
     "circuit-royal": "서킷 로얄",
     "shambali-monastery": "샴발리 수도원",
     "rialto": "리알토",
