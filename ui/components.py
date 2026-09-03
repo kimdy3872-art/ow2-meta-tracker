@@ -481,17 +481,19 @@ def icon_selectbox(label, options, scope, **kwargs):
     평문 그대로 두고 그림은 CSS 로 얹는다. 열린 목록과 닫힌 상태는 DOM 상
     전혀 다른 곳에 그려져서 규칙도 따로 만들어야 한다(ui/badges.py 참고).
 
-    scope 는 닫힌 상태를 잡을 때 쓰는 컨테이너 key 접두사다.
-    """
-    if "key" in kwargs and kwargs["key"] in st.session_state:
-        current = st.session_state[kwargs["key"]]
-    else:
-        current = options[kwargs.get("index", 0)] if options else ""
+    scope 는 닫힌 상태를 잡을 때 쓰는 컨테이너 key 접두사다. 값은 절대 key 에
+    넣지 않는다. key 가 바뀌면 리액트가 셀렉트박스를 통째로 다시 마운트해서,
+    클릭 커밋이 재마운트에 먹히고 검색 입력에 포커스가 잡혀 엔터를 한 번 더
+    눌러야 값이 반영된다. 셀렉터는 고정하고 규칙 안의 URI 만 바꾼다.
 
+    <style> 는 셀렉트박스 뒤에 낸다. 앞에 내면 아직 갱신 전인 session_state 로
+    뱃지를 그려 값보다 한 박자 늦는다. CSS 는 위치와 무관하게 전역이다.
+    """
+    with st.container(key=scope):
+        value = st.selectbox(label, options, **kwargs)
     st.markdown(
         f"<style>{option_list_icon_css(list(options))}"
-        f"{selected_value_icon_css(scope, str(current))}</style>",
+        f"{selected_value_icon_css(scope, str(value))}</style>",
         unsafe_allow_html=True,
     )
-    with st.container(key=f"{scope}-{current}"):
-        return st.selectbox(label, options, **kwargs)
+    return value

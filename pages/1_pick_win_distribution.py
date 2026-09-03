@@ -89,27 +89,25 @@ rank_color_map = GLOBAL_RANK_COLORS
 
 # 지시서 STEP 3: 문장으로 나열하던 메타 유형을 클릭 가능한 칩으로.
 META_TYPES = ["메타 지배", "과열 주의", "밴 압박", "저평가 픽", "전문가 픽", "비주류"]
-# st.pills 라벨에는 HTML 을 넣을 수 없어서, 색 점은 컬러 이모지 원으로 낸다.
-# nth-child CSS 로 칠하는 방법은 유형이 빠질 때 색이 밀려서 쓰지 않는다.
-META_TYPE_DOTS = {
-    "메타 지배": "🟡",
-    "과열 주의": "🟠",
-    "밴 압박": "🔴",
-    "저평가 픽": "🟢",
-    "전문가 픽": "🔵",
-    "비주류": "⚪",
-}
+
+# 차트 제목을 칩보다 위에 둔다. 칩은 페이지 범례가 아니라 아래 두 차트만 거르는
+# 보조 필터라서, 제목 위에 있으면 범례로 읽힌다.
+_t2d, _t3d = st.columns(COLS_HALF, gap=GAP)
+with _t2d:
+    section("판단용 2D", "픽률 x 승률")
+with _t3d:
+    section("탐색용 3D", "픽률 x 승률 x 밴률")
+
+# 칩에 색 점을 달지 않는다. 같은 화면에서 차트 점 색이 이미 랭크(S~D)를 뜻해서,
+# 유형 색을 같이 쓰면 빨간 점을 "밴 압박"으로 오독한다.
 _available = [t for t in META_TYPES if (filtered_df["meta_type"].astype(str) == t).any()]
-_chip_to_type = {f"{META_TYPE_DOTS[t]} {t}": t for t in _available}
-_selected_chips = st.pills(
-    "메타 유형",
-    list(_chip_to_type),
+selected_types = st.pills(
+    "메타 유형으로 걸러보기",
+    _available,
     selection_mode="multi",
     default=None,
     key="meta_filter",
-    label_visibility="collapsed",
-)
-selected_types = [_chip_to_type[c] for c in (_selected_chips or [])]
+) or []
 if selected_types:
     filtered_df = filtered_df[filtered_df["meta_type"].astype(str).isin(selected_types)].copy()
     if filtered_df.empty:
@@ -227,11 +225,9 @@ fig.update_layout(
 # 지시서 STEP 3: 2D 와 3D 를 세로로 쌓지 않고 나란히.
 _c2d, _c3d = st.columns(COLS_HALF, gap=GAP)
 with _c2d:
-    section("판단용 2D", "픽률 x 승률")
     st.plotly_chart(fig_2d, key="pick_win_scatter_2d",
                     config={"displayModeBar": False}, use_container_width=True)
 with _c3d:
-    section("탐색용 3D", "픽률 x 승률 x 밴률")
     event = st.plotly_chart(
         fig,
         key="pick_win_scatter_3d",

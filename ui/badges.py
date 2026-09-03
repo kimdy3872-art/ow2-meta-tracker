@@ -281,12 +281,38 @@ def rank_art_uri(name: str) -> str:
     return ""
 
 
-def _icon_rule(selector: str, uri: str, width: int = 30) -> str:
+# 아이콘 정사각 박스와 그 왼쪽 여백. 닫힌 상태와 열린 목록이 같은 값을 써야
+# 크기가 어긋나지 않는다. 티어 뱃지(세로로 긴 날개)와 포지션 아이콘(가로로 넓은
+# 칼)은 종횡비가 달라서, 정사각 박스에 맞춰야 시각적 무게가 비슷해진다.
+_ICON_BOX = 24
+_ICON_PAD = 48
+
+
+def _icon_rule(selector: str, uri: str, box: int = _ICON_BOX, pad: int = _ICON_PAD) -> str:
+    """배경 이미지 + padding-left 로 아이콘을 넣는다.
+
+    ::before 로 넣으면 값 컨테이너의 형제 플렉스 아이템이 되는데, 값 컨테이너가
+    이미 자기 padding-left 를 갖고 있어서 아이콘 폭 + margin + 그 패딩이 전부
+    더해져 글자가 멀리 밀렸다. 배경은 새 박스를 안 만들어서 중복이 없다.
+
+    background 단축 속성을 쓰면 BaseWeb 이 건 background-color 가 지워진다.
+    반드시 롱핸드로.
+
+    background-* 에만 !important 를 단다. style.css 의
+    `.stSelectbox [data-baseweb="select"] * { background: transparent !important }`
+    가 단축 속성이라 background 롱핸드 전부를 initial-important 로 덮는다.
+    특이도로는 못 이긴다. padding-left 는 그 규칙 밖이라 그냥 둔다.
+    """
     if not uri:
         return ""
     return (
-        f'{selector}::before{{content:"";flex:0 0 {width}px;height:22px;'
-        f"margin-right:8px;background:url('{uri}') left center/contain no-repeat;}}"
+        f"{selector}{{"
+        f"background-image:url('{uri}') !important;"
+        f"background-repeat:no-repeat !important;"
+        f"background-position:{(pad - box) // 2}px center !important;"
+        f"background-size:{box}px {box}px !important;"
+        f"padding-left:{pad}px;"
+        f"}}"
     )
 
 
@@ -302,14 +328,17 @@ def option_list_icon_css(options: list[str]) -> str:
     # 충돌한다. 현재 데이터는 모든 영웅이 9개 티어에 다 있어 도달 불가.
     # 실제로 겹치기 시작하면 열린 목록을 st.popover 로 직접 그리는 수밖에 없다.
 
-    li 가 display:flex 라 ::before 를 그냥 두면 폭이 0 으로 찌그러진다.
-    flex 를 고정해야 보인다.
+    li 는 display:flex 라 자체 padding-left 를 갖는다. 그 값을 덮어써서 아이콘
+    자리를 만든다.
     """
     total = len(options)
     css = ['li[role="option"]{align-items:center;}']
     for i, name in enumerate(options):
+        # body 접두사는 특이도용이다. style.css 의 aria-selected 규칙이
+        # `background: ... !important` 단축 속성이라 같은 특이도면 아이콘이
+        # 지워진다(현재 선택된 항목만 뱃지가 사라졌다).
         selector = (
-            f'li[role="option"]:nth-child({i + 1}):nth-last-child({total - i})'
+            f'body li[role="option"]:nth-child({i + 1}):nth-last-child({total - i})'
         )
         css.append(_icon_rule(selector, rank_art_uri(name)))
     return "".join(css)
@@ -318,8 +347,15 @@ def option_list_icon_css(options: list[str]) -> str:
 def selected_value_icon_css(scope: str, name: str) -> str:
     """닫힌 셀렉트박스(선택된 값)에 뱃지를 붙이는 CSS.
 
-    선택값 div 는 난독화된 st-* 클래스뿐이라 직접 못 잡는다. 현재 값을
-    st.container(key=...) 에 실어 .st-key-<scope>-<값> 으로 우회한다.
+    선택값 div 는 난독화된 st-* 클래스뿐이라 직접 못 잡는다. st.container(key=scope)
+    가 내주는 .st-key-<scope> 로 우회한다. 값은 key 에 넣지 않는다 - 그러면 값이
+    바뀔 때마다 셀렉트박스가 재마운트된다(ui/components.py:icon_selectbox 참고).
+    셀렉터는 고정이고, 값에 따라 달라지는 건 규칙 안의 URI 뿐이다.
     """
-    selector = f'.st-key-{scope}-{name} [data-baseweb="select"] > div:first-child'
-    return _icon_rule(selector, rank_art_uri(name), width=26)
+    # control div 은 style.css 가 linear-gradient 배경을 이미 깔아둬서 여기에
+    # background-image 를 걸면 그 그라디언트가 지워진다. 한 단계 안쪽 값
+    # 컨테이너로 좁힌다. 원래 padding-left 12px 자리를 그대로 넘겨받는다.
+    selector = (
+        f'.st-key-{scope} [data-baseweb="select"] > div:first-child > div:first-child'
+    )
+    return _icon_rule(selector, rank_art_uri(name))
