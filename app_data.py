@@ -282,6 +282,7 @@ HERO_PORTRAIT_FALLBACKS = {
 }
 # Blizzard 공식 영웅 목록의 하위 역할 분류.
 HERO_SUBROLES = {
+    "D.MON": "stalwart",
     "D.VA": "initiator",
     "겐지": "flanker",
     "도미나": "stalwart",
