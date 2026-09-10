@@ -139,6 +139,7 @@ NUMERIC_STATS_COLUMNS = [
     "pick_stability_multiplier",
     "performance_score",
     "total_score",
+    "neff",
 ]
 PATCH_NOTES_PATH = os.path.join("data", "patch_notes", "patch_notes.json")
 PATCH_AI_ANALYSIS_PATH = os.path.join("data", "patch_notes", "patch_ai_analysis.json")
@@ -444,21 +445,27 @@ def add_current_scoring_columns(df, group_key=None):
     )
     df["presence_score"] = df.groupby(group_key)["presence_log"].transform(safe_zscore)
 
+    # 전장별 행의 승률 보정은 같은 티어 전체 전장 값이 필요해서 update.py 가 표본 기반으로
+    # 계산해 저장한다. 저장값이 없는 옛 스냅샷만 여기서 픽률 가중 수축으로 채운다.
     group_mean_win = df.groupby(group_key)["win_rate"].transform("mean")
     shrink_k = (
         df.groupby(group_key)["pick_rate"].transform("median")
         .clip(lower=SHRINK_MIN_PICK_RATE)
     )
-    df["shrunk_win_rate"] = (
+    pick_shrunk = (
         (df["pick_rate"] * df["win_rate"] + shrink_k * group_mean_win)
         / (df["pick_rate"] + shrink_k)
     )
+    stored = df["shrunk_win_rate"] if "shrunk_win_rate" in df.columns else pd.Series(np.nan, index=df.index)
+    df["shrunk_win_rate"] = pd.to_numeric(stored, errors="coerce").fillna(pick_shrunk)
     df["performance_score"] = df.groupby(group_key)["shrunk_win_rate"].transform(safe_zscore)
     df["total_score"] = (
         META_PRESENCE_WEIGHT * df["presence_score"]
         + META_PERFORMANCE_WEIGHT * df["performance_score"]
     )
     df["rank"] = assign_score_rank(df["total_score"])
+    if "sample_warning" in df.columns:
+        df.loc[df["sample_warning"].eq("표본 부족"), "rank"] = "-"
     return df
 
 

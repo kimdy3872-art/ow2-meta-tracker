@@ -333,17 +333,21 @@ def render_hero_scroller(cards, favorites=None) -> None:
 
 
 def render_map_cards(cards) -> None:
-    """전장 카드. 첫 카드(승률 1위)만 위로 띄운다."""
+    """전장 카드. 첫 카드(승률 1위)만 위로 띄운다. 표본 부족 조합은 흐리게 그린다."""
     items = []
     for index, card in enumerate(cards):
         cls = "map-card featured" if index == 0 else "map-card"
+        sample = str(card.get("sample") or "")
+        if sample == "표본 부족":
+            cls += " dim"
+        sample_html = f"<span class='sample-note'>{html.escape(sample)}</span>" if sample else ""
         img = html.escape(str(card.get("image") or ""), quote=True)
         items.append(
             f"<div class='{cls}'>"
             f"<div class='map-card-art' style=\"background-image:url('{img}');\"></div>"
             f"<div class='map-card-body'>"
             f"<div class='map-card-name nowrap'>{html.escape(str(card.get('name', '-')))}</div>"
-            f"<div class='map-card-metric nowrap'>{html.escape(str(card.get('metric', '-')))}</div>"
+            f"<div class='map-card-metric nowrap'>{html.escape(str(card.get('metric', '-')))}{sample_html}</div>"
             f"</div></div>"
         )
     st.markdown(f"<div class='map-grid'>{''.join(items)}</div>", unsafe_allow_html=True)

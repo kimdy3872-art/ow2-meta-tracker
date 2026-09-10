@@ -9,7 +9,8 @@
 ## 프로젝트 한눈에 보기
 
 - **앱 유형**: Streamlit 멀티페이지 대시보드
-- **주요 데이터**: 오버워치 2 경쟁전 영웅 통계, OW Perks 영웅 퍼크, Blizzard 공식 패치노트
+- **주요 데이터**: 오버워치 2 경쟁전 영웅 통계(넥슨 [영웅 통계](https://overwatch.nexon.com/hero/rate), 한국 서버·PC·역할 고정), OW Perks 영웅 퍼크, Blizzard 공식 패치노트
+  - 2026-09-10 스냅샷부터 넥슨 한국 서버 통계입니다. 그 전은 Blizzard 아시아 서버 통계라서 이 날짜를 전후로 추세가 끊깁니다.
 - **핵심 산출물**: `data/latest/latest_tier.parquet`, `data/latest/latest_perks.parquet`, `data/patch_notes/*.json`
 - **주요 실행 파일**: `main.py`는 대시보드, `update.py`는 데이터 수집/가공
 - **기본 언어**: 한국어 UI와 한국어 데이터 라벨
@@ -176,12 +177,9 @@ python update.py --mode all
 
 | 환경변수 | 기본값 | 설명 |
 |---|---:|---|
-| `MAX_WORKERS` | `2` | Selenium 기반 퍼크 수집 병렬 작업 수 |
 | `TASK_RETRIES` | `3` | 수집 작업 재시도 횟수 |
 | `DRIVER_PAGE_LOAD_TIMEOUT` | `75` | Chrome 페이지 로드 제한 시간(초) |
 | `DRIVER_SCRIPT_TIMEOUT` | `30` | Chrome 스크립트 실행 제한 시간(초) |
-| `STATS_GAME_MODE_RQ` | `2` | Blizzard 경쟁전 통계 요청 모드 후보의 우선값 |
-| `STATS_GAME_MODE_RQ_CANDIDATES` | `STATS_GAME_MODE_RQ` | 통계 수집 시 순서대로 시도할 `rq` 값 목록 |
 | `META_PRESENCE_WEIGHT` | `0.65` | 종합 점수에서 존재감 축 가중치 (성능 축은 1 - 이 값) |
 | `PRESENCE_BAN_WEIGHT` | `1.0` | 존재감 축에서 밴률 가중치 β. 과열 감시 지표가 지속 초과하면 0.5 하향 검토 |
 | `WEEKLY_SNAPSHOT_WEEKDAY` | `0` | 주간 스냅샷 생성 요일 |
@@ -204,13 +202,15 @@ python update.py --mode all
 | `win_rate`, `pick_rate`, `ban_rate` | 승률, 픽률, 밴률 |
 | `win_rate_z`, `pick_rate_log`, `pick_rate_z`, `ban_rate_log`, `ban_rate_z` | 정규화 지표 |
 | `presence_score` | 메타 존재감 축: `z(log1p(pick_rate + β×ban_rate))` |
-| `shrunk_win_rate` | 픽률 가중으로 비교군 평균에 수축시킨 승률 |
+| `shrunk_win_rate` | 보정 승률. 전체 전장 행은 픽률 가중으로 비교군 평균에, 전장별 행은 추정 게임 수만큼 같은 티어 전체 전장 승률에 수축 |
 | `performance_score` | 성능 검증 축: 수축 승률의 z-점수 |
 | `persistence_score` | 최근 주간 승률 흐름 EWMA (진단용, 점수에 직접 미반영) |
 | `pick_stability_multiplier` | 레거시 산식 배율 (진단용, 점수에 직접 미반영) |
 | `total_score` | 랭크 산정에 쓰는 메타 지배력 종합 점수 |
 | `score_strength` | 특이 신호용 메타 유형 라벨 (메타 지배/과열 주의/밴 압박/저평가 픽/전문가 픽/비주류/보통) |
 | `pick_rate_warning` | 저픽률 경고 라벨 |
+| `neff` | 전장별 행의 조합(티어×전장) 유효 표본(추정 게임 수). 승률이 전체 전장 값에서 흩어진 정도로 역산 |
+| `sample_warning` | `neff` < 150 이면 `표본 부족`(화면에서 흐리게, 랭크 `-`), < 300 이면 `표본 적음` |
 | `rank` | S/A/B/C/D 랭크 |
 
 ### 퍼크 컬럼
@@ -240,6 +240,7 @@ presence_score = z(log1p(pick_rate + β * ban_rate))    # β = PRESENCE_BAN_WEIG
 
 # 성능 축 (가중 0.35): 픽률 가중 경험적 베이즈 수축 승률
 # 실제 게임 수가 없으므로 픽률을 표본 크기 대리로 사용, k = 비교군 픽률 중앙값
+# 전장별 행은 조합 평균 자체가 노이즈라, 추정 게임 수 neff×픽률 만큼 같은 티어 전체 전장 승률로 수축(K=150판)
 shrunk_win_rate = (pick_rate * win_rate + k * 비교군평균승률) / (pick_rate + k)
 performance_score = z(shrunk_win_rate)
 
