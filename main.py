@@ -466,20 +466,25 @@ _pick_top4 = df_filtered[df_filtered["pick_rate"].notna()].sort_values("pick_rat
 
 # 2차 지시서 D-2: 전역 라디오를 없애고 이 카드 안에서만 전환되는 탭으로 흡수.
 def _map_cards(hero_name, limit=4):
-    """전장별 승률 상위 카드. 전장 데이터가 없으면 빈 리스트."""
+    """전장별 승률 상위 카드. 전장 데이터가 없으면 빈 리스트.
+
+    순서는 표본 보정 승률로 정한다. 원래 승률로 줄 세우면 표본 부족 조합의 0%/100% 가 맨 위로 온다.
+    """
     if "map" not in df_raw.columns:
         return []
+    order_col = "shrunk_win_rate" if "shrunk_win_rate" in df_raw.columns else "win_rate"
     rows = df_raw[
         (df_raw["data_tier"] == selected_tier)
         & (df_raw["hero"].astype(str) == str(hero_name))
         & (df_raw["map"].astype(str) != "all-maps")
         & (df_raw["win_rate"].notna())
-    ].sort_values("win_rate", ascending=False).head(limit)
+    ].sort_values(order_col, ascending=False).head(limit)
     return [
         {
             "name": str(r.get("map_name") or r.get("map")),
             "metric": f"{float(r['win_rate']):.1f}%",
             "image": get_map_image_url(str(r["map"])),
+            "sample": r.get("sample_warning") if isinstance(r.get("sample_warning"), str) else "",
         }
         for _, r in rows.iterrows()
     ]
@@ -612,6 +617,8 @@ with st.expander("랭크는 어떻게 산정되나요?"):
         - 랭크는 "메타 지배력"을 측정합니다: 존재감(픽률+밴률) 65% + 성능 검증(수축 승률) 35%.
         - 존재감은 픽률과 밴률의 합으로 계산합니다. 밴률이 높은 영웅은 픽이 눌려 있으므로, 둘의 합이 드래프트에서 차지하는 실제 지분을 나타냅니다.
         - 성능은 픽률로 가중 수축한 승률입니다. 픽률이 낮을수록 승률을 비교군 평균 쪽으로 끌어당겨, 저픽률 고승률 영웅의 과대평가를 줄입니다.
+        - 전장별 승률은 추정 게임 수가 적을수록 같은 티어 전체 전장 승률 쪽으로 끌어당겨 비교합니다. 한국 서버는 상위 티어 전장별 표본이 적어 승률이 0%·100%로 튀기 때문입니다.
+        - 표본이 부족한 전장 조합은 흐리게 표시하고 랭크를 매기지 않습니다(`-`).
         - 영웅 이름 옆 메타 유형 라벨은 두 축의 조합입니다: `메타 지배`, `과열 주의`, `저평가 픽`, `전문가 픽`, `비주류`.
         - 랭크는 분위수 강제 배분이 아니라 절대 점수 기준 `S/A/B/C/D`로 산정됩니다.
         - 기준은 `S >= 1.25`, `A >= 0.50`, `B -0.50~0.50`, `C <= -0.50`, `D <= -1.00`입니다.

@@ -1547,6 +1547,17 @@ h1, h2, h3, h4,
     text-overflow: ellipsis;
 }
 
+/* 표본 부족 전장 조합: 값은 보여주되 믿기 어렵다는 걸 흐림으로 드러낸다. */
+.map-card.dim,
+.hmap-card.dim { opacity: 0.45; }
+.sample-note {
+    margin-left: 6px;
+    font-family: inherit;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #fdba74;
+}
+
 .cell-warn {
     color: #fdba74;
     font-size: 0.7rem;

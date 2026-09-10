@@ -292,7 +292,10 @@ with right_col:
         (df_raw["hero"].astype(str) == hero_name)
         & (df_raw["map"] != "all-maps")
         & (df_raw["data_tier"].astype(str) == selected_tier)
-    ].sort_values("win_rate", ascending=False)
+    ]
+    # 표본 부족 조합의 0%/100% 가 맨 위로 오지 않게 순서는 표본 보정 승률로 정한다.
+    win_order_col = "shrunk_win_rate" if "shrunk_win_rate" in hero_map_df.columns else "win_rate"
+    hero_map_df = hero_map_df.sort_values(win_order_col, ascending=False)
 
     if hero_map_df.empty:
         st.info("이 티어의 전장별 데이터가 없습니다.")
@@ -304,17 +307,20 @@ with right_col:
             p_rate = float(row["pick_rate"])
             rate_color = GLOBAL_GOOD_COLOR if w_rate >= 50 else GLOBAL_DANGER_COLOR
             bg_image = html.escape(get_map_image_url(m_id))
+            sample = row.get("sample_warning") if isinstance(row.get("sample_warning"), str) else ""
+            dim = " dim" if sample == "표본 부족" else ""
+            sample_note = f" · {html.escape(sample)}" if sample else ""
             badge = (
                 f'<div class="hmap-badge" style="background:{badge_color}22;border-color:{badge_color}88;color:{badge_color};">{badge_label}</div>'
                 if badge_label else ""
             )
             return (
-                f'<div class="hmap-card" style="background-image:url(\'{bg_image}\');">'
+                f'<div class="hmap-card{dim}" style="background-image:url(\'{bg_image}\');">'
                 f'<div class="hmap-scrim"></div>'
                 f'{badge}'
                 f'<div class="hmap-left">'
                 f'<div class="hmap-name">{m_name}</div>'
-                f'<div class="hmap-sub">픽률 {p_rate:.1f}%</div>'
+                f'<div class="hmap-sub">픽률 {p_rate:.1f}%{sample_note}</div>'
                 f'</div>'
                 f'<div class="hmap-right">'
                 f'<div class="hmap-rate" style="color:{rate_color};">{w_rate:.1f}%</div>'
@@ -322,7 +328,7 @@ with right_col:
                 f'</div></div>'
             )
 
-        top_win_df = hero_map_df.nlargest(2, "win_rate")
+        top_win_df = hero_map_df.nlargest(2, win_order_col)
         top_pick_df = hero_map_df.nlargest(2, "pick_rate")
 
         st.markdown("**Top Winrate**")

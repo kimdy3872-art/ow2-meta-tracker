@@ -31,7 +31,6 @@ except ImportError:
     EC = None
     SessionNotCreatedException = RuntimeError
     WebDriverException = RuntimeError
-from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from time import perf_counter
 
 # 1. 영웅별 포지션 매핑 딕셔너리
@@ -108,6 +107,7 @@ STATS_COLUMNS = [
     'presence_score', 'shrunk_win_rate',
     'persistence_score', 'pick_stability_multiplier', 'performance_score',
     'total_score', 'score_strength', 'pick_rate_warning', 'rank',
+    'neff', 'sample_warning',
 ]
 
 DATA_DIR = "data"
@@ -181,20 +181,19 @@ FORCE_PATCH_AI_ANALYSIS = os.getenv("FORCE_PATCH_AI_ANALYSIS", "0") == "1"
 OLLAMA_TIMEOUT = int(os.getenv("OLLAMA_TIMEOUT", "90"))
 PATCH_PROMPT_VERSION = "patch-impact-v2"
 DEFAULT_LOCALE = "ko"
-STATS_INPUT = "PC"
-STATS_REGION = "Asia"
-STATS_ROLE = "All"
-STATS_GAME_MODE_RQ = os.getenv("STATS_GAME_MODE_RQ", "2")
-STATS_GAME_MODE_RQ_CANDIDATES = [
-    value.strip()
-    for value in os.getenv("STATS_GAME_MODE_RQ_CANDIDATES", STATS_GAME_MODE_RQ).split(",")
-    if value.strip()
-]
-if not STATS_GAME_MODE_RQ_CANDIDATES:
-    STATS_GAME_MODE_RQ_CANDIDATES = ["2", "1"]
-if STATS_GAME_MODE_RQ not in STATS_GAME_MODE_RQ_CANDIDATES:
-    STATS_GAME_MODE_RQ_CANDIDATES.insert(0, STATS_GAME_MODE_RQ)
-ACTIVE_STATS_GAME_MODE_RQ = None
+# 한국 서버 분리(2026-09) 이후 통계는 넥슨 페이지에서 받는다. 내부 API(overwatch-api.nexon.com)는
+# Cloudflare 챌린지로 막혀 있어, 페이지 SSR HTML 에 박힌 __NUXT_DATA__ 를 파싱한다.
+# 파라미터 값이 틀리면 에러 없이 기본값(빠른 대전·전체)으로 폴백하므로 시작할 때 필터 목록과 대조한다.
+NEXON_RATE_URL = "https://overwatch.nexon.com/hero/rate"
+NEXON_RATE_PARAMS = {"role": "all", "rq": "2", "input": "pc", "region": "korea"}
+NUXT_DATA_RE = re.compile(r'<script[^>]*id="__NUXT_DATA__"[^>]*>(.*?)</script>', re.S)
+# 사이트가 게임 수를 주지 않아 조합(티어×전장)별 유효 표본 neff 를 승률 흩어짐으로 역산한다.
+# 기준값은 2026-09-10 데이터 한 번으로 정했다. 패치 직후 누적이 초기화되면 neff 가 전반적으로
+# 낮아지므로 일별 스냅샷의 neff 컬럼과 rank_diagnostics.json 의 sample_size 를 보고 재조정한다.
+LOW_SAMPLE_NEFF = 150
+THIN_SAMPLE_NEFF = 300
+# 승률 보정 강도(게임 수 환산) = 2500/τ². τ≈4.1%p 는 표본이 큰 전체 티어에서 잰 실제 전장 효과 표준편차.
+SHRINK_PRIOR_GAMES = 150
 
 CATEGORY_TO_ROLE = {
     "tanks": "Tank",
@@ -208,6 +207,7 @@ HERO_NAME_ALIASES = {
     "둠피": "둠피스트",
     "디바": "D.VA",
     "D.Va": "D.VA",
+    "D.Mon": "D.MON",
     "DVA": "D.VA",
     "솔저76": "솔저: 76",
     "솔저 76": "솔저: 76",
@@ -219,13 +219,11 @@ HERO_NAME_ALIASES = {
 HERO_LINK_RE = re.compile(r"^https://owperks\.com/ko/(tanks|damages|supports)/([^/?#]+)$")
 
 
-DEFAULT_MAX_WORKERS = 2
-MAX_WORKERS = int(os.getenv("MAX_WORKERS", str(DEFAULT_MAX_WORKERS)))
 DRIVER_CREATE_RETRIES = 3
 TASK_RETRIES = int(os.getenv("TASK_RETRIES", "3"))
 MIN_HERO_ROWS = 20
-# 일부 (티어, 전장) 조합은 블리자드 서버가 504를 돌려주는 등 장기간 응답하지 않을 수 있다.
-# 전량 폐기 대신 이 비율까지는 부분 수집을 허용하고, 빠진 조합은 직전 latest 값으로 메운다.
+# 요청이 끝내 실패한 조합이 이 비율 안이면 부분 저장하고, 빠진 조합은 직전 latest 값으로 메운다.
+# 사이트에 데이터가 없는 조합(표본 부족으로 0행)은 실패로 세지 않는다.
 MIN_TASK_SUCCESS_RATIO = float(os.getenv("MIN_TASK_SUCCESS_RATIO", "0.95"))
 DRIVER_PAGE_LOAD_TIMEOUT = int(os.getenv("DRIVER_PAGE_LOAD_TIMEOUT", "75"))
 DRIVER_SCRIPT_TIMEOUT = int(os.getenv("DRIVER_SCRIPT_TIMEOUT", "30"))
@@ -326,188 +324,90 @@ def normalize_dataset_for_scoring(df):
     return df
 
 
-def get_active_stats_game_mode_rq():
-    return ACTIVE_STATS_GAME_MODE_RQ or STATS_GAME_MODE_RQ
-
-
-def build_rates_url(map_id, tier_name):
-    params = {
-        "input": STATS_INPUT,
-        "map": map_id,
-        "region": STATS_REGION,
-        "role": STATS_ROLE,
-        "rq": get_active_stats_game_mode_rq(),
-        "tier": normalize_tier_name(tier_name),
-    }
-    return "https://overwatch.blizzard.com/ko-kr/rates/?" + urlencode(params)
-
-
-def build_rates_url_with_rq(map_id, tier_name, rq):
-    params = {
-        "input": STATS_INPUT,
-        "map": map_id,
-        "region": STATS_REGION,
-        "role": STATS_ROLE,
-        "rq": rq,
-        "tier": normalize_tier_name(tier_name),
-    }
-    return "https://overwatch.blizzard.com/ko-kr/rates/?" + urlencode(params)
-
-
-def page_context_matches(driver, expected_map, expected_tier, expected_rq=None):
-    if expected_rq is None:
-        expected_rq = get_active_stats_game_mode_rq()
-    context = current_page_context(driver)
-    return (
-        context["input"] == STATS_INPUT
-        and context["map"] == expected_map
-        and context["region"] == STATS_REGION
-        and context["role"] == STATS_ROLE
-        and context["rq"] == expected_rq
-        and context["tier"] == normalize_tier_name(expected_tier)
+def fetch_rate_page(rank="all", map_id="all"):
+    """넥슨 영웅 통계 페이지의 SSR 페이로드. {"hero-rate-filters": ..., "hero-rate-list": ...}"""
+    params = {**NEXON_RATE_PARAMS, "rank": rank, "map": map_id}
+    req = urllib.request.Request(
+        f"{NEXON_RATE_URL}?{urlencode(params)}", headers={"User-Agent": "Mozilla/5.0"}
     )
-
-
-def current_page_context(driver):
-    parsed = urlparse(driver.current_url)
-    query = parse_qs(parsed.query)
-    return {
-        "input": query.get("input", [""])[0],
-        "map": query.get("map", [""])[0],
-        "region": query.get("region", [""])[0],
-        "role": query.get("role", [""])[0],
-        "rq": query.get("rq", [""])[0],
-        "tier": query.get("tier", [""])[0],
-        "url": driver.current_url,
-    }
-
-
-def is_unsupported_all_maps_tier_redirect(expected_map, expected_tier, page_context):
-    return (
-        normalize_tier_name(expected_tier) != "All"
-        and page_context.get("map") == expected_map
-        and page_context.get("tier") == "All"
-    )
-
-
-def wait_for_page_context(driver, expected_map, expected_tier, expected_rq=None, timeout=8):
-    deadline = time.time() + timeout
-    while time.time() < deadline:
-        if page_context_matches(driver, expected_map, expected_tier, expected_rq=expected_rq):
-            return True, current_page_context(driver)
-        time.sleep(0.5)
-
-    return False, current_page_context(driver)
-
-
-def wait_for_rates_content(driver, timeout=20):
-    def has_rates_content(active_driver):
-        if active_driver.find_elements(By.CLASS_NAME, "hero-name"):
-            return True
-        body_text = active_driver.find_element(By.TAG_NAME, "body").text
-        return "영웅" in body_text and "%" in body_text
-
-    WebDriverWait(driver, timeout).until(has_rates_content)
-
-
-def parse_percent(value):
-    if value is None:
-        return "0%"
-    text = str(value).strip()
-    return text if text else "0%"
-
-
-def scrape_rates_from_dom(driver):
-    script = """
-    let data = [];
-    let names = document.querySelectorAll('.hero-name');
-    let winrates = document.querySelectorAll('.winrate-cell');
-    let pickrates = document.querySelectorAll('.pickrate-cell');
-    let banrates = document.querySelectorAll('.banrate-cell');
-    if (banrates.length === 0) {
-        banrates = document.querySelectorAll('[class*=\"ban\"]');
-    }
-    for (let i = 0; i < names.length; i++) {
-        data.push({
-            'hero': names[i].innerText.trim(),
-            'win_rate': winrates[i] ? winrates[i].innerText : '0%',
-            'pick_rate': pickrates[i] ? pickrates[i].innerText : '0%',
-            'ban_rate': banrates[i] ? banrates[i].innerText : '0%'
-        });
-    }
-    return data;
-    """
-    return pd.DataFrame(driver.execute_script(script))
-
-
-def scrape_rates_from_text(driver):
-    body_text = driver.find_element(By.TAG_NAME, "body").text
-    lines = [line.strip() for line in body_text.splitlines() if line.strip()]
-    try:
-        start_idx = lines.index("영웅 픽률 승률") + 1
-    except ValueError:
+    for attempt in range(1, TASK_RETRIES + 1):
         try:
-            start_idx = lines.index("영웅") + 1
-        except ValueError:
-            return pd.DataFrame()
-
-    rows = []
-    i = start_idx
-    percent_re = re.compile(r"^(?:--|\d+(?:\.\d+)?)%$")
-    stop_markers = {"자주 묻는 질문", "미래는 쟁취할 가치가 있습니다. 함께하세요!", "지금 플레이"}
-    while i < len(lines):
-        hero = lines[i]
-        if hero in stop_markers or hero.startswith("## "):
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                page = resp.read().decode("utf-8")
             break
-        if percent_re.match(hero):
-            i += 1
-            continue
-        if i + 2 >= len(lines):
-            break
+        except OSError as exc:
+            if attempt == TASK_RETRIES:
+                raise
+            print(f"⚠️  {rank} / {map_id} 요청 실패(시도 {attempt}/{TASK_RETRIES}), 재시도: {exc}")
+            time.sleep(attempt * 2)
 
-        first_rate = lines[i + 1]
-        second_rate = lines[i + 2]
-        if percent_re.match(first_rate) and percent_re.match(second_rate):
-            rows.append(
-                {
-                    "hero": hero,
-                    # The visible Korean table says pick/win, but the rendered text
-                    # order is hero, win rate, pick rate on the current Blizzard page.
-                    "win_rate": parse_percent(first_rate),
-                    "pick_rate": parse_percent(second_rate),
-                    "ban_rate": "0%",
-                }
-            )
-            i += 3
-        else:
-            i += 1
+    match = NUXT_DATA_RE.search(page)
+    if not match:
+        raise ValueError("__NUXT_DATA__ 가 없습니다(페이지 구조 변경 의심)")
+    raw = json.loads(match.group(1))
 
-    return pd.DataFrame(rows)
+    # Nuxt devalue 포맷: dict/list 의 값은 raw 인덱스다. 음수는 undefined 같은 특수값,
+    # ["ShallowReactive", i] 같은 [타입명, 인덱스] 래퍼는 벗긴다.
+    def resolve(index):
+        if index < 0:
+            return None
+        value = raw[index]
+        if isinstance(value, list):
+            if value and isinstance(value[0], str):
+                return resolve(value[1]) if len(value) > 1 and isinstance(value[1], int) else None
+            return [resolve(i) for i in value]
+        if isinstance(value, dict):
+            return {key: resolve(i) for key, i in value.items()}
+        return value
+
+    return resolve(0)["data"]
 
 
-def validate_scraped_df(df):
+def check_stats_filters():
+    """보낼 파라미터 값 중 사이트 필터 목록에 없는 것. 틀린 값은 조용히 기본값으로 폴백되기 때문."""
+    filters = (fetch_rate_page().get("hero-rate-filters") or {}).get("data") or {}
+
+    def values(key):
+        return {item.get("value") for item in filters.get(key) or []}
+
+    wanted = {
+        "rulesetQueues": {NEXON_RATE_PARAMS["rq"]},
+        "regions": {NEXON_RATE_PARAMS["region"]},
+        "inputs": {NEXON_RATE_PARAMS["input"]},
+        "ranks": {tier.lower() for tier in tiers},
+        "maps": {"all"} | set(map_dict) - {"all-maps"},
+    }
+    return {key: sorted(want - values(key)) for key, want in wanted.items() if want - values(key)}
+
+
+def fetch_stats(tier_name, map_id):
+    """티어×전장 한 조합. 빈 DataFrame 은 사이트에 데이터가 없는 조합(표본 부족)이다."""
+    data = fetch_rate_page(tier_name.lower(), "all" if map_id == "all-maps" else map_id)
+    rows = ((data.get("hero-rate-list") or {}).get("data") or {}).get("list") or []
+    df = pd.DataFrame([
+        {
+            # 사이트 표기(D.Va, D.Mon)만 다르고 나머지는 우리 이름과 같다.
+            # 퍼지 매칭은 쓰지 않는다. 신규 영웅이 비슷한 이름의 기존 영웅으로 잘못 붙는다.
+            "hero": HERO_NAME_ALIASES.get(row.get("name"), row.get("name")),
+            "role": str(row.get("role", "")).title(),
+            "win_rate": row.get("winRate"),
+            "pick_rate": row.get("pickRate"),
+            "ban_rate": row.get("banRate"),
+        }
+        for row in rows
+    ])
     if df.empty:
-        return False, "빈 DataFrame"
+        return df
 
-    if "hero" not in df.columns or "win_rate" not in df.columns or "pick_rate" not in df.columns:
-        return False, "필수 컬럼 누락"
-
-    if len(df) < MIN_HERO_ROWS:
-        return False, f"영웅 행 수 부족({len(df)}행)"
-
-    if df["hero"].astype(str).nunique() < MIN_HERO_ROWS:
-        return False, "영웅 고유 개수 부족"
-
-    win = pd.to_numeric(df["win_rate"].astype(str).str.replace('%', '', regex=False).replace('--', '0'), errors="coerce")
-    pick = pd.to_numeric(df["pick_rate"].astype(str).str.replace('%', '', regex=False).replace('--', '0'), errors="coerce")
-
-    if win.notna().sum() < MIN_HERO_ROWS or pick.notna().sum() < MIN_HERO_ROWS:
-        return False, "승률/픽률 숫자 변환 실패"
-
-    if win.nunique(dropna=True) <= 1 and pick.nunique(dropna=True) <= 1:
-        return False, "승률/픽률 분산 없음"
-
-    return True, "ok"
+    rate_cols = ["win_rate", "pick_rate", "ban_rate"]
+    df[rate_cols] = df[rate_cols].apply(pd.to_numeric, errors="coerce")
+    # 값이 없는 칸이 -1 로 온다(그마 일부 전장). 0~100 을 벗어나면 행을 버린다.
+    df = df[df[rate_cols].apply(lambda col: col.between(0, 100)).all(axis=1)].copy()
+    df["data_tier"] = tier_name
+    df["map"] = map_id
+    df["map_name"] = map_dict[map_id]
+    df["update_date"] = str(date.today())
+    return df
 
 
 def is_degenerate_snapshot(df):
@@ -562,6 +462,59 @@ def add_normalized_metric_columns(df, group_key=None):
     return df
 
 
+def add_sample_columns(df, group_key):
+    """전장별 행에 조합(티어×전장) 유효 표본 neff 와 표본 경고를 붙이고, 승률 보정을 표본 기반으로 바꾼다.
+
+    한국 서버는 표본이 적은 조합에서 승률이 0%/100% 로 튄다. 조합 평균 쪽 수축은 평균 자체가
+    노이즈라 소용없어서, 같은 영웅의 같은 티어 전체 전장 승률(부모) 쪽으로 추정 판수만큼 당긴다.
+    그마는 부모(티어 전체 전장)조차 튀므로, 부모도 먼저 전체 티어 전체 전장 쪽으로 같은 방식으로 당긴다.
+    전체 전장 행의 점수용 승률은 기존 픽률 가중 수축을 그대로 둔다(메인 순위표 산식 유지).
+    neff 는 전장별 행엔 조합 값, 전체 전장 행엔 티어 값(전체 티어와 비교)을 기록한다.
+    """
+    tier_key = [col for col in group_key if col not in ('map', 'role')]
+    base_key = [col for col in tier_key if col != 'data_tier']  # 이력 계산이면 ['snapshot_order']
+    is_parent = df['map'].astype(str) == 'all-maps'
+    is_top = is_parent & (df['data_tier'].astype(str) == 'All')
+
+    def lookup(values, mask, key):
+        table = pd.Series(values[mask].to_numpy(), index=pd.MultiIndex.from_frame(df.loc[mask, key]))
+        table = table[~table.index.duplicated()]
+        return pd.Series(table.reindex(pd.MultiIndex.from_frame(df[key])).to_numpy(), index=df.index)
+
+    def pull_to_parent(mask, parent_win, combo_cols):
+        # n 판짜리 승률(%)의 분산 ≈ 2500/n, 영웅 판수 ≈ neff × 픽률/100
+        # → neff ≈ Σ(2500·100/픽률) / Σ(승률 − 부모 승률)²
+        usable = mask & parent_win.notna() & (df['pick_rate'] > 0)
+        inverse_games = (2500 * 100 / df['pick_rate']).where(usable)
+        squared_gap = ((df['win_rate'] - parent_win) ** 2).where(usable)
+        combo = [df[col] for col in combo_cols]
+        neff = (
+            inverse_games.groupby(combo).transform('sum')
+            / squared_gap.groupby(combo).transform('sum').clip(lower=1e-9)
+        ).where(mask)
+        games = neff * df['pick_rate'] / 100
+        adjusted = (games * df['win_rate'] + SHRINK_PRIOR_GAMES * parent_win) / (games + SHRINK_PRIOR_GAMES)
+        return neff, adjusted
+
+    # 1단계: 티어 전체 전장 → 전체 티어 전체 전장
+    top_win = lookup(df['win_rate'], is_top, base_key + ['hero'])
+    tier_neff, tier_adjusted = pull_to_parent(is_parent & ~is_top, top_win, tier_key)
+    parent_source = tier_adjusted.fillna(df['win_rate'])
+
+    # 2단계: 전장별 → (1단계로 보정한) 티어 전체 전장
+    parent_win = lookup(parent_source, is_parent, tier_key + ['hero'])
+    map_neff, map_adjusted = pull_to_parent(~is_parent, parent_win, tier_key + ['map'])
+
+    df['neff'] = map_neff.fillna(tier_neff)
+    df['shrunk_win_rate'] = map_adjusted.fillna(df.get('shrunk_win_rate', df['win_rate']))
+    df['sample_warning'] = np.select(
+        [~is_parent & (map_neff < LOW_SAMPLE_NEFF), ~is_parent & (map_neff < THIN_SAMPLE_NEFF)],
+        ['표본 부족', '표본 적음'],
+        default='',
+    )
+    return df
+
+
 def add_meta_axis_columns(df, group_key=None):
     if group_key is None:
         group_key = ['data_tier', 'map', 'role']
@@ -580,6 +533,7 @@ def add_meta_axis_columns(df, group_key=None):
         (df['pick_rate'] * df['win_rate'] + shrink_k * group_mean_win)
         / (df['pick_rate'] + shrink_k)
     )
+    df = add_sample_columns(df, group_key)
     df['performance_score'] = df.groupby(group_key)['shrunk_win_rate'].transform(safe_zscore)
     return df
 
@@ -598,6 +552,8 @@ def add_scoring_columns(df, group_key=None, persistence_df=None):
         'total_score',
         'score_strength',
         'pick_rate_warning',
+        'neff',
+        'sample_warning',
     ]
     df = df.drop(columns=[col for col in derived_cols if col in df.columns])
     df = add_normalized_metric_columns(df, group_key=group_key)
@@ -849,7 +805,7 @@ def build_sensitivity_diagnostics(latest_df):
         return {"available": False, "reason": "missing_latest_columns"}
 
     group_key = ['data_tier', 'map', 'role']
-    baseline = latest_df.copy()
+    baseline = latest_df[latest_df['rank'].astype(str) != '-'].copy()
     baseline['baseline_rank_index'] = baseline['rank'].map(rank_index_value)
     variants = []
     for presence_weight in [0.55, 0.65, 0.75]:
@@ -913,6 +869,28 @@ def build_overheat_monitor(latest_df):
     }
 
 
+def build_sample_size_diagnostics(latest_df):
+    if latest_df.empty or 'neff' not in latest_df.columns:
+        return {"available": False, "reason": "missing_neff"}
+
+    is_map_row = latest_df['map'].astype(str) != 'all-maps'
+    combos = latest_df[is_map_row].dropna(subset=['neff']).groupby(['data_tier', 'map'])['neff'].first()
+    tier_neff = latest_df[~is_map_row].dropna(subset=['neff']).groupby('data_tier')['neff'].first()
+    if combos.empty:
+        return {"available": False, "reason": "no_map_rows"}
+    return {
+        "available": True,
+        "thresholds": {"low": LOW_SAMPLE_NEFF, "thin": THIN_SAMPLE_NEFF},
+        # 티어 전체 전장이 전체 티어 대비 얼마나 튀는지(그마가 특히 낮다). 전장별 보정의 부모 신뢰도.
+        "tier_all_maps_neff": {str(tier): float(value) for tier, value in tier_neff.items()},
+        "combos": int(len(combos)),
+        "low_combos": int((combos < LOW_SAMPLE_NEFF).sum()),
+        "thin_combos": int(((combos >= LOW_SAMPLE_NEFF) & (combos < THIN_SAMPLE_NEFF)).sum()),
+        "quantiles": {f"p{int(q * 100)}": float(combos.quantile(q)) for q in (0.1, 0.25, 0.5, 0.75, 0.9)},
+        "median_by_tier": {str(tier): float(value) for tier, value in combos.groupby(level=0).median().items()},
+    }
+
+
 def build_rank_diagnostics(latest_df=None):
     history_df = load_weekly_history_for_persistence()
     if latest_df is None and os.path.exists(LATEST_STATS_PATH):
@@ -955,6 +933,7 @@ def build_rank_diagnostics(latest_df=None):
         "overheat_monitor": build_overheat_monitor(latest_df),
         "walk_forward": build_walk_forward_diagnostics(history_df),
         "sensitivity": build_sensitivity_diagnostics(latest_df),
+        "sample_size": build_sample_size_diagnostics(latest_df),
     }
 
     if not history_df.empty and set(metric_cols).issubset(history_df.columns):
@@ -1887,163 +1866,6 @@ def run_patch_update(stats_result=None):
     print(f"{'🧠' if created else '♻️'} AI 패치 영향 분석 저장: {analysis_row['analysis_date']}")
 
 
-def resolve_stats_game_mode_rq():
-    probe_map = "all-maps"
-    probe_tier = "All"
-    probe_driver = None
-
-    try:
-        probe_driver = create_driver()
-        register_driver(probe_driver)
-
-        for rq in ["1", "2"]:
-            try:
-                probe_driver.get(build_rates_url_with_rq(probe_map, probe_tier, rq))
-                wait_for_rates_content(probe_driver)
-                context_ok, page_context = wait_for_page_context(
-                    probe_driver,
-                    probe_map,
-                    probe_tier,
-                    expected_rq=rq,
-                )
-                if context_ok:
-                    print(f"✅ 경쟁전 rq 확정: {rq}")
-                    return rq
-
-                current_rq = page_context.get("rq")
-                print(
-                    f"⚠️  rq={rq} probe 실패: {probe_map}/{probe_tier}에서 rq={current_rq}로 리다이렉트됨"
-                )
-
-                if current_rq != "0":
-                    print(f"⚠️  예상과 다른 rq로 리다이렉트됨: {current_rq}")
-            except Exception as exc:
-                print(f"⚠️  rq={rq} probe 실패: {probe_map}/{probe_tier} -> {exc}")
-
-        return None
-    finally:
-        if probe_driver is not None:
-            unregister_driver(probe_driver)
-            try:
-                probe_driver.quit()
-            except Exception:
-                pass
-
-
-def scrape_data(driver, tier_name, map_id):
-    """기존 드라이버로 특정 티어 + 전장 데이터 수집"""
-    rq = get_active_stats_game_mode_rq()
-    url = build_rates_url_with_rq(map_id, tier_name, rq)
-    try:
-        driver.get(url)
-        wait_for_rates_content(driver)
-        context_ok, page_context = wait_for_page_context(driver, map_id, tier_name, expected_rq=rq)
-        if not context_ok:
-            if is_unsupported_all_maps_tier_redirect(map_id, tier_name, page_context):
-                print(
-                    f"↪️  {tier_name} / {map_id} 조합은 현재 페이지에서 All 티어로 리다이렉트됩니다. "
-                    "기존 latest 행 유지 대상으로 표시합니다."
-                )
-                return None
-
-            print(f"⚠️  페이지 파라미터 불일치(rq={rq}): 요청 map={map_id}, tier={tier_name} / 현재 URL={page_context['url']}")
-            return pd.DataFrame()
-        time.sleep(1)
-
-        df = scrape_rates_from_dom(driver)
-        dom_ok, _dom_reason = validate_scraped_df(df)
-        if not dom_ok:
-            df = scrape_rates_from_text(driver)
-
-        if 'ban_rate' not in df.columns:
-            df['ban_rate'] = '0%'
-        ok, reason = validate_scraped_df(df)
-        if not ok:
-            print(f"⚠️  수집 검증 실패({tier_name}/{map_id}, rq={rq}): {reason}")
-            return pd.DataFrame()
-
-        if not df.empty:
-            df['role'] = df['hero'].map(role_dict).fillna("Unknown")
-            df['data_tier'] = normalize_tier_name(tier_name)
-            df['map'] = map_id
-            df['map_name'] = df['map'].map(map_dict)
-            df['update_date'] = str(date.today())
-        return df
-
-    except Exception as e:
-        print(f"❌ {tier_name} / {map_id} 에러: {e}")
-        return pd.DataFrame()
-
-def scrape_task(task):
-    tier_name, map_id = task
-    for attempt in range(1, TASK_RETRIES + 1):
-        if STOP_REQUESTED.is_set():
-            break
-
-        driver = None
-        try:
-            driver = create_driver()
-            register_driver(driver)
-            df = scrape_data(driver, tier_name, map_id)
-            if df is None:
-                return {
-                    'tier_name': tier_name,
-                    'map_id': map_id,
-                    'df': pd.DataFrame(),
-                    'missing': [],
-                    'skipped': True,
-                    'skip_reason': 'unsupported_all_maps_tier_redirect',
-                }
-            missing = []
-            if not df.empty:
-                missing = df[df['role'].isna()]['hero'].unique().tolist()
-            if df.empty and attempt < TASK_RETRIES:
-                print(f"⚠️  {tier_name} / {map_id} 빈 결과(시도 {attempt}/{TASK_RETRIES}), 재시도")
-                STOP_REQUESTED.wait(attempt)
-                continue
-            return {
-                'tier_name': tier_name,
-                'map_id': map_id,
-                'df': df,
-                'missing': missing,
-                'skipped': False,
-                'skip_reason': '',
-            }
-        except KeyboardInterrupt:
-            STOP_REQUESTED.set()
-            raise
-        except Exception as exc:
-            if attempt < TASK_RETRIES:
-                print(f"⚠️  {tier_name} / {map_id} 작업 실패(시도 {attempt}/{TASK_RETRIES}), 재시도: {exc}")
-                STOP_REQUESTED.wait(attempt * 2)
-                continue
-            print(f"❌ {tier_name} / {map_id} 최종 실패: {exc}")
-            return {
-                'tier_name': tier_name,
-                'map_id': map_id,
-                'df': pd.DataFrame(),
-                'missing': [],
-                'skipped': False,
-                'skip_reason': '',
-            }
-        finally:
-            if driver is not None:
-                unregister_driver(driver)
-                try:
-                    driver.quit()
-                except Exception:
-                    pass
-
-    return {
-        'tier_name': tier_name,
-        'map_id': map_id,
-        'df': pd.DataFrame(),
-        'missing': [],
-        'skipped': STOP_REQUESTED.is_set(),
-        'skip_reason': 'stop_requested' if STOP_REQUESTED.is_set() else '',
-    }
-
-
 def normalize_url(href):
     if not href:
         return ""
@@ -2288,100 +2110,58 @@ def run_perk_update(locale=DEFAULT_LOCALE, max_heroes=None, headed=False):
 
 def run_stats_update():
     started_at = perf_counter()
-    global ACTIVE_STATS_GAME_MODE_RQ
 
-    resolved_rq = resolve_stats_game_mode_rq()
-    if resolved_rq is None:
-        print("❌ rq 값을 확정하지 못해 수집을 중단합니다.")
+    missing_filters = check_stats_filters()
+    if missing_filters:
+        print(f"❌ 사이트 필터 목록에 없는 파라미터 값이 있어 수집을 중단합니다: {missing_filters}")
         return
 
-    ACTIVE_STATS_GAME_MODE_RQ = resolved_rq
-    print(f"🧭 수집에 사용할 rq: {ACTIVE_STATS_GAME_MODE_RQ}")
-
-    map_ids = list(map_dict.keys())
-    print(f"🗺️  전장 {len(map_ids)}개: {map_ids}")
-
-    tasks = [(tier_name, map_id) for map_id in map_ids for tier_name in tiers]
+    tasks = [(tier_name, map_id) for map_id in map_dict for tier_name in tiers]
     total = len(tasks)
-    print(f"🧵 병렬 수집 시작: worker={MAX_WORKERS}, task={total}")
+    print(f"🧵 수집 시작: 조합 {total}개 (티어 {len(tiers)} × 전장 {len(map_dict)})")
 
     final_list = []
     failed_tasks = []
-    skipped_tasks = []
-    done_count = 0
-    executor = ThreadPoolExecutor(max_workers=MAX_WORKERS)
-    futures = {executor.submit(scrape_task, task): task for task in tasks}
-    pending = set(futures)
+    empty_tasks = []
+    for done_count, (tier_name, map_id) in enumerate(tasks, start=1):
+        try:
+            df = fetch_stats(tier_name, map_id)
+        except Exception as exc:
+            print(f"❌ [{done_count}/{total}] {tier_name} / {map_id} 실패: {exc}")
+            failed_tasks.append((tier_name, map_id))
+            continue
 
-    try:
-        while pending:
-            done_futures, pending = wait(pending, timeout=1, return_when=FIRST_COMPLETED)
-            for future in done_futures:
-                done_count += 1
-                tier_name, map_id = futures[future]
-                print(f"🚀 [{done_count}/{total}] {tier_name} / {map_id} 완료")
-                result = future.result()
-                if result['missing']:
-                    print(f"⚠️  누락 영웅: {result['missing']}")
-                if result.get('skipped'):
-                    skipped_tasks.append((tier_name, map_id, result.get('skip_reason', '')))
-                elif not result['df'].empty:
-                    final_list.append(result['df'])
-                else:
-                    failed_tasks.append((tier_name, map_id))
-    except KeyboardInterrupt:
-        STOP_REQUESTED.set()
-        print("\n🛑 중단 요청 감지. 실행 중인 브라우저 세션을 정리합니다.")
-        for future in pending:
-            future.cancel()
-        quit_active_drivers()
-        executor.shutdown(wait=False, cancel_futures=True)
-        raise SystemExit(130)
-    finally:
-        if not STOP_REQUESTED.is_set():
-            executor.shutdown(wait=True, cancel_futures=False)
+        if map_id == "all-maps" and len(df) < MIN_HERO_ROWS:
+            # 전체 전장은 늘 전 영웅이 나온다. 적으면 페이지 구조가 바뀐 것이다.
+            print(f"❌ [{done_count}/{total}] {tier_name} / {map_id} 영웅 행 수 부족({len(df)}행)")
+            failed_tasks.append((tier_name, map_id))
+        elif df.empty:
+            empty_tasks.append((tier_name, map_id))
+        else:
+            final_list.append(df)
+        time.sleep(0.2)
 
     if not final_list:
         print("❌ 수집된 데이터가 없습니다.")
         return
 
-    incomplete_tasks = [(tier_name, map_id) for tier_name, map_id in failed_tasks]
-    incomplete_tasks += [(tier_name, map_id) for tier_name, map_id, _reason in skipped_tasks]
+    if empty_tasks:
+        print(f"↪️  데이터 없는 조합 {len(empty_tasks)}개(표본 부족): {empty_tasks[:20]}{' ...' if len(empty_tasks) > 20 else ''}")
 
-    if incomplete_tasks or len(final_list) != total:
-        success_ratio = len(final_list) / total if total else 0.0
-        summary = (
-            f"성공 {len(final_list)}/{total} ({success_ratio:.1%}), "
-            f"실패 {len(failed_tasks)}, 스킵 {len(skipped_tasks)}"
-        )
-
+    if failed_tasks:
+        attempted = total - len(empty_tasks)
+        success_ratio = len(final_list) / attempted if attempted else 0.0
+        summary = f"성공 {len(final_list)}/{attempted} ({success_ratio:.1%}), 실패 목록: {failed_tasks[:20]}"
         if success_ratio < MIN_TASK_SUCCESS_RATIO:
             print(f"❌ 수집이 완전하지 않아 저장을 중단합니다. {summary}")
-            if failed_tasks:
-                print(f"❌ 실패 목록: {failed_tasks[:20]}{' ...' if len(failed_tasks) > 20 else ''}")
-            if skipped_tasks:
-                print(f"❌ 스킵 목록: {skipped_tasks[:20]}{' ...' if len(skipped_tasks) > 20 else ''}")
             return
+        print(f"⚠️  일부 조합을 수집하지 못했지만 허용 범위({MIN_TASK_SUCCESS_RATIO:.0%}) 안이라 부분 저장합니다. {summary}")
 
-        print(
-            f"⚠️  일부 조합을 수집하지 못했지만 허용 범위({MIN_TASK_SUCCESS_RATIO:.0%}) 안이라 "
-            f"부분 저장을 진행합니다. {summary}"
-        )
-        if failed_tasks:
-            print(f"⚠️  실패 목록: {failed_tasks[:20]}{' ...' if len(failed_tasks) > 20 else ''}")
-        if skipped_tasks:
-            print(f"⚠️  스킵 목록: {skipped_tasks[:20]}{' ...' if len(skipped_tasks) > 20 else ''}")
+    # 요청이 실패한 조합만 직전 latest 로 메운다. 데이터 없는 조합까지 메우면
+    # 패치 전 값이나 아시아 서버 값이 섞인다.
+    incomplete_tasks = failed_tasks
 
-    # 데이터 통합
     full_df = pd.concat(final_list, ignore_index=True)
-
-    # 숫자 변환
-    full_df['win_rate']  = full_df['win_rate'].str.replace('%', '', regex=False).replace('--', '0').astype(float)
-    full_df['pick_rate'] = full_df['pick_rate'].str.replace('%', '', regex=False).replace('--', '0').astype(float)
-    if 'ban_rate' in full_df.columns:
-        full_df['ban_rate'] = full_df['ban_rate'].str.replace('%', '', regex=False).replace('--', '0').astype(float)
-    else:
-        full_df['ban_rate'] = 0.0
 
     # 랭크 계산
     group_key = ['data_tier', 'map', 'role']
@@ -2395,6 +2175,8 @@ def run_stats_update():
     full_df = add_scoring_columns(full_df, group_key=group_key, persistence_df=persistence_df)
 
     full_df['rank'] = full_df.groupby(group_key)['total_score'].transform(assign_score_rank)
+    # 표본 부족 조합은 값은 남기되(화면에서 흐리게) 랭크는 매기지 않는다.
+    full_df.loc[full_df['sample_warning'] == '표본 부족', 'rank'] = '-'
     full_df = normalize_dataset_for_scoring(full_df)
     full_df = full_df.reindex(columns=STATS_COLUMNS)
 
