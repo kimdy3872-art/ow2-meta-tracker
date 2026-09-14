@@ -1691,6 +1691,8 @@ h1, h2, h3, h4,
 .rot-wrap {
     position: relative;
     min-height: 232px;
+    /* 옆으로 밀려나는 묶음이 가로 스크롤을 만들지 않게 가로만 자른다(카드 hover 들림은 살린다) */
+    overflow-x: clip;
 }
 
 .rot-slide {
@@ -1699,19 +1701,21 @@ h1, h2, h3, h4,
     opacity: 0;
     animation-name: rot-cycle;
     animation-iteration-count: infinite;
-    animation-timing-function: ease-in-out;
+    /* 빠르게 들어와 부드럽게 멈춘다 */
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
     pointer-events: none;
 }
 
 /* 보이는 동안에만 클릭을 받는다 */
 .rot-slide { animation-fill-mode: both; }
 
+/* 오른쪽에서 들어와 왼쪽으로 빠진다. 나가는 묶음(30~34%)과 들어오는 묶음(0~4%)이 겹쳐 이어진다. */
 @keyframes rot-cycle {
-    0%      { opacity: 0; transform: translateY(10px) scale(0.995); pointer-events: none; }
-    3%      { opacity: 1; transform: none; pointer-events: auto; }
+    0%      { opacity: 0; transform: translateX(56px); pointer-events: none; }
+    4%      { opacity: 1; transform: none; pointer-events: auto; }
     30%     { opacity: 1; transform: none; pointer-events: auto; }
-    34%     { opacity: 0; transform: translateY(-8px) scale(0.995); pointer-events: none; }
-    100%    { opacity: 0; transform: translateY(10px) scale(0.995); pointer-events: none; }
+    34%     { opacity: 0; transform: translateX(-56px); pointer-events: none; }
+    100%    { opacity: 0; transform: translateX(56px); pointer-events: none; }
 }
 
 .rot-title { margin-bottom: 7px; }
