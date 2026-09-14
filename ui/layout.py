@@ -32,8 +32,9 @@ def page_shell(*, page_key: str, title: str, subtitle: str = "",
     헤더는 어떤 데이터 로딩보다 먼저 그린다. 그래야 로딩 중에도 화면이 서 있고,
     본문에서 예외가 나도 헤더가 남는다.
     """
+    # auto: PC 에서는 펼치고, 폰(좁은 화면)에서는 접힌 채 시작한다.
     st.set_page_config(page_title=title, layout="wide",
-                       initial_sidebar_state="expanded")
+                       initial_sidebar_state="auto")
     apply_global_theme()
     render_page_hero(title, subtitle, badge, live_label=_latest_data_date())
     render_sidebar_navigation(page_key, filters=filters)

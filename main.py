@@ -384,9 +384,9 @@ def render_rank_table_html(df):
             f"<div class='hero-cell-name nowrap'>{hero_cell_html}{low_html}</div>"
             f"<div class='hero-cell-sub nowrap'>{html.escape(sub_text)}</div>"
             f"</div></td>"
-            f"<td class='rate-cell'>{_bar('win', row['win_rate'], win_rate)}</td>"
-            f"<td class='rate-cell'>{_bar('pick', row['pick_rate'], pick_rate)}</td>"
-            f"<td class='rate-cell'>{_bar('ban', ban_rate_val, f'{ban_rate_val:.1f}%' if pd.notna(ban_rate_val) else '-')}</td>"
+            f"<td class='rate-cell win'>{_bar('win', row['win_rate'], win_rate)}</td>"
+            f"<td class='rate-cell pick'>{_bar('pick', row['pick_rate'], pick_rate)}</td>"
+            f"<td class='rate-cell ban'>{_bar('ban', ban_rate_val, f'{ban_rate_val:.1f}%' if pd.notna(ban_rate_val) else '-')}</td>"
             f"<td class='score-cell nowrap'>{score_html}"
             f"{rank_badge(rank)}</td>"
             "</tr>"
@@ -572,7 +572,7 @@ with _rail_col2:
         _top_hero,
     )
 
-    _deltas = load_score_deltas(selected_tier)
+    _deltas, _delta_since = load_score_deltas(selected_tier)
     _delta_rows = []
     if _deltas:
         _ranked = sorted(
@@ -585,7 +585,10 @@ with _rail_col2:
              GLOBAL_GOOD_COLOR if d >= 0 else GLOBAL_DANGER_COLOR)
             for h, d in _ranked
         ]
-    render_rail_rows("최근 변동", _delta_rows,
+    # 넥슨 원본은 며칠에 한 번 갱신되므로, 원본이 달랐던 마지막 날짜를 기준으로 비교한다.
+    _delta_title = (f"최근 변동 · {_delta_since[5:].replace('-', '/')} 대비"
+                    if _delta_since else "최근 변동")
+    render_rail_rows(_delta_title, _delta_rows,
                      empty_text="비교할 이전 스냅샷이 아직 없습니다.")
 
     if "ban_rate" in display_df.columns:

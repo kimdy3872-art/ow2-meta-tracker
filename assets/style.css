@@ -853,8 +853,6 @@ body [data-baseweb="popover"] ::-webkit-scrollbar-track {
     .ow-card, .ow-rail {height: 160px;}
 }
 
-@media (max-width: 900px) {.hero-showcase-art{ display: none; }
-}
 
 @media (max-width: 900px) {
     .block-container {
@@ -1690,14 +1688,17 @@ h1, h2, h3, h4,
 
 .rot-wrap {
     position: relative;
-    min-height: 232px;
+    /* 묶음들을 같은 칸에 겹쳐 쌓는다. 높이가 가장 큰 묶음에 저절로 맞춰져서,
+       카드가 세로로 쌓이는 좁은 화면에서도 아래 내용과 겹치지 않는다. */
+    display: grid;
+    min-height: 232px;  /* PC 에서 아래 TOP MAPS 와의 간격을 예전 그대로 둔다 */
     /* 옆으로 밀려나는 묶음이 가로 스크롤을 만들지 않게 가로만 자른다(카드 hover 들림은 살린다) */
     overflow-x: clip;
 }
 
 .rot-slide {
-    position: absolute;
-    inset: 0;
+    grid-area: 1 / 1;
+    min-width: 0;
     opacity: 0;
     animation-name: rot-cycle;
     animation-iteration-count: infinite;
@@ -1866,6 +1867,59 @@ h1, h2, h3, h4,
     .overwatch-table .rate-cell.win::before {content:"승률";}
     .overwatch-table .rate-cell.pick::before {content:"픽률";}
     .overwatch-table .rate-cell.ban::before {content:"밴률";}
+}
+
+/* ---------------------------------------------------------------------------
+   모바일(폰 폭 640px 이하). PC 레이아웃은 건드리지 않고 좁은 화면에서만 덮어쓴다.
+   위 표 규칙(860px)보다 뒤에 있어야 이긴다.
+   --------------------------------------------------------------------------- */
+/* 좁은 화면에서도 종합 점수 1위 영웅 아트를 살린다. 아트는 오른쪽 절반, 글은 왼쪽에만 둬서 겹치지 않게 한다.
+   (1100px 규칙의 .hero-showcase-left max-width:100% 보다 뒤에 있어야 이긴다) */
+@media (max-width: 900px) {
+    .hero-showcase-art { width: 50%; right: 0; }
+    .hero-showcase-left { max-width: 62%; }
+}
+
+@media (max-width: 640px) {
+    /* 위의 min-width:0 이 Streamlit 의 좁은 화면 컬럼 줄바꿈을 막는다. 폰에서는 한 줄씩 쌓는다. */
+    [data-testid="stHorizontalBlock"] { flex-wrap: wrap; }
+    [data-testid="stColumn"] {
+        flex: 1 1 100% !important;
+        width: 100% !important;
+        min-width: 100% !important;
+    }
+
+    .block-container,
+    [data-testid="stMainBlockContainer"] { padding: 0.8rem 0.9rem 2rem !important; }
+
+    /* TOP 카드: 1열 4장은 너무 길어서 2×2 로 */
+    .ow-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .ow-card { height: 150px; }
+
+    /* 전장 카드 1위 들림은 좁은 화면에서 위 제목을 가린다 */
+    .map-card.featured { transform: none; }
+
+    /* 순위표 카드: 영웅 / 승률·픽률·밴률 한 줄씩(이름 · 가로 막대 · 값) / 점수 */
+    .overwatch-table td.rate-cell {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border-bottom: 0;
+        padding: 5px 12px;
+    }
+    .overwatch-table .rate-cell::before {
+        flex: none;
+        width: 30px;
+        margin-bottom: 0 !important;
+    }
+    .overwatch-table .rate-cell .rate-line { flex: 1; min-width: 0; }
+    .overwatch-table td.rate-cell.ban { padding-bottom: 10px; }
+
+    /* 종합 점수 1위 카드: 폭 350px 안에 이름·지표·아트가 같이 들어가게 줄인다 */
+    .hero-showcase-card { min-height: 330px; padding: 20px 18px; }
+    .hero-showcase-num { font-size: 110px; right: 4%; top: 2%; }
+    .hero-showcase-stats { gap: 10px 18px; }
+    .hero-showcase-stat-value { font-size: 24px; }
 }
 
 /* ---------------------------------------------------------------------------

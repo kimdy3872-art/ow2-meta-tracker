@@ -22,6 +22,8 @@ USE_LOCAL_DATA = os.environ.get("OW2_LOCAL_DATA", "").strip().lower() in {"1", "
 DATA_HTTP_TIMEOUT = int(os.environ.get("OW2_DATA_HTTP_TIMEOUT", "20"))
 # 데이터 캐시 TTL(초). 데이터는 매일 갱신되므로 30분이면 충분히 최신.
 DATA_CACHE_TTL = int(os.environ.get("OW2_DATA_CACHE_TTL", "1800"))
+# 통계 출처를 넥슨 한국 서버로 바꾼 첫 스냅샷 날짜. 그 전은 Blizzard 아시아 서버 값이다.
+STATS_SOURCE_SINCE = "2026-09-10"
 
 
 def _remote_url(relpath):
@@ -580,10 +582,12 @@ def get_hero_image_url(hero_name):
 
 @st.cache_data(ttl=DATA_CACHE_TTL)
 def load_score_deltas(data_tier):
-    """직전 스냅샷 대비 종합 점수 변화. {영웅명: delta}
+    """최근 원본 갱신 전후의 종합 점수 변화. ({영웅명: delta}, 비교 기준 날짜)
 
-    일간 히스토리 파케이에 날짜별 total_score 가 있으므로 최근 두 날짜를 비교한다.
-    비교할 스냅샷이 하나뿐이면 빈 dict 를 돌려주고, 호출부는 섹션을 생략한다.
+    넥슨 통계는 매일이 아니라 며칠에 한 번(패치 등) 갱신돼서, 바로 전날과 비교하면 거의
+    항상 0 이다. 그래서 원본 수치(승률·픽률·밴률)가 달랐던 가장 최근 스냅샷과 비교한다.
+    STATS_SOURCE_SINCE 이전은 Blizzard 아시아 서버 값이라 비교에서 뺀다(출처 변화가 변동처럼 보인다).
+    비교할 스냅샷이 없으면 ({}, None).
     """
     frames = []
     for path in list_data_files(os.path.join("data", "history", "daily")):
@@ -592,23 +596,34 @@ def load_score_deltas(data_tier):
         except Exception:
             continue
     if not frames:
-        return {}
+        return {}, None
 
     df = pd.concat(frames, ignore_index=True)
-    needed = {"hero", "update_date", "total_score", "data_tier", "map"}
+    rate_cols = ["win_rate", "pick_rate", "ban_rate"]
+    needed = {"hero", "update_date", "total_score", "data_tier", "map", *rate_cols}
     if not needed.issubset(df.columns):
-        return {}
+        return {}, None
 
-    df = df[(df["data_tier"] == data_tier) & (df["map"].astype(str) == "all-maps")].copy()
     df["update_date"] = df["update_date"].astype(str)
-    dates = sorted(df["update_date"].dropna().unique())
+    df = df[
+        (df["data_tier"] == data_tier)
+        & (df["map"].astype(str) == "all-maps")
+        & (df["update_date"] >= STATS_SOURCE_SINCE)
+    ].drop_duplicates(["update_date", "hero"], keep="last")
+    by_date = {date: frame.set_index("hero").sort_index() for date, frame in df.groupby("update_date")}
+    dates = sorted(by_date)
     if len(dates) < 2:
-        return {}
+        return {}, None
 
-    latest = df[df["update_date"] == dates[-1]].set_index("hero")["total_score"]
-    previous = df[df["update_date"] == dates[-2]].set_index("hero")["total_score"]
-    delta = (latest - previous).dropna()
-    return {str(hero): float(value) for hero, value in delta.items()}
+    latest = by_date[dates[-1]]
+    latest_rates = latest[rate_cols].round(3)
+    for date in reversed(dates[:-1]):
+        previous = by_date[date]
+        if previous[rate_cols].round(3).reindex(latest_rates.index).equals(latest_rates):
+            continue  # 원본이 그대로인 날(넥슨 미갱신)은 건너뛴다
+        delta = (latest["total_score"] - previous["total_score"]).dropna()
+        return {str(hero): float(value) for hero, value in delta.items()}, date
+    return {}, None
 
 
 def normalize_meta_score(series, reference=None):
