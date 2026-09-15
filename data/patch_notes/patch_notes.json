@@ -414,29 +414,27 @@
     "has_hero_updates": true,
     "patch_category": "hero_balance",
     "created_at": "2026-09-09T02:01:27",
-    "updated_at": "2026-09-14T02:05:23"
+    "updated_at": "2026-09-15T02:12:15"
   },
   {
     "id": "patch-2026-09-10",
     "patch_version": "2026-09-10",
-    "title": "Overwatch Retail Patch Notes – September 10, 2026",
+    "title": "오버워치 패치 노트 - 2026년 9월 11일",
     "patch_date": "2026-09-10",
     "source_url": "https://overwatch.blizzard.com/ko-kr/news/patch-notes/live/2026/9/#patch-2026-09-10",
-    "raw_content": "2026년 9월 10일\nOverwatch Retail Patch Notes – September 10, 2026\nHotfix Patch\nThis is a hotfix patch. Replay codes from the September 8 patch are still available.\nBug Fixes\nResolved an issue with Ramattra's Ravenous Vortex that caused additional unintended delay before it could be detonated.\nFixed a bug with Jetpack Cat that allowed Purr to go through enemy barriers.\nFixed an issue that affected the range of Vendetta's Palatine Fang in some instances.",
-    "parsed_content": "Hotfix Patch\nThis is a hotfix patch. Replay codes from the September 8 patch are still available.\nBug Fixes\nResolved an issue with Ramattra's Ravenous Vortex that caused additional unintended delay before it could be detonated.\nFixed a bug with Jetpack Cat that allowed Purr to go through enemy barriers.\nFixed an issue that affected the range of Vendetta's Palatine Fang in some instances.",
-    "summary": "Hotfix Patch · This is a hotfix patch. Replay codes from the September 8 patch are still available. · Bug Fixes",
+    "raw_content": "2026년 9월 10일\n오버워치 패치 노트 - 2026년 9월 11일\n핫픽스 패치\n핫픽스 패치입니다. 9월 9일 패치부터 생성된 리플레이 코드는 계속 이용할 수 있습니다.\n버그 수정\n라마트라의 탐식의 소용돌이가 폭발하기 전에 의도하지 않은 추가 지연이 발생하던 문제를 수정했습니다.\n제트팩 캣의 골골대기가 적 방벽을 뚫을 수 있던 문제를 수정했습니다.\n때때로 벤데타의 팔라틴 팽 사거리에 영향을 주던 문제를 수정했습니다.",
+    "parsed_content": "핫픽스 패치\n핫픽스 패치입니다. 9월 9일 패치부터 생성된 리플레이 코드는 계속 이용할 수 있습니다.\n버그 수정\n라마트라의 탐식의 소용돌이가 폭발하기 전에 의도하지 않은 추가 지연이 발생하던 문제를 수정했습니다.\n제트팩 캣의 골골대기가 적 방벽을 뚫을 수 있던 문제를 수정했습니다.\n때때로 벤데타의 팔라틴 팽 사거리에 영향을 주던 문제를 수정했습니다.",
+    "summary": "핫픽스 패치입니다. 9월 9일 패치부터 생성된 리플레이 코드는 계속 이용할 수 있습니다. · 라마트라의 탐식의 소용돌이가 폭발하기 전에 의도하지 않은 추가 지연이 발생하던 문제를 수정했습니다. · 제트팩 캣의 골골대기가 적 방벽을 뚫을 수 있던 문제를 수정했습니다.",
     "summary_items": [
-      "Hotfix Patch",
-      "This is a hotfix patch. Replay codes from the September 8 patch are still available.",
-      "Bug Fixes",
-      "Resolved an issue with Ramattra's Ravenous Vortex that caused additional unintended delay before it could be detonated.",
-      "Fixed a bug with Jetpack Cat that allowed Purr to go through enemy barriers.",
-      "Fixed an issue that affected the range of Vendetta's Palatine Fang in some instances."
+      "핫픽스 패치입니다. 9월 9일 패치부터 생성된 리플레이 코드는 계속 이용할 수 있습니다.",
+      "라마트라의 탐식의 소용돌이가 폭발하기 전에 의도하지 않은 추가 지연이 발생하던 문제를 수정했습니다.",
+      "제트팩 캣의 골골대기가 적 방벽을 뚫을 수 있던 문제를 수정했습니다.",
+      "때때로 벤데타의 팔라틴 팽 사거리에 영향을 주던 문제를 수정했습니다."
     ],
     "affected_heroes": [],
     "has_hero_updates": false,
     "patch_category": "general",
     "created_at": "2026-09-10T22:29:23",
-    "updated_at": "2026-09-14T02:05:23"
+    "updated_at": "2026-09-15T02:12:15"
   }
 ]
