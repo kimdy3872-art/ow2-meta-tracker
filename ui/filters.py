@@ -125,7 +125,7 @@ def selected_role() -> str:
 def resolve_tier(available) -> str:
     """전역 티어를 이 페이지가 가진 티어 목록에 맞춰 해석한다.
 
-    영웅별 시계열처럼 데이터가 부분적인 화면에서 전역 선택이 비어 있을 수 있다.
+    영웅별 지표 추이처럼 데이터가 부분적인 화면에서 전역 선택이 비어 있을 수 있다.
     그때 빈 화면을 내는 대신 있는 티어로 떨어뜨린다.
     """
     available = list(available)

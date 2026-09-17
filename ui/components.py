@@ -131,7 +131,7 @@ def render_rank_rail(title: str, rows, footnote: str = "") -> None:
 NAV_ITEMS = [
     ("main", "랭크 순위표", ":material/leaderboard:", "main.py"),
     ("pick_win", "3D 메타 분포", ":material/scatter_plot:", "pages/1_pick_win_distribution.py"),
-    ("hero_trends", "시계열 분석", ":material/show_chart:", "pages/2_hero_trends.py"),
+    ("hero_trends", "영웅 추이", ":material/show_chart:", "pages/2_hero_trends.py"),
 ]
 
 
@@ -414,7 +414,7 @@ def render_kpi_row(items) -> None:
 
 
 def render_hero_portrait_card(hero_name: str, art: dict | None, accent: str, caption: str = "") -> None:
-    """시계열 상단 좌측의 영웅 세로 카드."""
+    """영웅 추이 페이지 상단 좌측의 영웅 세로 카드."""
     art = art or {}
     inner = ""
     if art.get("cutout_url"):

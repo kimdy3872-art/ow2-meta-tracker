@@ -38,8 +38,8 @@ from ui import (
 
 _shell = page_shell(
     page_key="hero_trends",
-    title="영웅별 시계열",
-    badge="Hero Trend Watch",
+    title="영웅별 지표 추이",
+    badge="Hero Metric Trend",
 )
 _shell.__enter__()
 
@@ -144,7 +144,7 @@ def format_map_option(map_id, df):
 history_df = load_history_data()
 
 if history_df.empty:
-    st.warning("시계열로 표시할 데이터가 없습니다.")
+    st.warning("추이로 표시할 데이터가 없습니다.")
     st.stop()
 
 # 티어/포지션은 사이드바 전역 필터. 본문에는 이 페이지 고유 필터(영웅·전장)만
@@ -213,7 +213,7 @@ chart_metrics = [
 ]
 
 if map_df.empty:
-    st.warning("선택한 조건에 해당하는 시계열 데이터가 없습니다.")
+    st.warning("선택한 조건에 해당하는 추이 데이터가 없습니다.")
     st.stop()
 
 map_df = map_df.sort_values("period_date").copy()
