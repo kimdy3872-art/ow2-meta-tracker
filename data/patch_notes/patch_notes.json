@@ -436,5 +436,30 @@
     "patch_category": "general",
     "created_at": "2026-09-10T22:29:23",
     "updated_at": "2026-09-17T02:07:53"
+  },
+  {
+    "id": "patch-2026-09-17",
+    "patch_version": "2026-09-17",
+    "title": "Overwatch Retail Patch Notes – September 17, 2026",
+    "patch_date": "2026-09-17",
+    "source_url": "https://overwatch.blizzard.com/ko-kr/news/patch-notes/live/2026/9/#patch-2026-09-17",
+    "raw_content": "2026년 9월 17일\nOverwatch Retail Patch Notes – September 17, 2026\nHotfix Update\nThis is a hotfix update. Replay codes from the September 8, 2026 patch are still available.\nHero Updates\nD.Mon\nArmor reduced from 325 to 275 (5v5).\nArmor reduced from 300 to 250 (6v6).\nFocused Fusion - Major Perk\nDamage per bullet reduced from 45 to 36.\nPropulsors\nFuel drain rate increased from 25 to 30.\nFusion Repeater\nDamage reduced from 16 to 15.\nCooldown increased from 4 to 5 seconds.\nBug Fixes\nStadium\nFixed a gameplay issue with Mercy in Stadium. She has been re-enabled in all Stadium queues.",
+    "parsed_content": "Hotfix Update\nThis is a hotfix update. Replay codes from the September 8, 2026 patch are still available.\nHero Updates\nD.Mon\nArmor reduced from 325 to 275 (5v5).\nArmor reduced from 300 to 250 (6v6).\nFocused Fusion - Major Perk\nDamage per bullet reduced from 45 to 36.\nPropulsors\nFuel drain rate increased from 25 to 30.\nFusion Repeater\nDamage reduced from 16 to 15.\nCooldown increased from 4 to 5 seconds.\nBug Fixes\nStadium\nFixed a gameplay issue with Mercy in Stadium. She has been re-enabled in all Stadium queues.",
+    "summary": "영향 영웅: D.Mon · Hotfix Update · This is a hotfix update. Replay codes from the September 8, 2026 patch are still available.",
+    "summary_items": [
+      "영향 영웅: D.Mon",
+      "Hotfix Update",
+      "This is a hotfix update. Replay codes from the September 8, 2026 patch are still available.",
+      "Hero Updates",
+      "Armor reduced from 325 to 275 (5v5).",
+      "Armor reduced from 300 to 250 (6v6)."
+    ],
+    "affected_heroes": [
+      "D.Mon"
+    ],
+    "has_hero_updates": true,
+    "patch_category": "hero_balance",
+    "created_at": "2026-09-18T01:53:18",
+    "updated_at": "2026-09-18T01:53:18"
   }
 ]
