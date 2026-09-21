@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-20T01:58:23",
+  "generated_at": "2026-09-21T02:01:21",
   "method_note": "Diagnostics are used to audit the hand-designed presence-led meta formula; they do not automatically optimize production weights.",
   "long_term_plan": "patch_buff_nerf_history_based_regression",
   "formula": {
@@ -9,82 +9,82 @@
   },
   "data_summary": {
     "latest_rows": 14780,
-    "weekly_rows": 181323,
-    "weekly_snapshots": 14
+    "weekly_rows": 196103,
+    "weekly_snapshots": 15
   },
   "correlation_matrix": {
     "win_rate_z": {
       "win_rate_z": 1.0,
-      "persistence_score": 0.7632659793993888,
-      "presence_score": 0.26428400368530064,
-      "performance_score": 0.8814982748797103,
-      "pick_rate_z": 0.21882830810805132,
-      "ban_rate_z": 0.20730969518880174,
-      "total_score": 0.7700478636266231
+      "persistence_score": 0.7560762486420017,
+      "presence_score": 0.26801139643417243,
+      "performance_score": 0.8800566514444175,
+      "pick_rate_z": 0.2214341049517925,
+      "ban_rate_z": 0.20976527501872363,
+      "total_score": 0.7575447213595393
     },
     "persistence_score": {
-      "win_rate_z": 0.7632659793993888,
+      "win_rate_z": 0.7560762486420017,
       "persistence_score": 1.0,
-      "presence_score": 0.2574218848344893,
-      "performance_score": 0.7395362575882825,
-      "pick_rate_z": 0.21127205877966507,
-      "ban_rate_z": 0.20531243508996003,
-      "total_score": 0.6871243553681348
+      "presence_score": 0.25725942046465144,
+      "performance_score": 0.731653736266821,
+      "pick_rate_z": 0.20983591667600857,
+      "ban_rate_z": 0.20518158003034231,
+      "total_score": 0.6722276544092973
     },
     "presence_score": {
-      "win_rate_z": 0.26428400368530064,
-      "persistence_score": 0.2574218848344893,
+      "win_rate_z": 0.26801139643417243,
+      "persistence_score": 0.25725942046465144,
       "presence_score": 1.0,
-      "performance_score": 0.278187388616882,
-      "pick_rate_z": 0.6753438791696273,
-      "ban_rate_z": 0.8268531312109304,
-      "total_score": 0.6408657788985188
+      "performance_score": 0.28452563051223073,
+      "pick_rate_z": 0.6762740250742968,
+      "ban_rate_z": 0.8282881320264563,
+      "total_score": 0.6614420899967549
     },
     "performance_score": {
-      "win_rate_z": 0.8814982748797103,
-      "persistence_score": 0.7395362575882825,
-      "presence_score": 0.278187388616882,
+      "win_rate_z": 0.8800566514444175,
+      "persistence_score": 0.731653736266821,
+      "presence_score": 0.28452563051223073,
       "performance_score": 1.0,
-      "pick_rate_z": 0.1940891915832038,
-      "ban_rate_z": 0.25683529608482647,
-      "total_score": 0.751812093110657
+      "pick_rate_z": 0.19891700031999993,
+      "ban_rate_z": 0.26126083623107943,
+      "total_score": 0.747613240319395
     },
     "pick_rate_z": {
-      "win_rate_z": 0.21882830810805132,
-      "persistence_score": 0.21127205877966507,
-      "presence_score": 0.6753438791696273,
-      "performance_score": 0.1940891915832038,
+      "win_rate_z": 0.2214341049517925,
+      "persistence_score": 0.20983591667600857,
+      "presence_score": 0.6762740250742968,
+      "performance_score": 0.19891700031999993,
       "pick_rate_z": 1.0,
-      "ban_rate_z": 0.24844341004674214,
-      "total_score": 0.4569198522612218
+      "ban_rate_z": 0.25167542762195355,
+      "total_score": 0.4701749627207806
     },
     "ban_rate_z": {
-      "win_rate_z": 0.20730969518880174,
-      "persistence_score": 0.20531243508996003,
-      "presence_score": 0.8268531312109304,
-      "performance_score": 0.25683529608482647,
-      "pick_rate_z": 0.24844341004674214,
+      "win_rate_z": 0.20976527501872363,
+      "persistence_score": 0.20518158003034231,
+      "presence_score": 0.8282881320264563,
+      "performance_score": 0.26126083623107943,
+      "pick_rate_z": 0.25167542762195355,
       "ban_rate_z": 1.0,
-      "total_score": 0.5328568136419709
+      "total_score": 0.5512552436004589
     },
     "total_score": {
-      "win_rate_z": 0.7700478636266231,
-      "persistence_score": 0.6871243553681348,
-      "presence_score": 0.6408657788985188,
-      "performance_score": 0.751812093110657,
-      "pick_rate_z": 0.4569198522612218,
-      "ban_rate_z": 0.5328568136419709,
+      "win_rate_z": 0.7575447213595393,
+      "persistence_score": 0.6722276544092973,
+      "presence_score": 0.6614420899967549,
+      "performance_score": 0.747613240319395,
+      "pick_rate_z": 0.4701749627207806,
+      "ban_rate_z": 0.5512552436004589,
       "total_score": 1.0
     }
   },
   "variance": {
-    "win_rate_z": 0.9379446509524493,
-    "persistence_score": 0.8447268538567214,
-    "presence_score": 0.9423787516131521,
-    "performance_score": 0.9423787516131521,
-    "pick_rate_z": 0.9381597379247966,
-    "ban_rate_z": 0.9368637010401387,
-    "total_score": 0.7123188083646598
+    "win_rate_z": 0.9383535099081091,
+    "persistence_score": 0.8291678976872137,
+    "presence_score": 0.9424534170992646,
+    "performance_score": 0.9424534170992646,
+    "pick_rate_z": 0.9385523860032022,
+    "ban_rate_z": 0.9373540300455887,
+    "total_score": 0.7091025605495972
   },
   "overheat_monitor": {
     "available": true,
@@ -95,43 +95,43 @@
   },
   "walk_forward": {
     "available": true,
-    "rows": 166536,
-    "weekly_snapshots": 14,
+    "rows": 181316,
+    "weekly_snapshots": 15,
     "targets": {
       "next_week_win_rate_z": {
         "correlation_to_target": {
-          "presence_led_meta_score": 0.4988434564515743,
-          "presence_only": 0.24231075352296094,
-          "shrunk_win_only": 0.71655712429869,
-          "win_rate_only": 0.7411129441391471,
-          "persistence_only": 0.6419106720883531,
-          "legacy_win_centric_score": 0.744883360814466
+          "presence_led_meta_score": 0.49876141524701784,
+          "presence_only": 0.24594718873383228,
+          "shrunk_win_only": 0.7110479640082366,
+          "win_rate_only": 0.7303783440819731,
+          "persistence_only": 0.6241141744607837,
+          "legacy_win_centric_score": 0.7387970543965285
         },
         "top_quartile_precision": {
-          "presence_led_meta_score": 0.4956499115412633,
-          "presence_only": 0.35265376209803306,
-          "shrunk_win_only": 0.7228223540430846,
-          "win_rate_only": 0.7249973982724529,
-          "persistence_only": 0.6316803690984146,
-          "legacy_win_centric_score": 0.7264127380580705
+          "presence_led_meta_score": 0.49912406662837444,
+          "presence_only": 0.3547944986916842,
+          "shrunk_win_only": 0.7178696789839811,
+          "win_rate_only": 0.7149259684727807,
+          "persistence_only": 0.6193088263450124,
+          "legacy_win_centric_score": 0.7195417703746251
         }
       },
       "next_week_presence_z": {
         "correlation_to_target": {
-          "presence_led_meta_score": 0.8705158832718294,
-          "presence_only": 0.9579139663080598,
-          "shrunk_win_only": 0.2569455166011941,
-          "win_rate_only": 0.24906184760295588,
-          "persistence_only": 0.2473662126455702,
-          "legacy_win_centric_score": 0.2958442395807026
+          "presence_led_meta_score": 0.8737620306121189,
+          "presence_only": 0.9595822175745338,
+          "shrunk_win_only": 0.2637741721418474,
+          "win_rate_only": 0.24762126807250356,
+          "persistence_only": 0.24149214740045263,
+          "legacy_win_centric_score": 0.2959883102819833
         },
         "top_quartile_precision": {
-          "presence_led_meta_score": 0.8373040643639894,
-          "presence_only": 0.9466014703842419,
-          "shrunk_win_only": 0.409680607573866,
-          "win_rate_only": 0.3565560410597864,
-          "persistence_only": 0.35473540019420163,
-          "legacy_win_centric_score": 0.39752219447912335
+          "presence_led_meta_score": 0.8394950074967301,
+          "presence_only": 0.9488627300858138,
+          "shrunk_win_only": 0.4155293967524803,
+          "win_rate_only": 0.3546096915175296,
+          "persistence_only": 0.3542109292755287,
+          "legacy_win_centric_score": 0.39829170255526847
         }
       }
     }
