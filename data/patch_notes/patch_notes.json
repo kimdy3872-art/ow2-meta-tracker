@@ -440,19 +440,19 @@
   {
     "id": "patch-2026-09-17",
     "patch_version": "2026-09-17",
-    "title": "Overwatch Retail Patch Notes – September 17, 2026",
+    "title": "오버워치 패치 노트 - 2026년 9월 18일",
     "patch_date": "2026-09-17",
     "source_url": "https://overwatch.blizzard.com/ko-kr/news/patch-notes/live/2026/9/#patch-2026-09-17",
-    "raw_content": "2026년 9월 17일\nOverwatch Retail Patch Notes – September 17, 2026\nHotfix Update\nThis is a hotfix update. Replay codes from the September 8, 2026 patch are still available.\nHero Updates\nD.Mon\nArmor reduced from 325 to 275 (5v5).\nArmor reduced from 300 to 250 (6v6).\nFocused Fusion - Major Perk\nDamage per bullet reduced from 45 to 36.\nPropulsors\nFuel drain rate increased from 25 to 30.\nFusion Repeater\nDamage reduced from 16 to 15.\nCooldown increased from 4 to 5 seconds.\nBug Fixes\nStadium\nFixed a gameplay issue with Mercy in Stadium. She has been re-enabled in all Stadium queues.",
-    "parsed_content": "Hotfix Update\nThis is a hotfix update. Replay codes from the September 8, 2026 patch are still available.\nHero Updates\nD.Mon\nArmor reduced from 325 to 275 (5v5).\nArmor reduced from 300 to 250 (6v6).\nFocused Fusion - Major Perk\nDamage per bullet reduced from 45 to 36.\nPropulsors\nFuel drain rate increased from 25 to 30.\nFusion Repeater\nDamage reduced from 16 to 15.\nCooldown increased from 4 to 5 seconds.\nBug Fixes\nStadium\nFixed a gameplay issue with Mercy in Stadium. She has been re-enabled in all Stadium queues.",
-    "summary": "영향 영웅: D.Mon · Hotfix Update · This is a hotfix update. Replay codes from the September 8, 2026 patch are still available.",
+    "raw_content": "2026년 9월 17일\n오버워치 패치 노트 - 2026년 9월 18일\n핫픽스 업데이트\n핫픽스 업데이트입니다. 2026년 9월 9일 패치부터 생성된 리플레이 코드는 계속 이용할 수 있습니다.\n영웅 업데이트\nD.Mon\n방어력이 325에서 275로 감소했습니다. (5대5)\n방어력이 300에서 250으로 감소했습니다. (6대6)\n집중 융합 - 주요 특전\n탄환당 공격력이 45에서 36으로 감소했습니다.\n추진기\n연료 소모율이 25에서 30으로 증가했습니다.\n융합 연발총\n공격력이 16에서 15로 감소했습니다.\n재사용 대기시간이 4초에서 5초로 증가했습니다.\n버그 수정\n스타디움\n스타디움에서 메르시 관련 게임플레이 문제를 수정했습니다. 모든 스타디움 대기열에서 메르시를 다시 사용할 수 있게 되었습니다.",
+    "parsed_content": "핫픽스 업데이트\n핫픽스 업데이트입니다. 2026년 9월 9일 패치부터 생성된 리플레이 코드는 계속 이용할 수 있습니다.\n영웅 업데이트\nD.Mon\n방어력이 325에서 275로 감소했습니다. (5대5)\n방어력이 300에서 250으로 감소했습니다. (6대6)\n집중 융합 - 주요 특전\n탄환당 공격력이 45에서 36으로 감소했습니다.\n추진기\n연료 소모율이 25에서 30으로 증가했습니다.\n융합 연발총\n공격력이 16에서 15로 감소했습니다.\n재사용 대기시간이 4초에서 5초로 증가했습니다.\n버그 수정\n스타디움\n스타디움에서 메르시 관련 게임플레이 문제를 수정했습니다. 모든 스타디움 대기열에서 메르시를 다시 사용할 수 있게 되었습니다.",
+    "summary": "영향 영웅: D.Mon · 핫픽스 업데이트 · 핫픽스 업데이트입니다. 2026년 9월 9일 패치부터 생성된 리플레이 코드는 계속 이용할 수 있습니다.",
     "summary_items": [
       "영향 영웅: D.Mon",
-      "Hotfix Update",
-      "This is a hotfix update. Replay codes from the September 8, 2026 patch are still available.",
-      "Hero Updates",
-      "Armor reduced from 325 to 275 (5v5).",
-      "Armor reduced from 300 to 250 (6v6)."
+      "핫픽스 업데이트",
+      "핫픽스 업데이트입니다. 2026년 9월 9일 패치부터 생성된 리플레이 코드는 계속 이용할 수 있습니다.",
+      "방어력이 325에서 275로 감소했습니다. (5대5)",
+      "방어력이 300에서 250으로 감소했습니다. (6대6)",
+      "집중 융합 - 주요 특전"
     ],
     "affected_heroes": [
       "D.Mon"
@@ -460,6 +460,6 @@
     "has_hero_updates": true,
     "patch_category": "hero_balance",
     "created_at": "2026-09-18T01:53:18",
-    "updated_at": "2026-09-21T02:04:55"
+    "updated_at": "2026-09-22T02:10:51"
   }
 ]
