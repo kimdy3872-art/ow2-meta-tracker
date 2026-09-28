@@ -1,294 +1,89 @@
-/* 지시서 STEP 1 기준 디자인 토큰.
-   Black Han Sans 는 한글 글리프가 있는 디스플레이 폰트라, 그동안 Oswald 로는 못 잡던
-   한글 제목까지 압축형으로 잡힌다. 라틴/숫자는 Bebas Neue 가 더 좁아 지표에 쓴다. */
-@import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Bebas+Neue&display=swap');
-@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+/* OW2 메타 트래커 스타일시트.
+
+   토큰은 ui/tokens.py 와 짝이다(theme.py 가 같은 값을 :root 에 한 번 더 내보낸다).
+   Streamlit 1.50 의 data-testid 셀렉터에 기대는 규칙이 많다 - requirements.txt 의
+   버전 고정 주석 참고.
+
+   원칙
+   - 폰트는 Pretendard 한 벌. 숫자는 tabular-nums 로 자릿수를 맞춘다.
+   - 액센트는 오버워치 오렌지 한 색. 승률/픽률/밴률 색은 데이터 의미로만 쓴다.
+   - 그라디언트·글로우는 영웅 아트 뒤에만. 카드는 1px 선 + 단색 면.
+   - 겹침 방지: absolute 는 overflow:hidden 카드 안쪽에서만, 음수 margin/translate 로
+     레이아웃을 띄우지 않는다(hover 들림은 예외). 모든 컬럼·래퍼에 min-width:0.
+   - 모션은 마운트 시 한 번(fill-mode: backwards). 끝나면 손을 떼서 hover 트랜지션과
+     싸우지 않는다. prefers-reduced-motion 이면 전부 끈다. */
+
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css');
 
 :root,
 [data-theme="light"],
 [data-theme="dark"] {
     color-scheme: dark !important;
-    --app-bg: #0c0f1a;
-    --app-surface: #161a2b;
-    --app-surface-alt: #1d2236;
-    --app-border: #2f3552;
-    --app-text: #eceffc;
-    --app-muted: #9ba2c4;
-    --app-accent: #ff4d6a;
-    --app-font: 'Pretendard', 'Pretendard Variable', 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
-    /* 제목용: 한글까지 압축형으로 잡힌다 */
-    --app-display-font: 'Black Han Sans', 'Pretendard', 'Noto Sans KR', sans-serif;
-    /* 숫자/라틴 지표용: 더 좁고 키가 크다 */
-    --app-num-font: 'Bebas Neue', 'Black Han Sans', 'Pretendard', sans-serif;
-    --app-panel: #12141c;
-    --app-card: #171a24;
-    --app-card-2: #1e222e;
-    --app-line: rgba(255, 255, 255, 0.07);
-    --bg: #0a0c12;
-    /* 라운드 위계: HERO > 일반 카드 > 칩 > 표 행(0) */
-    --r-hero: 20px;
+    --bg: #0b0c10;
+    --bg-side: #0e0f14;
+    --surface: #13151b;
+    --surface-2: #1a1d25;
+    --line: rgba(255, 255, 255, 0.07);
+    --line-2: rgba(255, 255, 255, 0.12);
+    --text: #eceef3;
+    --text-2: #b4b9c6;
+    --muted: #868c9c;
+    --accent: #f99e1a;
+    --accent-soft: rgba(249, 158, 26, 0.14);
+    --good: #3ecf8e;
+    --info: #4ea8ff;
+    --danger: #ff5c6a;
+    --warn: #f5b942;
+    --font: 'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', system-ui, sans-serif;
+    /* 라운드 위계: HERO > 카드 > 칩 > 표 행(0) */
+    --r-hero: 16px;
     --r-card: 12px;
-    --r-inner: 12px;
-    --r-chip: 8px;
-    /* 그림자는 HERO 카드 1개에만 쓴다. blur 45px 짜리가 20개 쌓이면 화면이 뿌옇다. */
-    --shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
-    --app-radius-sm: 8px;
-    --app-radius-md: 10px;
-    --app-radius-lg: 12px;
-    --app-good: #34d399;
-    --app-info: #60a5fa;
-    --app-danger: #f87171;
-    --app-warn: #fbbf24;
-    --app-menu-bg: #12162a;
-    --app-menu-surface: #191e35;
-    --app-menu-hover: #242a49;
-    --app-menu-selected: #4a2440;
-    --app-menu-text: #f2f4ff;
-    --app-menu-muted: #a9b0d0;
-    --app-menu-border: #3d4468;
-    --primary-color: #ff4d6a;
-    --background-color: #0c0f1a;
-    --secondary-background-color: #161a2b;
-    --text-color: #eceffc;
-    --font: 'SUIT Variable', 'Pretendard Variable', 'Noto Sans KR', 'Apple SD Gothic Neo', 'Segoe UI', sans-serif;
+    --r-chip: 6px;
+    --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+    /* Streamlit 내부 변수 */
+    --primary-color: #f99e1a;
+    --background-color: #0b0c10;
+    --secondary-background-color: #13151b;
+    --text-color: #eceef3;
 }
 
-/* 참고 목업의 보라 배경은 Dribbble 샷의 촬영 배경이지 제품 화면이 아니다.
-   실제 제품은 배경까지 화면이 꽉 찬다. 단색으로 채운다. */
+/* ===========================================================================
+   1. 앱 셸
+   =========================================================================== */
+
 html, body, .stApp, [data-testid="stAppViewContainer"] {
     background: var(--bg) !important;
-    color: var(--app-text) !important;
-    font-family: var(--app-font) !important;
+    color: var(--text) !important;
+    font-family: var(--font) !important;
 }
+
+.stApp {
+    -webkit-font-smoothing: antialiased;
+    font-variant-numeric: tabular-nums;
+}
+
+::selection { background: rgba(249, 158, 26, 0.32); }
+
+* { scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.14) transparent; }
 
 [data-testid="stMain"],
-section.main {
-    background: transparent !important;
-}
-
+section.main,
 header[data-testid="stHeader"],
 [data-testid="stToolbar"] {
     background: transparent !important;
 }
 
-/* Streamlit 기본 페이지 목록만 숨긴다. 네비게이션은 render_sidebar_navigation 이 직접 그린다.
-   접기 버튼은 남겨둔다 - 좁은 화면에서 사이드바가 본문을 덮는데 닫을 방법이 없으면 갇힌다. */
-[data-testid="stSidebarNav"] {
+/* 상단 무지개 띠, 제목 옆 앵커 아이콘: 방문자에겐 개발 도구의 흔적이다 */
+[data-testid="stDecoration"],
+[data-testid="stHeaderActionElements"] {
     display: none !important;
 }
 
-[data-testid="stSidebarCollapseButton"] button {
-    color: var(--app-muted) !important;
-}
-
-/* 사이드바도 라벤더 위에 떠 있는 카드로. 메인 프레임과 같은 재질을 쓴다. */
-[data-testid="stSidebar"] {
-    background: transparent !important;
-    width: 268px !important;
-    min-width: 268px !important;
-}
-
-[data-testid="stSidebar"] > div:first-child {
-    background: var(--app-panel) !important;
-    border-right: 1px solid var(--app-line);
-    border-radius: 0;
-    margin: 0;
-}
-
-[data-testid="stSidebarUserContent"] {
-    padding: 20px 14px 18px !important;
-}
-
-.ow-nav-brand {
-    display: flex;
-    align-items: center;
-    gap: 11px;
-    padding: 0 6px 16px;
-    margin-bottom: 6px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-}
-
-.ow-nav-brand-mark {
-    display: grid;
-    place-items: center;
-    width: 38px;
-    height: 38px;
-    flex-shrink: 0;
-    border-radius: 11px;
-    background: linear-gradient(135deg, #a8123a, #ff4d6a);
-    color: #fff;
-    font-family: var(--app-display-font);
-    font-size: 0.86rem;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-}
-
-.ow-nav-brand-title {
-    font-family: var(--app-display-font);
-    color: #f6f7ff;
-    font-size: 0.98rem;
-    font-weight: 600;
-    letter-spacing: 0.09em;
-    line-height: 1.1;
-}
-
-.ow-nav-brand-sub {
-    color: var(--app-muted);
-    font-size: 0.72rem;
-    font-weight: 600;
-    margin-top: 2px;
-}
-
-.ow-nav-section {
-    color: rgba(155, 162, 196, 0.72);
-    font-family: var(--app-display-font);
-    font-size: 0.68rem;
-    font-weight: 500;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    padding: 0 8px;
-    margin: 14px 0 4px;
-}
-
-/* page_link 를 사이드바 항목처럼 재단장 */
-[data-testid="stSidebar"] [data-testid="stPageLink"] a {
-    display: flex;
-    align-items: center;
-    gap: 11px;
-    position: relative;
-    padding: 9px 10px 9px 13px !important;
-    margin: 2px 0;
-    border-radius: 10px;
-    background: transparent;
-    text-decoration: none !important;
-    transition: background 0.16s ease, color 0.16s ease;
-}
-
-[data-testid="stSidebar"] [data-testid="stPageLink"] a p,
-[data-testid="stSidebar"] [data-testid="stPageLink"] a span {
-    color: var(--app-muted) !important;
-    font-size: 0.9rem !important;
-    font-weight: 650 !important;
-}
-
-[data-testid="stSidebar"] [data-testid="stPageLink"] a:hover {
-    background: rgba(255, 255, 255, 0.05);
-}
-
-[data-testid="stSidebar"] [data-testid="stPageLink"] a:hover p,
-[data-testid="stSidebar"] [data-testid="stPageLink"] a:hover span {
-    color: #e6e8f7 !important;
-}
-
-/* 활성 항목: 좌측 크림슨 바 + 강조색 - 레퍼런스 사이드바와 같은 언어 */
-[class*="st-key-ownav-active"] [data-testid="stPageLink"] a {
-    background: linear-gradient(90deg, rgba(255, 77, 106, 0.18), rgba(255, 77, 106, 0.03));
-}
-
-[class*="st-key-ownav-active"] [data-testid="stPageLink"] a::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 8px;
-    bottom: 8px;
-    width: 3px;
-    border-radius: 0 3px 3px 0;
-    background: linear-gradient(180deg, #ff4d6a, #ff7a54);
-}
-
-[class*="st-key-ownav-active"] [data-testid="stPageLink"] a p,
-[class*="st-key-ownav-active"] [data-testid="stPageLink"] a span {
-    color: #ff8da0 !important;
-    font-weight: 750 !important;
-}
-
-.ow-nav-standalone {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    padding: 9px 10px 9px 13px;
-    margin: 2px 0;
-    border-radius: 10px;
-    color: #ff8da0;
-    font-size: 0.9rem;
-    font-weight: 700;
-    background: linear-gradient(90deg, rgba(255, 77, 106, 0.18), rgba(255, 77, 106, 0.03));
-}
-
-.ow-nav-standalone-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: #ff4d6a;
-    flex-shrink: 0;
-}
-
-.ow-nav-foot {
-    margin-top: 18px;
-    padding-top: 12px;
-    border-top: 1px solid rgba(255, 255, 255, 0.07);
-}
-
-.ow-nav-legal {
-    margin-top: 14px;
-    padding: 10px 8px 0;
-    border-top: 1px solid rgba(255, 255, 255, 0.07);
-    color: rgba(155, 162, 196, 0.66);
-    font-size: 0.66rem;
-    line-height: 1.5;
-}
-
-.ow-nav-foot-value {
-    color: #e6e8f7;
-    font-family: var(--app-display-font);
-    font-size: 0.94rem;
-    font-weight: 500;
-    padding: 0 8px;
-}
-
-/* 떠 있는 앱 프레임 */
-.block-container,
-[data-testid="stMainBlockContainer"] {
-    max-width: 1440px;
-    margin: 0 auto !important;
-    padding: 1rem 1.6rem 2.4rem !important;
-    background: transparent;
-    min-width: 0;
-}
-
-/* flex 자식의 기본 min-width:auto 때문에 표가 컬럼을 뚫고 나간다. */
-[data-testid="stColumn"],
-[data-testid="stVerticalBlock"],
-[data-testid="stHorizontalBlock"] {
-    min-width: 0;
-}
-
-[data-testid="stVerticalBlock"] {
-    gap: 14px;
-}
-
 h1, h2, h3, h4, p, span, div, label, li, a, summary, input, select, button, table, th, td {
-    font-family: var(--app-font) !important;
+    font-family: var(--font) !important;
 }
 
-/* 디스플레이 타이포. 위 blanket 규칙보다 뒤에 와야 이긴다(동일 명시도,
-나중 선언 승). */
-h1,
-h2,
-h3,
-.ow-hero-title,
-.ow-hero-badge,
-.overwatch-table th,
-.rank-pill,
-[data-testid="stMetricValue"]{
-    font-family: var(--app-display-font) !important;
-}
-
-h1, h2, h3 {
-    text-transform: uppercase;
-    letter-spacing: 0.01em;
-}
-
+/* 위 일괄 규칙이 아이콘 폰트까지 덮어써서 되돌린다 */
 .material-symbols-rounded,
 .material-symbols-outlined,
 .material-icons,
@@ -298,448 +93,850 @@ h1, h2, h3 {
     font-family: "Material Symbols Rounded", "Material Symbols Outlined", "Material Icons" !important;
 }
 
-h1 {
-    font-size: clamp(1.8rem, 1.2rem + 1.8vw, 2.7rem) !important;
-    font-weight: 780 !important;
-    letter-spacing: -0.02em;
+a:focus-visible,
+[tabindex]:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
 }
 
-h2 {
-    font-size: clamp(1.2rem, 1rem + 0.8vw, 1.7rem) !important;
+.block-container,
+[data-testid="stMainBlockContainer"] {
+    max-width: 1400px;
+    margin: 0 auto !important;
+    padding: 1.4rem 2rem 3rem !important;
+    min-width: 0;
+}
+
+/* flex 자식의 기본 min-width:auto 때문에 표가 컬럼을 뚫고 나간다 */
+[data-testid="stColumn"],
+[data-testid="stVerticalBlock"],
+[data-testid="stHorizontalBlock"] {
+    min-width: 0;
+}
+
+[data-testid="stVerticalBlock"] { gap: 16px; }
+
+/* 마크다운 컨테이너의 margin-bottom:-1rem 은 마지막 <p> 여백을 상쇄하려는 것이다.
+   HTML 카드(div/section/header)로 끝나면 블록 간격만 먹어서 카드끼리 붙는다. */
+[data-testid="stMarkdownContainer"]:has(> :is(div, section, header):last-child) {
+    margin-bottom: 0;
+}
+
+/* ===========================================================================
+   2. 사이드바
+   =========================================================================== */
+
+/* 기본 페이지 목록만 숨긴다. 네비게이션은 render_sidebar_navigation 이 직접 그린다.
+   접기 버튼은 남긴다 - 좁은 화면에서 사이드바가 본문을 덮는데 닫을 방법이 없으면 갇힌다. */
+[data-testid="stSidebarNav"] { display: none !important; }
+
+[data-testid="stSidebarCollapseButton"] button { color: var(--muted) !important; }
+
+[data-testid="stSidebar"] {
+    background: transparent !important;
+    width: 256px !important;
+    min-width: 256px !important;
+}
+
+[data-testid="stSidebar"] > div:first-child {
+    background: var(--bg-side) !important;
+    border-right: 1px solid var(--line);
+}
+
+[data-testid="stSidebarUserContent"] { padding: 20px 14px 18px !important; }
+
+.ow-nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 6px 18px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid var(--line);
+}
+
+.ow-nav-brand-mark {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    background: var(--accent);
+    color: #111216;
+}
+
+.ow-nav-brand-title {
+    color: var(--text);
+    font-size: 0.92rem;
+    font-weight: 800;
+    letter-spacing: 0.01em;
+    line-height: 1.15;
+    white-space: nowrap;
+}
+
+.ow-nav-brand-sub {
+    color: var(--muted);
+    font-size: 0.72rem;
+    font-weight: 500;
+    margin-top: 2px;
+}
+
+.ow-nav-section {
+    color: var(--muted);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0 10px;
+    margin: 18px 0 6px;
+    opacity: 0.8;
+}
+
+/* page_link 를 사이드바 항목처럼 재단장 */
+[data-testid="stSidebar"] [data-testid="stPageLink"] a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+    padding: 8px 10px !important;
+    margin: 1px 0;
+    border-radius: 8px;
+    background: transparent;
+    text-decoration: none !important;
+    transition: background 0.15s ease;
+}
+
+[data-testid="stSidebar"] [data-testid="stPageLink"] a p,
+[data-testid="stSidebar"] [data-testid="stPageLink"] a span {
+    color: var(--text-2) !important;
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
+    transition: color 0.15s ease;
+}
+
+[data-testid="stSidebar"] [data-testid="stPageLink"] a:hover { background: rgba(255, 255, 255, 0.04); }
+
+[data-testid="stSidebar"] [data-testid="stPageLink"] a:hover p,
+[data-testid="stSidebar"] [data-testid="stPageLink"] a:hover span {
+    color: var(--text) !important;
+}
+
+/* 활성 항목: st.container(key=ownav-active-*) 가 붙이는 클래스를 훅으로 쓴다 */
+[class*="st-key-ownav-active"] [data-testid="stPageLink"] a { background: rgba(255, 255, 255, 0.06); }
+
+[class*="st-key-ownav-active"] [data-testid="stPageLink"] a::before,
+.ow-nav-standalone::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 9px;
+    bottom: 9px;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: var(--accent);
+}
+
+[class*="st-key-ownav-active"] [data-testid="stPageLink"] a p,
+[class*="st-key-ownav-active"] [data-testid="stPageLink"] a span {
+    color: var(--text) !important;
     font-weight: 700 !important;
-    letter-spacing: -0.01em;
 }
 
-[data-testid="stMetric"] {
-    border: 1px solid var(--app-border);
-    border-radius: var(--app-radius-lg);
-    padding: 10px 12px;
-    background: linear-gradient(180deg, rgba(30,28,50,0.9), rgba(14,13,24,0.94));
+[class*="st-key-ownav-active"] [data-testid="stPageLink"] a [data-testid="stIconMaterial"] {
+    color: var(--accent) !important;
 }
 
-[data-testid="stMetricLabel"],
-[data-testid="stMetricValue"],
-[data-testid="stMetricDelta"] {
-    color: var(--app-text) !important;
+.ow-nav-standalone {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 8px 10px 8px 14px;
+    margin: 1px 0;
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 0.9rem;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.06);
 }
 
-.stButton > button,
-div[data-testid="stButton"] > button,
-button[data-testid^="stBaseButton-"] {
-    border-radius: 12px !important;
-    border: 1px solid var(--app-border) !important;
-    min-height: 44px !important;
-    background: linear-gradient(180deg, rgba(30,28,50,0.95), rgba(18,17,30,0.95)) !important;
-    color: var(--app-text) !important;
-    font-size: 0.92rem !important;
-    font-weight: 760 !important;
-    letter-spacing: 0.01em !important;
-    transition: all 0.18s ease;
+.ow-nav-standalone-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
 }
 
-.stButton > button:hover,
-div[data-testid="stButton"] > button:hover {
-    border-color: rgba(255, 77, 106, 0.55) !important;
-    transform: translateY(-1px);
+.ow-nav-foot {
+    margin-top: 18px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
 }
 
-.stButton > button[kind="primary"],
-button[data-testid="stBaseButton-primary"] {
-    background: linear-gradient(135deg, #a8123a 0%, #e0284f 52%, #ff4d6a 100%) !important;
-    border-color: rgba(255, 138, 140, 0.7) !important;
-    color: #fff5f7 !important;
+.ow-nav-foot-value {
+    color: var(--text);
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0 10px;
 }
 
-[data-testid="stWidgetLabel"] {
-    margin-bottom: 0.36rem !important;
+.ow-nav-legal {
+    margin-top: 14px;
+    padding: 12px 10px 0;
+    border-top: 1px solid var(--line);
+    color: rgba(134, 140, 156, 0.72);
+    font-size: 0.66rem;
+    line-height: 1.55;
 }
+
+/* ===========================================================================
+   3. 위젯
+   =========================================================================== */
+
+[data-testid="stWidgetLabel"] { margin-bottom: 0.3rem !important; }
 
 [data-testid="stWidgetLabel"] p {
-    color: var(--app-muted) !important;
-    font-size: 0.76rem !important;
-    font-weight: 820 !important;
-    letter-spacing: 0.06em !important;
-    line-height: 1.15 !important;
+    color: var(--muted) !important;
+    font-size: 0.78rem !important;
+    font-weight: 600 !important;
+    line-height: 1.2 !important;
 }
 
-.stSelectbox,
-.stMultiSelect,
-.stTextInput,
-.stSlider {
-    margin-bottom: 0.35rem !important;
-}
+.stSelectbox, [data-testid="stSelectbox"] { max-width: 220px; }
+.stTextInput, [data-testid="stTextInput"] { max-width: 300px; }
 
-.stSelectbox [data-baseweb="select"],
-.stMultiSelect [data-baseweb="select"] {
-    background: transparent !important;
-}
+[data-testid="stSelectbox"] label,
+[data-testid="stTextInput"] label { white-space: nowrap; }
 
-.stSelectbox [data-baseweb="select"] [data-baseweb="popover"],
-.stMultiSelect [data-baseweb="select"] [data-baseweb="popover"] {
-    color-scheme: dark !important;
-}
-
+/* 입력 컨트롤 외곽. 셀렉트는 control div, 텍스트는 root 에만 테두리를 준다 */
 .stSelectbox [data-baseweb="select"] > div,
-.stMultiSelect [data-baseweb="select"] > div,
-[data-baseweb="input"],
-[data-testid="stTextInputRootElement"],
-[data-baseweb="input"] > div,
-.stTextArea textarea,
-.stNumberInput input {
-    border-radius: 12px !important;
-    border: 1px solid rgba(100, 94, 140, 0.75) !important;
-    min-height: 44px !important;
-    background: linear-gradient(180deg, rgba(30,28,50,0.96), rgba(16,15,26,0.96)) !important;
-    color: var(--app-text) !important;
+[data-testid="stTextInputRootElement"] {
+    border-radius: 8px !important;
+    border: 1px solid var(--line-2) !important;
+    min-height: 40px !important;
+    background: var(--surface) !important;
+    color: var(--text) !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.stTextInput [data-baseweb="input"] > div,
-.stTextInput div[data-baseweb="input"] > div,
-div[data-baseweb="base-input"] > div {
-    border: 1px solid rgba(100, 94, 140, 0.75) !important;
-    border-radius: 12px !important;
+.stSelectbox [data-baseweb="select"] > div:hover,
+[data-testid="stTextInputRootElement"]:hover {
+    border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+[data-testid="stTextInputRootElement"] > div,
+[data-testid="stTextInputRootElement"] [data-baseweb="base-input"] {
+    border: none !important;
     background: transparent !important;
 }
 
+/* ui/badges.py 의 아이콘 규칙이 이 단축 속성을 전제로 롱핸드 !important 로 덮는다.
+   background 를 롱핸드로 바꾸면 선택값 뱃지가 사라진다. */
 .stSelectbox [data-baseweb="select"] *,
-.stMultiSelect [data-baseweb="select"] *,
 .stTextInput input,
 .stTextInput input:focus,
 .stTextInput input:focus-visible {
     border: none !important;
     outline: none !important;
     background: transparent !important;
-    color: var(--app-text) !important;
-    -webkit-text-fill-color: var(--app-text) !important;
-    font-size: 0.94rem !important;
-    font-weight: 650 !important;
+    color: var(--text) !important;
+    -webkit-text-fill-color: var(--text) !important;
+    font-size: 0.92rem !important;
+    font-weight: 600 !important;
 }
 
 .stTextInput input::placeholder,
 [data-baseweb="select"] input::placeholder {
-    color: rgba(143, 167, 204, 0.78) !important;
-    -webkit-text-fill-color: rgba(143, 167, 204, 0.78) !important;
+    color: var(--muted) !important;
+    -webkit-text-fill-color: var(--muted) !important;
+    font-weight: 500 !important;
 }
 
 .stSelectbox [data-baseweb="select"]:focus-within > div,
-.stMultiSelect [data-baseweb="select"]:focus-within > div,
-[data-baseweb="input"]:focus-within > div,
-[data-baseweb="input"]:focus-within,
-[data-testid="stTextInputRootElement"]:focus-within,
-[data-baseweb="input"] > div:focus-within,
-.stTextInput div[data-baseweb="input"]:focus-within > div {
-    border-color: var(--app-accent) !important;
-    outline: none !important;
+[data-testid="stTextInputRootElement"]:focus-within {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 3px rgba(249, 158, 26, 0.16);
 }
 
 .stTextInput input:-webkit-autofill,
 .stTextInput input:-webkit-autofill:hover,
 .stTextInput input:-webkit-autofill:focus {
-    -webkit-text-fill-color: var(--app-text) !important;
+    -webkit-text-fill-color: var(--text) !important;
     transition: background-color 9999s ease-out 0s !important;
 }
 
-.stSelectbox svg,
-.stMultiSelect svg,
 [data-baseweb="select"] svg {
-    color: var(--app-muted) !important;
-    fill: var(--app-muted) !important;
+    color: var(--muted) !important;
+    fill: var(--muted) !important;
 }
 
+/* 영웅 검색: 라벨 대신 돋보기 */
+.st-key-search_hero [data-testid="stTextInputRootElement"] {
+    padding-left: 30px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23868c9c' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: 11px center !important;
+    background-size: 16px !important;
+}
+
+/* 드롭다운 목록. 셀렉트박스 밖 포털에 그려진다.
+   선택 항목 규칙의 명시도는 (0,3,1) 이하로 둔다. badges.py 의 목록 아이콘 규칙
+   (body li[role=option]:nth-child():nth-last-child() = 0,3,2)이 이겨야 뱃지가 산다. */
 body [data-baseweb="popover"],
 body [data-baseweb="popover"] > div,
 body [data-baseweb="popover"] > div > div,
-body [data-baseweb="popover"] [data-baseweb],
 body [data-baseweb="popover"] [data-baseweb="menu"],
-body [data-baseweb="popover"] [data-baseweb="select-dropdown"],
 body [data-baseweb="popover"] [role="listbox"],
-body [data-baseweb="popover"] ul,
-div[data-baseweb="popover"],
-div[data-baseweb="popover"] > div,
-div[data-baseweb="popover"] [role="listbox"] {
-    background: var(--app-menu-bg) !important;
-    background-color: var(--app-menu-bg) !important;
-    color: var(--app-menu-text) !important;
+body [data-baseweb="popover"] ul {
+    background: var(--surface-2) !important;
+    color: var(--text) !important;
     color-scheme: dark !important;
 }
 
-body [data-baseweb="popover"],
-div[data-baseweb="popover"] {
-    border: 1px solid var(--app-menu-border) !important;
-    border-radius: 12px !important;
-    color: var(--app-menu-text) !important;
+body [data-baseweb="popover"] {
+    border: 1px solid var(--line-2) !important;
+    border-radius: 10px !important;
     overflow: hidden !important;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55) !important;
 }
 
 body [data-baseweb="popover"] [role="option"],
-body [data-baseweb="popover"] [data-baseweb="menu"] li,
-body [data-baseweb="popover"] li,
-div[data-baseweb="popover"] [role="option"],
-div[data-baseweb="popover"] li {
-    background: var(--app-menu-bg) !important;
-    background-color: var(--app-menu-bg) !important;
-    color: var(--app-menu-text) !important;
-    font-size: 0.92rem !important;
-    font-weight: 620 !important;
+body [data-baseweb="popover"] li {
+    background: transparent !important;
+    color: var(--text) !important;
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
 }
 
 body [data-baseweb="popover"] [role="option"] *,
-body [data-baseweb="popover"] [data-baseweb="menu"] li *,
-body [data-baseweb="popover"] li *,
-div[data-baseweb="popover"] [role="option"] *,
-div[data-baseweb="popover"] li * {
-    color: var(--app-menu-text) !important;
-    -webkit-text-fill-color: var(--app-menu-text) !important;
+body [data-baseweb="popover"] li * {
+    color: var(--text) !important;
+    -webkit-text-fill-color: var(--text) !important;
     background-color: transparent !important;
 }
 
 body [data-baseweb="popover"] [role="option"]:hover,
-body [data-baseweb="popover"] [role="option"]:hover *,
 body [data-baseweb="popover"] [data-highlighted="true"],
-body [data-baseweb="popover"] [data-baseweb="menu"] li:hover,
-body [data-baseweb="popover"] li:hover,
-div[data-baseweb="popover"] [role="option"]:hover,
-div[data-baseweb="popover"] li:hover {
-    background: var(--app-menu-hover) !important;
-    background-color: var(--app-menu-hover) !important;
+body [data-baseweb="popover"] li:hover {
+    background: rgba(255, 255, 255, 0.05) !important;
 }
 
 body [data-baseweb="popover"] [aria-selected="true"],
-body [data-baseweb="popover"] [role="option"][aria-selected="true"],
-div[data-baseweb="popover"] [aria-selected="true"],
-div[data-baseweb="popover"] [role="option"][aria-selected="true"] {
-    background: var(--app-menu-selected) !important;
-    background-color: var(--app-menu-selected) !important;
-    color: #ffffff !important;
+body [data-baseweb="popover"] [role="option"][aria-selected="true"] {
+    background: var(--accent-soft) !important;
 }
 
-body [data-baseweb="popover"] [aria-selected="true"] *,
-div[data-baseweb="popover"] [aria-selected="true"] * {
-    color: #ffffff !important;
-    -webkit-text-fill-color: #ffffff !important;
+body [data-baseweb="popover"] input {
+    background: var(--surface) !important;
+    color: var(--text) !important;
+    -webkit-text-fill-color: var(--text) !important;
 }
 
-body [data-baseweb="popover"] input,
-div[data-baseweb="popover"] input {
-    background: var(--app-menu-surface) !important;
-    background-color: var(--app-menu-surface) !important;
-    color: var(--app-menu-text) !important;
-    -webkit-text-fill-color: var(--app-menu-text) !important;
+/* 탭: 밑줄형 */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 4px;
+    border-bottom: 1px solid var(--line);
 }
 
-body [data-baseweb="popover"] input::placeholder,
-div[data-baseweb="popover"] input::placeholder {
-    color: var(--app-menu-muted) !important;
-    -webkit-text-fill-color: var(--app-menu-muted) !important;
-}
-
-body [data-baseweb="popover"] ::-webkit-scrollbar-thumb {
-    background: #5d7192 !important;
-    border-radius: 999px !important;
-}
-
-body [data-baseweb="popover"] ::-webkit-scrollbar-track {
-    background: var(--app-menu-surface) !important;
-}
-
-.stMultiSelect [data-baseweb="tag"] {
-    border: 1px solid rgba(255, 122, 140, 0.42) !important;
-    border-radius: 999px !important;
-    background: rgba(255, 77, 106, 0.14) !important;
-    color: #ffd9e0 !important;
-}
-
-.stMultiSelect [data-baseweb="tag"] span {
-    color: #ffd9e0 !important;
-    font-size: 0.82rem !important;
-    font-weight: 760 !important;
-}
-
-[data-testid="stSlider"] [role="slider"] {
-    background: var(--app-accent) !important;
-    border: 2px solid #ffe3e8 !important;
-}
-
-[data-testid="stExpander"] > details {
-    border: 1px solid var(--app-border) !important;
-    border-radius: var(--app-radius-lg) !important;
-    background: rgba(16, 15, 27, 0.86) !important;
-}
-
-[data-testid="stExpander"] > details > summary,
-[data-testid="stExpander"] > details[open] > summary,
-[data-testid="stExpander"] > details > summary:hover,
-[data-testid="stExpander"] > details > summary:focus-visible {
+.stTabs [data-baseweb="tab"] {
+    height: 40px;
+    padding: 0 14px;
     background: transparent !important;
-    color: var(--app-text) !important;
-    -webkit-text-fill-color: var(--app-text) !important;
+    color: var(--muted) !important;
+    font-weight: 600;
+    transition: color 0.15s ease;
 }
 
-[data-testid="stExpander"] > details > summary * {
-    color: var(--app-text) !important;
-    -webkit-text-fill-color: var(--app-text) !important;
+.stTabs [data-baseweb="tab"]:hover,
+.stTabs [aria-selected="true"] { color: var(--text) !important; }
+
+.stTabs [data-baseweb="tab-highlight"] { background-color: var(--accent) !important; }
+.stTabs [data-baseweb="tab-border"] { display: none; }
+
+/* 필터 칩 */
+[data-testid="stPills"] button {
+    border-radius: 999px !important;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+[data-testid="stPills"] button[kind="pills"] {
     background: transparent !important;
+    border: 1px solid var(--line-2) !important;
+    color: var(--text-2) !important;
 }
 
-[data-testid="stDivider"] {
-    border-color: rgba(92, 86, 132, 0.5) !important;
+[data-testid="stPills"] button[kind="pills"]:hover {
+    border-color: rgba(255, 255, 255, 0.24) !important;
+    color: var(--text) !important;
 }
 
-.ow-hero-wrap {
-    position: relative;
-    border: 1px solid rgba(255, 255, 255, 0.09);
-    border-radius: 18px;
-    padding: 20px 22px;
-    overflow: hidden;
-    background:
-        radial-gradient(680px 300px at 100% 0%, rgba(255, 77, 106, 0.22), transparent 66%),
-        linear-gradient(120deg, #1c1930 0%, #12111f 58%, #0c0d16 100%);
-    margin-bottom: 0.9rem;
+[data-testid="stPills"] button[kind="pillsActive"] {
+    background: var(--accent-soft) !important;
+    border: 1px solid rgba(249, 158, 26, 0.6) !important;
+    color: var(--text) !important;
 }
 
-/* 좌측 액센트 바 - 레퍼런스 사이드바의 활성 표시와 같은 언어 */
-.ow-hero-wrap::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 16px;
-    bottom: 16px;
-    width: 3px;
-    border-radius: 0 3px 3px 0;
-    background: linear-gradient(180deg, #ff4d6a, #ff7a54);
+[data-testid="stExpander"] details {
+    border: 1px solid var(--line) !important;
+    border-radius: 10px !important;
+    background: var(--surface) !important;
 }
 
-.ow-hero-badge {
-    display: inline-block;
-    border-radius: 999px;
-    border: 1px solid rgba(255, 122, 140, 0.5);
-    background: rgba(255, 77, 106, 0.12);
-    color: #ffb3c1;
-    padding: 4px 11px;
-    font-size: 0.72rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    margin-bottom: 9px;
+[data-testid="stExpander"] summary {
+    background: transparent !important;
+    color: var(--text) !important;
+    transition: background 0.15s ease;
+}
+
+[data-testid="stExpander"] summary:hover { background: rgba(255, 255, 255, 0.02) !important; }
+
+[data-testid="stExpander"] summary * {
+    color: var(--text) !important;
+    -webkit-text-fill-color: var(--text) !important;
     font-weight: 600;
 }
 
-.ow-hero-title {
-    font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.6rem);
+[data-testid="stAlert"] > div { border-radius: 10px !important; }
+
+/* ===========================================================================
+   4. 공통 조각
+   =========================================================================== */
+
+.eyebrow {
+    display: block;
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* 숫자와 단위가 갈라져 줄바꿈되지 않게 한 덩어리로 */
+.unit {
+    font-size: 0.5em;
+    margin-left: 2px;
+    color: var(--muted);
+    font-weight: 600;
+    letter-spacing: 0;
+    white-space: nowrap;
+}
+
+.nowrap { white-space: nowrap; }
+
+.rank-tag {
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    border-radius: var(--r-chip);
+    color: var(--rank);
+    background: color-mix(in srgb, var(--rank) 15%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--rank) 42%, transparent);
+    font-weight: 800;
+    line-height: 1;
+}
+
+.ow-section { margin-top: 12px; }
+
+h3.ow-section-title {
+    color: var(--text);
+    font-size: 1.15rem !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.02em;
+    line-height: 1.3 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.ow-section-sub {
+    margin: 4px 0 0;
+    color: var(--muted);
+    font-size: 0.82rem;
+    font-weight: 500;
+}
+
+.section-gap { height: 8px; }
+
+/* ===========================================================================
+   5. 페이지 머리
+   =========================================================================== */
+
+.ow-page-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px 24px;
+    padding: 2px 0 18px;
+    border-bottom: 1px solid var(--line);
+    animation: fade-in 0.5s var(--ease) backwards;
+}
+
+.ow-page-kicker {
+    color: var(--accent);
+    font-size: 0.74rem;
     font-weight: 700;
-    color: #f6f7ff;
-    line-height: 1.1;
-    letter-spacing: -0.01em;
-    margin: 0 0 6px 0;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
 }
 
-.ow-hero-sub {
-    color: var(--app-muted);
-    margin: 0;
-    font-size: 0.95rem;
+h1.ow-page-title {
+    color: var(--text);
+    font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem) !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.03em;
+    line-height: 1.15 !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
-/* 전신 렌더를 카드 안쪽 레이어로 깐다. 카드가 overflow:hidden 이라 밖으로 새지
-   않는다. 배경 이미지가 아니라 별도 레이어인 이유는, drop-shadow 가 실루엣을
-   따라가려면 알파를 가진 자기 박스가 필요해서다(배경으로 넣으면 필터가 카드
-   전체에 걸려 텍스트까지 번진다). */
+.ow-page-sub {
+    margin: 6px 0 0;
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+.ow-page-status {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    color: var(--muted);
+    font-size: 0.8rem;
+    font-weight: 500;
+    padding-bottom: 3px;
+}
+
+.ow-page-src {
+    padding-left: 14px;
+    border-left: 1px solid var(--line-2);
+    white-space: nowrap;
+}
+
+.live-dot {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-2);
+    white-space: nowrap;
+}
+
+.live-dot i {
+    position: relative;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--good);
+}
+
+.live-dot i::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: var(--good);
+    animation: pulse 2.4s ease-out infinite;
+}
+
+/* ===========================================================================
+   6. HERO 카드 (페이지 시그니처)
+   =========================================================================== */
+
+.hero-showcase {
+    position: relative;
+    min-width: 0;
+}
+
+.hero-showcase-card {
+    position: relative;
+    display: block;
+    /* 전신 렌더가 contain 으로 다 들어가려면 세로 여유가 필요하다 */
+    min-height: 360px;
+    padding: 28px 32px;
+    border-radius: var(--r-hero);
+    border: 1px solid var(--line);
+    overflow: hidden;
+    isolation: isolate;
+    background-repeat: no-repeat;
+    box-shadow: 0 24px 48px -28px rgba(0, 0, 0, 0.8);
+    color: inherit !important;
+    text-decoration: none !important;
+    transition: border-color 0.25s ease;
+    animation: rise 0.6s var(--ease) backwards;
+}
+
+a.hero-showcase-card:hover { border-color: var(--line-2); }
+
+/* 전신 렌더는 배경이 아니라 카드 안쪽 <img> 레이어다. drop-shadow 림라이트가 실루엣을
+   따라가려면 알파를 가진 자기 박스가 필요하다. 카드가 overflow:hidden 이라 밖으로 새지 않는다. */
 .hero-showcase-art {
     position: absolute;
-    right: 4%;
+    right: 3%;
     top: 0;
     bottom: 0;
-    width: 44%;
+    width: 46%;
     height: 100%;
     z-index: 1;
     object-fit: contain;
     object-position: right bottom;
     pointer-events: none;
-    -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 12%);
-    mask-image: linear-gradient(to right, transparent 0%, #000 12%);
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 14%);
+    mask-image: linear-gradient(to right, transparent 0%, #000 14%);
+    transition: transform 0.7s var(--ease);
+    animation: art-in 0.9s 0.1s var(--ease) backwards;
 }
 
-/* 어두운 그림자만 있으면 어두운 배너 위에서 인물이 배경에 먹힌다. 영웅 색
-   림라이트를 깔아야 확실히 떠오른다. --hero-glow 는 hero_colors.json 값을
-   ui/components.py 가 인라인으로 넘긴다. */
+a.hero-showcase-card:hover .hero-showcase-art { transform: translateX(-6px) scale(1.015); }
+
+/* 어두운 영웅은 대표색도 어둡다. --hero-glow 는 components._glow 가 밝혀서 넘긴다 */
 .hero-showcase-art,
 .portrait-card-art {
     filter:
-        drop-shadow(0 0 22px var(--hero-glow, rgba(255, 122, 140, 0.45)))
-        drop-shadow(0 16px 26px rgba(2, 6, 23, 0.55))
-        saturate(1.05);
+        drop-shadow(0 0 26px var(--hero-glow, rgba(249, 158, 26, 0.35)))
+        drop-shadow(0 18px 24px rgba(0, 0, 0, 0.5));
 }
 
-/* --- 영웅 카드 그리드 -------------------------------------------
-   레퍼런스의 AGENTS 카드와 같은 언어: 세로형 아트 카드 + 하단 스크림 + 이름. */
+.hero-showcase-left {
+    position: relative;
+    z-index: 2;
+    max-width: 56%;
+    min-height: 302px;
+    display: flex;
+    flex-direction: column;
+}
+
+.hero-showcase-left > * { animation: rise 0.55s var(--ease) backwards; }
+.hero-showcase-left > :nth-child(2) { animation-delay: 0.05s; }
+.hero-showcase-left > :nth-child(3) { animation-delay: 0.1s; }
+.hero-showcase-left > :nth-child(4) { animation-delay: 0.16s; }
+.hero-showcase-left > :nth-child(5) { animation-delay: 0.22s; }
+
+.hero-showcase-eyebrow {
+    color: var(--accent);
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.hero-showcase-title {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 8px 0 6px;
+}
+
+h2.hero-showcase-name {
+    color: #fff;
+    font-size: clamp(2.2rem, 1.6rem + 2vw, 3.2rem) !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.04em;
+    line-height: 1.05 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.hero-showcase-meta {
+    color: var(--text-2);
+    font-size: 0.88rem;
+    font-weight: 500;
+}
+
+.hero-showcase-stats {
+    display: flex;
+    flex-wrap: wrap;
+    row-gap: 14px;
+    margin-top: auto;
+    padding-top: 24px;
+}
+
+.hero-showcase-stat {
+    padding: 0 22px;
+    border-left: 1px solid var(--line-2);
+}
+
+.hero-showcase-stat:first-child {
+    padding-left: 0;
+    border-left: 0;
+}
+
+.hero-showcase-stat-label {
+    color: var(--muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.hero-showcase-stat-value {
+    color: #fff;
+    font-size: 1.85rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+}
+
+.hero-showcase-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    align-self: flex-start;
+    margin-top: 22px;
+    padding: 7px 10px 7px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--line-2);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-2);
+    font-size: 0.82rem;
+    font-weight: 600;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.hero-showcase-cta svg { transition: transform 0.2s var(--ease); }
+
+a.hero-showcase-card:hover .hero-showcase-cta {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #111216;
+}
+
+a.hero-showcase-card:hover .hero-showcase-cta svg { transform: translateX(2px); }
+
+/* ===========================================================================
+   7. TOP 카드 자동 순환
+   rerun 없이 CSS 키프레임만으로 전환한다. 세 묶음을 같은 칸에 겹쳐 두고 시작을
+   interval 만큼 어긋나게 준다. 한 묶음의 창은 33.33% 이고, 앞 묶음이 빠지는
+   2.5% 구간과 다음 묶음이 들어오는 2.5% 구간이 정확히 겹쳐 빈 프레임이 없다.
+   (묶음 수가 바뀌면 퍼센트를 1/N 로 - components.render_rotating_card_groups 참고)
+   =========================================================================== */
+
+.rot-wrap {
+    position: relative;
+    animation: rise 0.6s 0.1s var(--ease) backwards;
+}
+
+.rot-tabs {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--line);
+}
+
+.rot-tab {
+    position: relative;
+    padding-bottom: 9px;
+    color: var(--muted);
+    font-size: 0.84rem;
+    font-weight: 600;
+    white-space: nowrap;
+    animation: rot-tab var(--rot-total) linear var(--rot-delay) infinite both;
+}
+
+/* 현재 묶음이 남은 시간을 밑줄 진행으로 보여준다 */
+.rot-tab::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 2px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: left;
+    animation: rot-progress var(--rot-total) linear var(--rot-delay) infinite both;
+}
+
+.rot-stage {
+    display: grid;
+    /* 옆으로 밀려나는 묶음이 가로 스크롤을 만들지 않게 가로만 자른다 */
+    overflow-x: clip;
+    overflow-y: visible;
+}
+
+.rot-slide {
+    grid-area: 1 / 1;
+    min-width: 0;
+    opacity: 0;
+    visibility: hidden;
+    animation: rot-cycle var(--rot-total) var(--ease) var(--rot-delay) infinite both;
+}
+
+/* 읽는 중에는 멈춘다. 모두 같은 타임라인이라 같이 멈추면 동기가 유지된다 */
+.rot-wrap:hover .rot-slide,
+.rot-wrap:hover .rot-tab,
+.rot-wrap:hover .rot-tab::after {
+    animation-play-state: paused;
+}
+
+@keyframes rot-cycle {
+    0%     { opacity: 0; visibility: hidden; transform: translateX(28px); }
+    2.5%   { opacity: 1; visibility: visible; transform: none; }
+    33.33% { opacity: 1; visibility: visible; transform: none; }
+    35.83% { opacity: 0; visibility: hidden; transform: translateX(-28px); }
+    100%   { opacity: 0; visibility: hidden; transform: translateX(-28px); }
+}
+
+@keyframes rot-tab {
+    0%, 33.34%, 100% { color: var(--muted); }
+    0.01%, 33.33%    { color: var(--text); }
+}
+
+@keyframes rot-progress {
+    0%              { transform: scaleX(0); opacity: 1; }
+    33.33%          { transform: scaleX(1); opacity: 1; }
+    33.34%, 100%    { transform: scaleX(0); opacity: 0; }
+}
+
 .ow-card-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 11px;
-    margin: 2px 0 4px;
+    gap: 12px;
 }
 
 .ow-card {
     position: relative;
     display: block;
-    height: 188px;
-    border-radius: 15px;
+    height: 200px;
+    border-radius: var(--r-card);
     overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    background: #12141f;
+    border: 1px solid var(--line);
+    background: var(--surface);
     text-decoration: none !important;
+    transition: transform 0.25s var(--ease), border-color 0.25s ease;
 }
 
 .ow-card:hover {
     transform: translateY(-3px);
-    border-color: rgba(255, 122, 140, 0.5);
+    border-color: var(--line-2);
 }
 
-/* 1위 카드는 레퍼런스의 강조 카드처럼 액센트 글로우를 준다 */
-.ow-card.featured {
-    border-color: rgba(255, 77, 106, 0.62);
-}
+.ow-card.featured { border-color: rgba(249, 158, 26, 0.4); }
 
 .ow-card-art {
     position: absolute;
     inset: 0;
     background-size: cover;
     background-repeat: no-repeat;
-    transition: transform 0.35s ease;
+    transition: transform 0.5s var(--ease);
 }
 
-.ow-card:hover .ow-card-art {
-    transform: scale(1.06);
-}
+.ow-card:hover .ow-card-art { transform: scale(1.05); }
 
 .ow-card-art::after {
     content: "";
     position: absolute;
     inset: 0;
-    background: linear-gradient(
-        180deg,
-        rgba(10, 8, 20, 0.10) 0%,
-        rgba(10, 8, 20, 0.30) 42%,
-        rgba(9, 7, 17, 0.86) 78%,
-        rgba(8, 6, 15, 0.96) 100%
-    );
+    background: linear-gradient(180deg,
+        rgba(11, 12, 16, 0) 28%,
+        rgba(11, 12, 16, 0.72) 62%,
+        rgba(11, 12, 16, 0.96) 100%);
 }
 
 .ow-card-rank {
     position: absolute;
-    top: 9px;
-    right: 9px;
-    min-width: 26px;
-    height: 26px;
+    top: 10px;
+    right: 10px;
+    z-index: 1;
     display: grid;
-    place-items: center;
-    padding: 0 6px;
-    border-radius: 8px;
-    font-family: var(--app-display-font);
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: #fff;
-    background: rgba(10, 8, 20, 0.62);
-    border: 1px solid currentColor;
-    backdrop-filter: blur(3px);
+    border-radius: 7px;
+    background: rgba(11, 12, 16, 0.7);
+    backdrop-filter: blur(4px);
 }
 
 .ow-card-body {
@@ -747,370 +944,60 @@ body [data-baseweb="popover"] ::-webkit-scrollbar-track {
     left: 0;
     right: 0;
     bottom: 0;
-    padding: 11px 12px 12px;
+    padding: 12px 14px 13px;
 }
 
 .ow-card-metric {
-    font-family: var(--app-display-font);
     font-size: 1.5rem;
-    font-weight: 600;
+    font-weight: 800;
+    letter-spacing: -0.03em;
     line-height: 1;
-    letter-spacing: -0.01em;
 }
 
 .ow-card-name {
-    color: #ffffff;
-    font-size: 0.98rem;
-    font-weight: 800;
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 700;
     line-height: 1.2;
-    margin-top: 3px;
+    margin-top: 6px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
 .ow-card-sub {
-    color: rgba(226, 228, 245, 0.66);
+    color: rgba(255, 255, 255, 0.58);
     font-size: 0.74rem;
-    font-weight: 650;
-    margin-top: 1px;
-}
-
-/* --- 우측 요약 패널 ---------------------------------------------- */
-.ow-rail {
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 15px;
-    background: linear-gradient(180deg, #171a28 0%, #101320 100%);
-    padding: 14px 15px 15px;
-    height: 188px;
-    display: flex;
-    flex-direction: column;
-}
-
-.ow-rail-title {
-    font-family: var(--app-display-font);
-    color: rgba(155, 162, 196, 0.86);
-    font-size: 0.68rem;
     font-weight: 500;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    margin-bottom: 10px;
-}
-
-.ow-rail-row {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    margin-bottom: 7px;
-}
-
-.ow-rail-key {
-    font-family: var(--app-display-font);
-    font-size: 0.92rem;
-    font-weight: 600;
-    width: 15px;
-    flex-shrink: 0;
-}
-
-.ow-rail-bar {
-    flex: 1;
-    height: 7px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.07);
-    overflow: hidden;
-}
-
-.ow-rail-fill {
-    height: 100%;
-    border-radius: 999px;
-}
-
-.ow-rail-count {
-    color: #e2e4f5;
-    font-family: var(--app-display-font);
-    font-size: 0.88rem;
-    font-weight: 500;
-    width: 22px;
-    text-align: right;
-    flex-shrink: 0;
-}
-
-.ow-rail-foot {
-    margin-top: auto;
-    padding-top: 9px;
-    border-top: 1px solid rgba(255, 255, 255, 0.07);
-    color: var(--app-muted);
-    font-size: 0.74rem;
-    font-weight: 650;
-}
-
-@media (max-width: 1100px) {
-    .ow-card-grid {grid-template-columns: repeat(2, minmax(0, 1fr));}
-}
-
-@media (max-width: 560px) {
-    .ow-card-grid {grid-template-columns: 1fr;}
-    .ow-card, .ow-rail {height: 160px;}
-}
-
-
-@media (max-width: 900px) {
-    .block-container {
-        padding-top: 1.2rem !important;
-    }
-}
-
-/* ---------------------------------------------------------------------------
-   지시서 STEP 1 - 공통 유틸리티
-   --------------------------------------------------------------------------- */
-
-.card {
-    background: var(--app-card);
-    border-radius: var(--r-card);
-    padding: 22px;
-}
-
-.eyebrow {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.14em;
-    color: var(--app-muted);
-    font-weight: 600;
-}
-
-.display {
-    font-family: var(--app-display-font);
-    line-height: 0.9;
-}
-
-/* 숫자와 단위가 갈라져 줄바꿈되는 것을 막는다 (지시서 [6] / STEP 5) */
-.unit {
-    font-size: 0.45em;
-    margin-left: 2px;
-    opacity: 0.75;
-    vertical-align: baseline;
-}
-
-.nowrap,
-.unit,
-.eyebrow {
-    white-space: nowrap;
-}
-
-/* ---------------------------------------------------------------------------
-   지시서 [6] - 한글이 한 글자씩 세로로 깨지는 문제
-   포지션 칩·메타 유형 배지·랭크 필처럼 짧은 라벨은 절대 줄바꿈되면 안 된다.
-   --------------------------------------------------------------------------- */
-
-.overwatch-table th,
-.overwatch-table .role-cell,
-.overwatch-table .rank-cell,
-.overwatch-table .score-cell,
-.overwatch-table .rate-text,
-.meta-type-badge,
-.low-pick-badge,
-.patch-hero-badge,
-.rank-pill,
-.ow-card-name,
-.ow-card-sub,
-.ow-rail-title,
-.ow-nav-brand-title{
-    white-space: nowrap;
-}
-
-.overwatch-table .role-cell { min-width: 76px; }
-.overwatch-table .score-cell { min-width: 96px; }
-.overwatch-table .rank-cell { min-width: 62px; }
-.overwatch-table .hero-cell { min-width: 150px; }
-
-/* ---------------------------------------------------------------------------
-   지시서 STEP 2 - HERO 카드 (페이지 시그니처)
-   아트가 카드 위로 삐져나와야 해서 래퍼에 상단 여백을 주고, 잘라내는 건 카드만.
-   --------------------------------------------------------------------------- */
-
-.hero-showcase {
-    position: relative;
-    margin: 0 0 18px;
-    min-width: 0;
-}
-
-.hero-showcase-card {
-    position: relative;
-    /* 전신 렌더가 contain 으로 다 들어가야 해서 세로 여유가 필요하다. 세로가
-       인물 크기를 정하므로(전신은 세로로 길어 폭이 아니라 높이에 걸린다)
-       260px 에서는 우표만 해진다. */
-    min-height: 400px;
-    border-radius: var(--r-hero);
-    overflow: hidden;
-    padding: 26px 30px;
-    box-shadow: var(--shadow);
-    background-repeat: no-repeat;
-}
-
-.hero-showcase-card::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(100deg, rgba(8, 6, 16, 0.42) 0%, rgba(8, 6, 16, 0.12) 46%, rgba(8, 6, 16, 0.66) 100%);
-}
-
-.hero-showcase-num {
-    position: absolute;
-    right: 24%;
-    top: -6%;
-    font-family: var(--app-num-font);
-    font-size: 200px;
-    line-height: 1;
-    color: rgba(255, 255, 255, 0.18);
-    pointer-events: none;
-    user-select: none;
-    z-index: 1;
-}
-
-.hero-showcase-left {
-    position: relative;
-    z-index: 2;
-    max-width: 60%;
-}
-
-.hero-showcase-name {
-    margin: 4px 0 2px;
-    color: #fff;
-    font-size: clamp(2.2rem, 1.4rem + 2.8vw, 3.6rem);
-    letter-spacing: 0.01em;
-}
-
-.hero-showcase-meta {
-    color: rgba(255, 255, 255, 0.72);
-    font-size: 0.84rem;
-    font-weight: 600;
-    margin-bottom: 16px;
-}
-
-.hero-showcase-stats {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 26px;
-}
-
-.hero-showcase-stat-value {
-    font-family: var(--app-num-font);
-    font-size: 34px;
-    line-height: 1.1;
-    color: #fff;
-}
-
-/* ---------------------------------------------------------------------------
-   HEROES 가로 스크롤
-   --------------------------------------------------------------------------- */
-
-.hero-scroller {
-    display: flex;
-    gap: 12px;
-    overflow-x: auto;
-    padding: 2px 2px 10px;
-    scrollbar-width: thin;
-}
-
-.hero-tile {
-    position: relative;
-    flex: 0 0 152px;
-    height: 228px;
-    border-radius: var(--r-inner);
-    overflow: hidden;
-    border: 1px solid var(--app-line);
-    background: #12141c;
-}
-
-.hero-tile-link {
-    display: block;
-    height: 100%;
-    text-decoration: none !important;
-}
-
-.hero-tile-art {
-    position: absolute;
-    inset: 0;
-    background-size: cover;
-    transition: transform 0.3s ease;
-}
-
-.hero-tile:hover .hero-tile-art { transform: scale(1.07); }
-
-.hero-tile-art::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(180deg, rgba(8, 6, 16, 0.05) 40%, rgba(8, 6, 16, 0.92) 100%);
-}
-
-.hero-tile-body {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    padding: 10px 11px 11px;
-}
-
-.hero-tile-metric {
-    font-family: var(--app-num-font);
-    font-size: 24px;
-    line-height: 1;
-}
-
-.hero-tile-name {
-    color: #fff;
-    font-size: 0.92rem;
-    font-weight: 700;
     margin-top: 2px;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-.hero-tile-fav {
-    position: absolute;
-    top: 7px;
-    right: 8px;
-    z-index: 3;
-    width: 26px;
-    height: 26px;
-    display: grid;
-    place-items: center;
-    border-radius: 50%;
-    background: rgba(10, 8, 20, 0.55);
-    color: rgba(255, 255, 255, 0.75);
-    font-size: 0.9rem;
-    text-decoration: none !important;
-    backdrop-filter: blur(3px);
-}
-
-.hero-tile-fav.on { color: var(--app-accent); }
-
-/* ---------------------------------------------------------------------------
-   TOP MAPS
-   --------------------------------------------------------------------------- */
+/* ===========================================================================
+   8. 전장 카드
+   =========================================================================== */
 
 .map-grid {
     display: grid;
+    margin-top: 10px;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 12px;
-    align-items: end;
-    padding-top: 26px;
+    animation: rise 0.6s 0.16s var(--ease) backwards;
 }
 
 .map-card {
     position: relative;
-    height: 132px;
-    border-radius: var(--r-inner);
+    min-height: 118px;
+    border-radius: 10px;
     overflow: hidden;
-    border: 1px solid var(--app-line);
-    background: #12141c;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    transition: transform 0.25s var(--ease), border-color 0.25s ease;
 }
 
-/* 목업의 ICEBOX 카드 대응: 1위만 띄운다 */
-.map-card.featured {
-    transform: translateY(-24px);
-    border-color: rgba(255, 70, 85, 0.5);
+.map-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--line-2);
 }
 
 .map-card-art {
@@ -1118,13 +1005,16 @@ body [data-baseweb="popover"] ::-webkit-scrollbar-track {
     inset: 0;
     background-size: cover;
     background-position: center;
+    transition: transform 0.5s var(--ease);
 }
+
+.map-card:hover .map-card-art { transform: scale(1.05); }
 
 .map-card-art::after {
     content: "";
     position: absolute;
     inset: 0;
-    background: linear-gradient(180deg, rgba(8, 6, 16, 0.1) 35%, rgba(8, 6, 16, 0.9) 100%);
+    background: linear-gradient(180deg, rgba(11, 12, 16, 0.04) 30%, rgba(11, 12, 16, 0.92) 100%);
 }
 
 .map-card-body {
@@ -1132,351 +1022,207 @@ body [data-baseweb="popover"] ::-webkit-scrollbar-track {
     left: 0;
     right: 0;
     bottom: 0;
-    padding: 9px 11px 10px;
+    padding: 10px 12px 11px;
 }
 
 .map-card-name {
     color: #fff;
-    font-size: 0.92rem;
-    font-weight: 700;
+    font-size: 0.85rem;
+    font-weight: 600;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
 .map-card-metric {
-    font-family: var(--app-num-font);
-    font-size: 20px;
-    color: var(--app-good);
-    line-height: 1.1;
+    color: var(--good);
+    font-size: 1.15rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin-top: 2px;
 }
 
-/* ---------------------------------------------------------------------------
-   우측 레일
-   --------------------------------------------------------------------------- */
+/* 표본 부족 조합: 값은 보여주되 믿기 어렵다는 걸 흐림으로 드러낸다 */
+.map-card.dim,
+.hmap-card.dim { opacity: 0.45; }
 
-.rail-card {
-    border: 1px solid var(--app-line);
-    border-radius: var(--r-inner);
-    background: linear-gradient(180deg, #171a28 0%, #101320 100%);
-    padding: 14px 15px 15px;
-    margin-bottom: 12px;
+.sample-note,
+.cell-warn {
+    margin-left: 6px;
+    color: #f5a35c;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0;
 }
+
+/* ===========================================================================
+   9. 우측 레일
+   =========================================================================== */
+
+.rail-card,
+.ow-rail {
+    border: 1px solid var(--line);
+    border-radius: var(--r-card);
+    background: var(--surface);
+    padding: 16px;
+    animation: rise 0.6s 0.12s var(--ease) backwards;
+}
+
+.rail-card > .eyebrow { margin-bottom: 8px; }
 
 .meta-score-value {
-    font-family: var(--app-num-font);
-    font-size: 52px;
-    line-height: 1;
     color: #fff;
-    margin-top: 6px;
+    font-size: 2.6rem;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    margin-top: 10px;
+}
+
+.meta-meter {
+    height: 4px;
+    margin: 14px 0 10px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.07);
+    overflow: hidden;
+}
+
+.meta-meter i {
+    display: block;
+    height: 100%;
+    border-radius: 2px;
+    background: var(--accent);
+    transform-origin: left;
+    animation: grow 1s 0.3s var(--ease) backwards;
 }
 
 .meta-score-sub {
-    color: var(--app-muted);
+    color: var(--muted);
     font-size: 0.8rem;
-    font-weight: 650;
-    margin-top: 4px;
+    font-weight: 500;
 }
 
 .rail-row {
     display: flex;
     align-items: center;
-    gap: 9px;
-    padding: 7px 6px;
-    margin: 0 -6px;
-    border-radius: 9px;
+    gap: 10px;
+    padding: 6px 8px;
+    margin: 0 -8px;
+    border-radius: 8px;
     text-decoration: none !important;
     transition: background 0.15s ease;
 }
 
-.rail-row:hover { background: rgba(255, 255, 255, 0.05); }
+.rail-row:hover { background: rgba(255, 255, 255, 0.04); }
 
 .rail-row-img {
-    width: 34px;
-    height: 34px;
-    border-radius: 9px;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
     object-fit: cover;
     flex-shrink: 0;
-    background: #1f2233;
+    background: var(--surface-2);
 }
 
 .rail-row-name {
     flex: 1;
     min-width: 0;
-    color: var(--app-text);
+    color: var(--text);
     font-size: 0.88rem;
-    font-weight: 700;
+    font-weight: 600;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
 .rail-row-value {
-    font-family: var(--app-num-font);
-    font-size: 18px;
     flex-shrink: 0;
+    font-size: 0.92rem;
+    font-weight: 700;
 }
 
 .rail-empty {
-    color: var(--app-muted);
+    color: var(--muted);
     font-size: 0.8rem;
-    padding: 8px 0 2px;
+    padding: 6px 0 2px;
 }
 
-/* 표 헤더는 본문 폰트로 되돌린다 - 디스플레이 폰트는 표에서 너무 두껍다 */
-.overwatch-table th {
-    font-family: var(--app-font) !important;
-    font-weight: 700;
-}
-
-@media (max-width: 1100px) {
-    .map-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .hero-showcase-left { max-width: 100%; }
-}
-
-/* ---------------------------------------------------------------------------
-   지시서 STEP 4 - 영웅 추이 페이지
-   --------------------------------------------------------------------------- */
-
-.kpi-row {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 12px;
-    margin-bottom: 14px;
-}
-
-.kpi-card {
-    border: 1px solid var(--app-line);
-    border-radius: var(--r-inner);
-    background: linear-gradient(180deg, #171a28 0%, #101320 100%);
-    padding: 14px 16px 15px;
-}
-
-.kpi-value {
-    font-family: var(--app-num-font);
-    font-size: 56px;
-    line-height: 1;
-    color: #fff;
-    margin-top: 6px;
-}
-
-.kpi-delta {
-    display: inline-block;
-    margin-top: 8px;
-    padding: 3px 9px;
-    border-radius: 999px;
-    font-size: 0.76rem;
-    font-weight: 700;
-}
-
-.kpi-delta.up {
-    color: #bbf7d0;
-    background: rgba(52, 211, 153, 0.14);
-    border: 1px solid rgba(52, 211, 153, 0.4);
-}
-
-.kpi-delta.down {
-    color: #fecaca;
-    background: rgba(248, 113, 113, 0.14);
-    border: 1px solid rgba(248, 113, 113, 0.4);
-}
-
-.portrait-card {
-    position: relative;
-    min-height: 300px;
-    height: 100%;
-    border-radius: var(--r-card);
-    overflow: hidden;
-    border: 1px solid var(--app-line);
-    background: linear-gradient(160deg, var(--pc-accent, #3b1a5c) 0%, #12111f 78%);
-}
-
-.portrait-card-art {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    object-position: bottom center;
-}
-
-.portrait-card-art.bg {
-    background-size: cover;
-}
-
-.portrait-card-body {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    padding: 12px 14px 14px;
-    background: linear-gradient(180deg, transparent, rgba(8, 6, 16, 0.9));
-}
-
-.portrait-card-name {
-    font-family: var(--app-display-font);
-    color: #fff;
-    font-size: 1.5rem;
-    line-height: 1.1;
-}
-
-.portrait-card-cap {
-    color: var(--app-muted);
+.ow-rail-title {
+    color: var(--muted);
     font-size: 0.78rem;
-    font-weight: 650;
-    margin-top: 2px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    white-space: nowrap;
 }
 
-/* 탭 헤더를 pill 로. 활성 탭은 액센트 밑줄. */
-.stTabs [data-baseweb="tab-list"] {
-    gap: 6px;
-    border-bottom: 1px solid var(--app-line);
+.ow-rail-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
 }
 
-.stTabs [data-baseweb="tab"] {
-    height: 40px;
-    padding: 0 16px;
-    border-radius: 10px 10px 0 0;
-    color: var(--app-muted) !important;
-    font-weight: 700;
-}
-
-.stTabs [aria-selected="true"] {
-    color: var(--app-accent) !important;
-    background: rgba(255, 70, 85, 0.08);
-}
-
-.stTabs [data-baseweb="tab-highlight"] {
-    background-color: var(--app-accent) !important;
-}
-
-@media (max-width: 900px) {
-    .kpi-row { grid-template-columns: 1fr; }
-}
-
-/* 지시서 STEP 5 - PERKS 확대 */
-.perk-card { gap: 11px !important; padding: 9px 11px !important; }
-
-.perk-icon {
-    width: 44px;
-    height: 44px;
-    object-fit: cover;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.14);
+.ow-rail-key {
+    width: 14px;
     flex-shrink: 0;
+    font-size: 0.85rem;
+    font-weight: 800;
 }
 
-.perk-main { flex: 1; min-width: 0; }
-
-.perk-name {
-    color: #e6e8f7;
-    font-size: 0.88rem;
-    font-weight: 700;
-    line-height: 1.2;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.perk-bar {
-    margin-top: 6px;
+.ow-rail-bar {
+    flex: 1;
     height: 6px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.08);
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.06);
     overflow: hidden;
 }
 
-.perk-bar span {
-    display: block;
+.ow-rail-fill {
     height: 100%;
-    border-radius: 999px;
+    border-radius: 3px;
+    transform-origin: left;
+    animation: grow 0.9s 0.3s var(--ease) backwards;
 }
 
-.perk-rate {
-    font-family: var(--app-num-font);
-    font-size: 20px;
-    min-width: 62px;
-    text-align: right;
+.ow-rail-count {
+    width: 24px;
     flex-shrink: 0;
+    text-align: right;
+    color: var(--text-2);
+    font-size: 0.85rem;
+    font-weight: 600;
 }
 
-/* ---------------------------------------------------------------------------
-   2차 지시서 D-1 - 전역 정리
-   --------------------------------------------------------------------------- */
-
-/* 제목에 걸린 glow 가 굵은 폰트의 속공간을 메워 글자를 뭉갠다. */
-h1, h2, h3, h4,
-.ow-hero-title,
-.hero-showcase-name,
-.portrait-card-name,
-.ow-nav-brand-title,
-.overwatch-table th {
-    text-shadow: none !important;
-    filter: none !important;
-    color: var(--app-text);
+.ow-rail-foot {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 0.76rem;
+    font-weight: 500;
 }
 
-/* 카드는 테두리만. 그림자는 HERO 하나뿐이다. */
-.card,
-.rail-card,
-.ow-rail,
-.kpi-card,
-.hero-tile,
-.map-card,
-.ow-card,
-.patch-intel-wrap,
-[data-testid="stMetric"],
-[data-testid="stExpander"] > details{
-    border: 1px solid var(--app-line) !important;
-    background: var(--app-card) !important;
-    border-radius: var(--r-card) !important;
-}
-
-.hero-showcase-card { border-radius: var(--r-hero) !important; }
-
-.ow-hero-badge,
-.patch-hero-badge,
-.meta-type-badge,
-.low-pick-badge,
-.stMultiSelect [data-baseweb="tag"]{
-    border-radius: var(--r-chip) !important;
-}
-
-.overwatch-table,
-.overwatch-table th,
-.overwatch-table td {
-    border-radius: 0 !important;
-}
-
-/* 우측 레일은 실제 컬럼이다. 고정은 sticky 만 쓴다(absolute/fixed 금지). */
-.ow-rail-sticky {
-    position: sticky;
-    top: 1rem;
-}
-
-/* 섹션 리듬 */
-.section-gap { height: 32px; }
-
-/* 이모지 대체 SVG */
-.hero-tile-fav svg { width: 15px; height: 15px; }
-.kpi-delta { display: inline-flex; align-items: center; gap: 5px; }
-.kpi-delta svg { width: 9px; height: 7px; flex-shrink: 0; }
-
-/* ---------------------------------------------------------------------------
-   2차 지시서 D-3 - 순위표 5열
-   좁은 폭에서 표가 컬럼을 뚫고 나가던 문제(1276px 에서 936 vs 793) 해결.
-   --------------------------------------------------------------------------- */
+/* ===========================================================================
+   10. 랭크 순위표
+   thead/tbody/tr 을 display:contents 로 풀고 td 를 그리드 칸으로 쓴다.
+   5열: 영웅(초상화+이름+부제) / 승률 / 픽률 / 밴률 / 종합 점수+랭크.
+   --i 는 행 번호(최대 16)라 위에서부터 순서대로 들어온다.
+   =========================================================================== */
 
 .table-wrap {
     overflow-x: auto;
     min-width: 0;
-    border: 1px solid var(--app-line);
+    border: 1px solid var(--line);
     border-radius: var(--r-card);
+    background: var(--surface);
+    animation: rise 0.6s 0.2s var(--ease) backwards;
 }
 
 .overwatch-table {
     display: grid;
-    grid-template-columns: minmax(200px, 1.6fr) repeat(3, minmax(110px, 1fr)) 130px;
+    grid-template-columns: minmax(220px, 1.6fr) repeat(3, minmax(120px, 1fr)) 124px;
     width: 100%;
-    border: 0 !important;
-    background: transparent !important;
+    border-collapse: separate;
+    border-spacing: 0;
 }
 
 .overwatch-table thead,
@@ -1485,17 +1231,23 @@ h1, h2, h3, h4,
     display: contents;
 }
 
+/* Streamlit 마크다운의 표 기본 테두리(칸마다 세로줄)를 걷어낸다 */
+.overwatch-table,
+.overwatch-table th,
+.overwatch-table td {
+    border: 0 !important;
+}
+
 .overwatch-table th {
     position: sticky;
     top: 0;
     z-index: 2;
-    background: var(--app-card) !important;
-    border-bottom: 1px solid var(--app-line);
-    border-right: 0 !important;
-    padding: 10px 14px !important;
-    font-size: 0.76rem !important;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    padding: 11px 16px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--line) !important;
+    color: var(--muted);
+    font-size: 0.76rem;
+    font-weight: 600;
     text-align: left;
     white-space: nowrap;
 }
@@ -1503,20 +1255,48 @@ h1, h2, h3, h4,
 .overwatch-table td {
     display: flex;
     align-items: center;
-    min-height: 56px;
-    padding: 8px 14px !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
-    border-right: 0 !important;
-    background: transparent;
     min-width: 0;
+    min-height: 58px;
+    padding: 8px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.045) !important;
+    background: transparent;
+    color: var(--text);
+    font-size: 0.88rem;
+    transition: background 0.15s ease, box-shadow 0.15s ease;
+    animation: row-in 0.45s var(--ease) backwards;
+    animation-delay: calc(var(--i, 0) * 22ms + 240ms);
 }
 
-/* hover 는 행 전체로 */
-.overwatch-table tbody tr:hover td {
-    background: rgba(255, 255, 255, 0.03);
+.overwatch-table tbody tr:last-child td { border-bottom: 0 !important; }
+
+.overwatch-table tbody tr:hover td { background: rgba(255, 255, 255, 0.03); }
+.overwatch-table tbody tr:hover td:first-child { box-shadow: inset 2px 0 0 var(--accent); }
+
+.overwatch-table th.sortable a {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: inherit !important;
+    text-decoration: none !important;
+    transition: color 0.15s ease;
 }
 
-.hero-cell { gap: 10px; }
+.overwatch-table th.sortable:hover a { color: var(--text) !important; }
+.overwatch-table th.active a { color: var(--accent) !important; }
+
+.sort-caret { width: 9px; height: 6px; }
+.caret-wrap.flip { display: inline-flex; transform: rotate(180deg); }
+
+.hero-cell { gap: 12px; }
+
+.row-num {
+    width: 20px;
+    flex: none;
+    text-align: right;
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-weight: 600;
+}
 
 .hero-cell-img {
     width: 36px;
@@ -1524,7 +1304,7 @@ h1, h2, h3, h4,
     border-radius: 8px;
     object-fit: cover;
     flex-shrink: 0;
-    background: #1f2233;
+    background: var(--surface-2);
 }
 
 .hero-cell-text { min-width: 0; }
@@ -1536,619 +1316,428 @@ h1, h2, h3, h4,
     text-overflow: ellipsis;
 }
 
+a.hero-link {
+    color: var(--text) !important;
+    text-decoration: none !important;
+    transition: color 0.15s ease;
+}
+
+a.hero-link:hover { color: var(--accent) !important; }
+
 .hero-cell-sub {
-    color: var(--app-muted);
-    font-size: 0.74rem;
-    font-weight: 600;
-    margin-top: 1px;
+    margin-top: 2px;
+    color: var(--muted);
+    font-size: 0.75rem;
+    font-weight: 500;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-/* 표본 부족 전장 조합: 값은 보여주되 믿기 어렵다는 걸 흐림으로 드러낸다. */
-.map-card.dim,
-.hmap-card.dim { opacity: 0.45; }
-.sample-note {
-    margin-left: 6px;
-    font-family: inherit;
-    font-size: 0.7rem;
-    font-weight: 700;
-    color: #fdba74;
+.rate-line {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-width: 0;
 }
 
-.cell-warn {
-    color: #fdba74;
-    font-size: 0.7rem;
-    font-weight: 700;
-    margin-left: 6px;
+.rate-bar {
+    flex: 1;
+    min-width: 0;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.07);
+    overflow: hidden;
 }
 
-.rate-line { display: flex; align-items: center; gap: 9px; width: 100%; min-width: 0; }
-.rate-bar { flex: 1; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.08); overflow: hidden; min-width: 0; }
-.rate-fill { height: 100%; border-radius: 2px; }
-.rate-text { width: 54px; text-align: right; flex-shrink: 0; font-size: 0.86rem; font-weight: 700; white-space: nowrap; }
-.rate-text.muted { color: var(--app-muted); }
+.rate-fill {
+    height: 100%;
+    border-radius: 2px;
+    transform-origin: left;
+    animation: grow 0.8s var(--ease) backwards;
+    animation-delay: calc(var(--i, 0) * 22ms + 360ms);
+}
+
+.rate-fill.win { background: var(--good); }
+.rate-fill.pick { background: var(--info); }
+.rate-fill.ban { background: var(--danger); }
+
+.rate-text {
+    width: 50px;
+    flex-shrink: 0;
+    text-align: right;
+    color: var(--text);
+    font-size: 0.86rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.rate-text.muted { color: var(--muted); }
 
 .score-cell {
     gap: 10px;
     justify-content: space-between;
-    font-weight: 800;
-    color: var(--app-warn);
-}
-
-[data-testid="stSegmentedControl"] button {
-    border-radius: var(--r-chip) !important;
-}
-
-.overwatch-table th.sortable a {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    color: inherit;
-    text-decoration: none !important;
-}
-
-.overwatch-table th.sortable:hover a { color: var(--app-text); }
-
-.overwatch-table th.active a { color: var(--app-accent) !important; }
-
-.sort-caret { width: 9px; height: 6px; }
-.caret-wrap.flip { display: inline-flex; transform: rotate(180deg); }
-
-/* 섹션 제목. 예전에는 h3.section-title / st.subheader / eyebrow 세 방식이
-   섞여 있어서 폰트와 여백이 페이지마다 달랐다. ui.section() 하나로 통일한다.
-   부제 슬롯은 비워둘 수 있다. */
-.ow-section {
-    margin: 22px 0 8px;
-}
-
-.ow-section-title {
-    font-family: var(--app-display-font);
-    font-size: 1.35rem;
-    margin: 0;
-    color: var(--app-text);
-}
-
-.ow-section-sub {
-    margin: 2px 0 0;
-    color: var(--app-muted);
-    font-size: 0.84rem;
-    font-weight: 600;
-}
-
-/* D-2 상단바 sticky. absolute/fixed 는 쓰지 않는다. */
-[data-testid="stMainBlockContainer"] > div > [data-testid="stVerticalBlock"]
-  > [data-testid="stElementContainer"]:has([data-testid="stSegmentedControl"]):first-of-type {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    background: var(--bg);
-}
-
-/* D-5 필터 칩: 선택/미선택을 채움 vs outline 으로 명확히 */
-[data-testid="stPills"] button[aria-pressed="false"],
-[data-testid="stPills"] button[aria-checked="false"] {
-    background: transparent !important;
-    border: 1px solid var(--app-line) !important;
-    color: var(--app-muted) !important;
-}
-
-[data-testid="stPills"] button[aria-pressed="true"],
-[data-testid="stPills"] button[aria-checked="true"] {
-    background: rgba(255, 70, 85, 0.16) !important;
-    border: 1px solid var(--app-accent) !important;
-    color: var(--app-text) !important;
-}
-
-/* D-6: 좌측 아트 카드와 우측 KPI 의 높이를 맞춘다 */
-[data-testid="stHorizontalBlock"]:has(.portrait-card) {
-    align-items: stretch;
-}
-
-/* height:100% 는 부모에 높이가 없으면 0 으로 접힌다. min-height 로 바닥을 깔고
-   stretch 로 늘린다. */
-[data-testid="stHorizontalBlock"]:has(.portrait-card) .kpi-row { margin-bottom: 0; }
-[data-testid="stHorizontalBlock"]:has(.portrait-card) .kpi-card {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
-
-/* D-7: PERKS 확대 - 아이콘 64px, 이름은 아이콘 아래 한 줄 */
-.perk-icon { width: 64px !important; height: 64px !important; }
-.perk-card { align-items: center; }
-.eyebrow { white-space: nowrap; }
-
-/* PART C: 마지막 갱신 시각을 상단 라이브 점으로 */
-.live-dot {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    margin-left: 10px;
-    color: var(--app-muted);
-    font-size: 0.74rem;
-    font-weight: 650;
-    white-space: nowrap;
-    vertical-align: middle;
-}
-
-.live-dot i {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--app-good);
-    box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.16);
-}
-
-/* ---------------------------------------------------------------------------
-   TOP 카드 자동 순환
-   Streamlit 재실행 없이 CSS 키프레임만으로 전환한다. 세 묶음을 겹쳐 두고
-   각 묶음의 애니메이션 시작 시각을 어긋나게 준다.
-   --------------------------------------------------------------------------- */
-
-.rot-wrap {
-    position: relative;
-    /* 묶음들을 같은 칸에 겹쳐 쌓는다. 높이가 가장 큰 묶음에 저절로 맞춰져서,
-       카드가 세로로 쌓이는 좁은 화면에서도 아래 내용과 겹치지 않는다. */
-    display: grid;
-    min-height: 232px;  /* PC 에서 아래 TOP MAPS 와의 간격을 예전 그대로 둔다 */
-    /* 옆으로 밀려나는 묶음이 가로 스크롤을 만들지 않게 가로만 자른다(카드 hover 들림은 살린다) */
-    overflow-x: clip;
-}
-
-.rot-slide {
-    grid-area: 1 / 1;
-    min-width: 0;
-    opacity: 0;
-    animation-name: rot-cycle;
-    animation-iteration-count: infinite;
-    /* 빠르게 들어와 부드럽게 멈춘다 */
-    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
-    pointer-events: none;
-}
-
-/* 보이는 동안에만 클릭을 받는다 */
-.rot-slide { animation-fill-mode: both; }
-
-/* 오른쪽에서 들어와 왼쪽으로 빠진다. 나가는 묶음(30~34%)과 들어오는 묶음(0~4%)이 겹쳐 이어진다. */
-@keyframes rot-cycle {
-    0%      { opacity: 0; transform: translateX(56px); pointer-events: none; }
-    4%      { opacity: 1; transform: none; pointer-events: auto; }
-    30%     { opacity: 1; transform: none; pointer-events: auto; }
-    34%     { opacity: 0; transform: translateX(-56px); pointer-events: none; }
-    100%    { opacity: 0; transform: translateX(56px); pointer-events: none; }
-}
-
-.rot-title { margin-bottom: 7px; }
-
-.rot-dots {
-    position: absolute;
-    top: 0;
-    right: 2px;
-    display: flex;
-    gap: 5px;
-}
-
-.rot-dots i {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.16);
-    animation-name: rot-dot;
-    animation-iteration-count: infinite;
-    animation-timing-function: ease-in-out;
-    animation-fill-mode: both;
-}
-
-@keyframes rot-dot {
-    0%, 34%, 100% { background: rgba(255, 255, 255, 0.16); }
-    3%, 30%       { background: var(--app-accent); }
-}
-
-/* 애니메이션을 원치 않는 사용자는 첫 묶음만 고정으로 본다 */
-@media (prefers-reduced-motion: reduce) {
-    .rot-slide { animation: none; opacity: 0; }
-    .rot-slide:first-child { opacity: 1; pointer-events: auto; }
-    .rot-dots { display: none; }
-}
-
-/* ---------------------------------------------------------------------------
-   TOP MAPS - 4장 높이 균형
-   강조 카드를 띄우던 translateY 를 없앤 뒤 정렬 기준도 stretch 로 되돌린다.
-   --------------------------------------------------------------------------- */
-
-.map-grid {
-    align-items: stretch;
-    padding-top: 0;
-}
-
-.map-card {
-    height: auto;
-    min-height: 132px;
-}
-
-.map-card.featured {
-    transform: none;
-}
-
-.ow-card-rank {
-    background: rgba(10, 8, 20, 0.55);
-    border: 0;
-    padding: 0;
-    width: 32px;
-    height: 32px;
-    border-radius: var(--r-chip);
-    backdrop-filter: blur(3px);
-}
-
-/* ---------------------------------------------------------------------------
-   드롭다운 폭 통일
-   글자 수에 비해 지나치게 넓어 "설문 폼"처럼 보였다. 한 값으로 묶는다.
-   --------------------------------------------------------------------------- */
-
-.stSelectbox,
-[data-testid="stSelectbox"] {
-    max-width: 220px;
-}
-
-.stTextInput,
-[data-testid="stTextInput"] {
-    max-width: 280px;
-}
-
-[data-testid="stSelectbox"] label,
-[data-testid="stTextInput"] label {
+    color: var(--text);
+    font-weight: 700;
     white-space: nowrap;
 }
 
-.ow-card-rank{
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: none;
-    border: 0;
-    padding: 0;
-    width: auto;
-    height: auto;
-    backdrop-filter: none;
-}
+/* ===========================================================================
+   11. 패치 노트 카드
+   =========================================================================== */
 
-.ow-card-rank {
-    background: rgba(10, 8, 20, 0.5);
-    border-radius: var(--r-chip);
-    padding: 2px;
-    backdrop-filter: blur(3px);
-}
-
-/* ---------------------------------------------------------------------------
-   랭크 순위표. main.py 인라인 <style> 에서 옮겨왔다.
-   --------------------------------------------------------------------------- */
-.overwatch-table {border-collapse: separate; border-spacing: 0; width: 100%; font-family: var(--font); overflow: hidden; border: 1px solid var(--border); border-radius: 12px; background-color: var(--bg);}
-.overwatch-table th, .overwatch-table td {border-bottom: 1px solid var(--border); padding: 9px 12px; vertical-align: middle; color: var(--text); font-size: 0.9rem;}
-.overwatch-table th:not(:last-child), .overwatch-table td:not(:last-child) {border-right: 1px solid rgba(43, 63, 99, 0.72);}
-.overwatch-table tbody tr:last-child td {border-bottom: 0;}
-.overwatch-table th {background-color: var(--surface); color: #f8fafc; font-weight: 700; font-size: 0.9rem; letter-spacing: 0.03em; text-transform: uppercase;}
-.overwatch-table tbody tr:hover {background-color: #111827;}
-.overwatch-table .portrait-cell {width: 76px; text-align: center;}
-.overwatch-table .portrait-cell img {border-radius: 10px; width: 54px; height: 54px; object-fit: cover;}
-.overwatch-table .hero-cell {text-align: left; font-weight: 700; color: var(--text);}
-.overwatch-table .role-cell {text-align: center; color: var(--text);}
-.overwatch-table .rate-cell {text-align: left; min-width: 152px;}
-.overwatch-table .score-cell {text-align: center; font-weight: 800; min-width: 92px; color: #fbbf24;}
-.overwatch-table .rank-cell {text-align: center; padding: 4px 8px;}
-.rank-pill {display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:30px;border-radius:999px;font-weight:900;font-size:1.05rem;border:1px solid currentColor;background:rgba(255,255,255,0.05);}
-.meta-type-badge {display: inline-block; margin-left: 8px; padding: 2px 7px; border-radius: 999px; font-size: 0.68rem; font-weight: 850; letter-spacing: 0.02em; vertical-align: middle;}
-.meta-dominant {background: rgba(250, 204, 21, 0.14); color: #fde68a; border: 1px solid rgba(250, 204, 21, 0.36);}
-.meta-overheated {background: rgba(249, 115, 22, 0.14); color: #fdba74; border: 1px solid rgba(251, 146, 60, 0.42);}
-.meta-ban-pressure {background: rgba(248, 113, 113, 0.14); color: #fecaca; border: 1px solid rgba(248, 113, 113, 0.42);}
-.meta-underrated {background: rgba(16, 185, 129, 0.14); color: #86efac; border: 1px solid rgba(52, 211, 153, 0.42);}
-.meta-expert {background: rgba(20, 184, 166, 0.13); color: #99f6e4; border: 1px solid rgba(45, 212, 191, 0.38);}
-.meta-niche {background: rgba(148, 163, 184, 0.10); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.28);}
-.low-pick-badge {display: inline-block; margin-left: 6px; padding: 2px 7px; border-radius: 999px; font-size: 0.68rem; font-weight: 800; vertical-align: middle; color: #fed7aa; background: rgba(249, 115, 22, 0.12); border: 1px solid rgba(251, 146, 60, 0.35);}
-.rate-line {display:flex;align-items:center;gap:9px;}
-.rate-bar {flex:1;background: #1f2937; border-radius: 999px; height: 8px; overflow: hidden;}
-.rate-fill {height: 100%; border-radius: 999px;}
-.rate-fill.pick {background: #60a5fa;}
-.rate-fill.win {background: #34d399;}
-.rate-fill.ban {background: #f87171;}
-.rate-text {width:48px;text-align:right;font-size: 0.84rem; color: var(--text); font-weight:700;}
-.header-note {font-size: 0.9rem; color: #cbd5e1; margin-bottom: 8px;}
-@media (max-width: 860px) {
-    .overwatch-table {border: 0; background: transparent;}
-    .overwatch-table thead {display:none;}
-    .overwatch-table, .overwatch-table tbody, .overwatch-table tr, .overwatch-table td {display:block;width:100%;}
-    .overwatch-table tr {border:1px solid var(--border);border-radius:12px;margin-bottom:10px;background:rgba(15,23,42,0.82);overflow:hidden;}
-    .overwatch-table td {border-right:0!important;padding:8px 12px;}
-    .overwatch-table td[data-label]::before {content:attr(data-label);display:block;color:#8fa7cc;font-size:0.72rem;font-weight:850;letter-spacing:0.05em;text-transform:uppercase;margin-bottom:5px;}
-    .overwatch-table .portrait-cell {width:100%;text-align:left;}
-    .overwatch-table .role-cell,.overwatch-table .score-cell,.overwatch-table .rank-cell {text-align:left;}
-    .overwatch-table .rate-cell {min-width:0;}
-    .overwatch-table .rate-cell::before {display:inline-flex!important;align-items:center;gap:6px;margin-bottom:7px;}
-    .overwatch-table .rate-cell.win::before {content:"승률";}
-    .overwatch-table .rate-cell.pick::before {content:"픽률";}
-    .overwatch-table .rate-cell.ban::before {content:"밴률";}
-}
-
-/* ---------------------------------------------------------------------------
-   모바일(폰 폭 640px 이하). PC 레이아웃은 건드리지 않고 좁은 화면에서만 덮어쓴다.
-   위 표 규칙(860px)보다 뒤에 있어야 이긴다.
-   --------------------------------------------------------------------------- */
-/* 좁은 화면에서도 종합 점수 1위 영웅 아트를 살린다. 아트는 오른쪽 절반, 글은 왼쪽에만 둬서 겹치지 않게 한다.
-   (1100px 규칙의 .hero-showcase-left max-width:100% 보다 뒤에 있어야 이긴다) */
-@media (max-width: 900px) {
-    .hero-showcase-art { width: 50%; right: 0; }
-    .hero-showcase-left { max-width: 62%; }
-}
-
-@media (max-width: 640px) {
-    /* 위의 min-width:0 이 Streamlit 의 좁은 화면 컬럼 줄바꿈을 막는다. 폰에서는 한 줄씩 쌓는다. */
-    [data-testid="stHorizontalBlock"] { flex-wrap: wrap; }
-    [data-testid="stColumn"] {
-        flex: 1 1 100% !important;
-        width: 100% !important;
-        min-width: 100% !important;
-    }
-
-    .block-container,
-    [data-testid="stMainBlockContainer"] { padding: 0.8rem 0.9rem 2rem !important; }
-
-    /* TOP 카드: 1열 4장은 너무 길어서 2×2 로 */
-    .ow-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-    .ow-card { height: 150px; }
-
-    /* 전장 카드 1위 들림은 좁은 화면에서 위 제목을 가린다 */
-    .map-card.featured { transform: none; }
-
-    /* 순위표 카드: 영웅 / 승률·픽률·밴률 한 줄씩(이름 · 가로 막대 · 값) / 점수 */
-    .overwatch-table td.rate-cell {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        border-bottom: 0;
-        padding: 5px 12px;
-    }
-    .overwatch-table .rate-cell::before {
-        flex: none;
-        width: 30px;
-        margin-bottom: 0 !important;
-    }
-    .overwatch-table .rate-cell .rate-line { flex: 1; min-width: 0; }
-    .overwatch-table td.rate-cell.ban { padding-bottom: 10px; }
-
-    /* 종합 점수 1위 카드: 폭 350px 안에 이름·지표·아트가 같이 들어가게 줄인다 */
-    .hero-showcase-card { min-height: 330px; padding: 20px 18px; }
-    .hero-showcase-num { font-size: 110px; right: 4%; top: 2%; }
-    .hero-showcase-stats { gap: 10px 18px; }
-    .hero-showcase-stat-value { font-size: 24px; }
-}
-
-/* ---------------------------------------------------------------------------
-   패치 노트 카드. main.py 인라인 <style> 에서 옮겨왔다.
-   --------------------------------------------------------------------------- */
 .patch-intel-wrap {
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    background: linear-gradient(180deg, var(--surface) 0%, #12111f 100%);
+    border: 1px solid var(--line);
+    border-radius: var(--r-card);
+    background: var(--bg);
     padding: 16px 18px;
-    margin: 4px 0 14px;
 }
+
 .patch-intel-top {
     display: flex;
     justify-content: space-between;
-    gap: 16px;
     align-items: flex-start;
+    gap: 16px;
 }
+
 .patch-kicker {
-    color: #ff8da0;
-    font-size: 0.76rem;
-    font-weight: 800;
-    letter-spacing: 0.05em;
+    color: var(--accent);
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
     margin-bottom: 5px;
 }
+
 .patch-title {
     color: var(--text);
-    font-size: 1.04rem;
-    font-weight: 850;
-    line-height: 1.35;
+    font-size: 1.02rem;
+    font-weight: 700;
+    line-height: 1.4;
     margin-bottom: 6px;
 }
-.patch-summary {
-    color: #cbd5e1;
-    font-size: 0.92rem;
-    line-height: 1.55;
+
+.patch-summary,
+.patch-ai-summary {
+    color: var(--text-2);
+    font-size: 0.9rem;
+    line-height: 1.6;
 }
+
 .patch-meta {
-    color: #94a3b8;
+    color: var(--muted);
     font-size: 0.82rem;
     white-space: nowrap;
     text-align: right;
 }
+
 .patch-link {
     display: inline-block;
     margin-top: 8px;
-    color: #ff9db0;
-    font-weight: 800;
-    text-decoration: none;
-    border-bottom: 1px solid rgba(255, 157, 176, 0.5);
+    color: var(--accent) !important;
+    font-weight: 600;
+    text-decoration: none !important;
 }
+
+.patch-link:hover { text-decoration: underline !important; }
+
 .patch-hero-row {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
     margin-top: 12px;
 }
+
 .patch-hero-badge {
-    color: #ffd2db;
-    background: rgba(255, 77, 106, 0.13);
-    border: 1px solid rgba(255, 122, 140, 0.28);
-    border-radius: 999px;
+    color: var(--text-2);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--line-2);
+    border-radius: var(--r-chip);
     padding: 3px 9px;
     font-size: 0.76rem;
-    font-weight: 750;
+    font-weight: 600;
+    white-space: nowrap;
 }
-.patch-hero-badge.muted {
-    color: #cbd5e1;
-    background: rgba(148, 163, 184, 0.1);
-    border-color: rgba(148, 163, 184, 0.22);
-}
+
+.patch-hero-badge.muted { color: var(--muted); }
+
 .patch-ai-box {
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid rgba(90, 84, 128, 0.55);
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
 }
+
 .patch-ai-title {
-    color: #f8fafc;
+    color: var(--text);
     font-size: 0.9rem;
-    font-weight: 850;
-    margin-bottom: 5px;
+    font-weight: 700;
+    margin-bottom: 4px;
 }
+
 .patch-ai-sub {
-    color: #94a3b8;
+    color: var(--muted);
     font-size: 0.78rem;
     line-height: 1.45;
     margin-bottom: 6px;
 }
-.patch-ai-summary {
-    color: #dfe0f0;
-    font-size: 0.92rem;
-    line-height: 1.55;
-}
+
 .patch-ai-list {
-    color: #cbd5e1;
+    color: var(--text-2);
     font-size: 0.88rem;
-    line-height: 1.55;
+    line-height: 1.6;
     margin: 8px 0 0 18px;
     padding: 0;
 }
-.patch-ai-list li {
-    margin: 3px 0;
-}
-@media (max-width: 760px) {
-    .patch-intel-top {display: block;}
-    .patch-meta {text-align: left; margin-top: 8px; white-space: normal;}
-}
 
-/* ---------------------------------------------------------------------------
-   2_hero_trends.py 인라인 <style> 에서 옮겨왔다.
-   --------------------------------------------------------------------------- */
+.patch-ai-list li { margin: 3px 0; }
+
+/* ===========================================================================
+   12. 영웅 추이 페이지
+   =========================================================================== */
+
 .trend-context {
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    background: linear-gradient(135deg, var(--surface) 0%, #0f1b31 100%);
-    padding: 10px 14px;
-    color: var(--muted);
     display: flex;
     align-items: center;
     gap: 14px;
-    margin-bottom: 12px;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+    padding: 12px 16px;
+    border: 1px solid var(--line);
+    border-radius: var(--r-card);
+    background: var(--surface);
+    animation: rise 0.5s var(--ease) backwards;
 }
+
 .trend-context img,
 .trend-context .portrait-fallback {
-    width: 54px;
-    height: 54px;
+    width: 44px;
+    height: 44px;
     border-radius: 10px;
     object-fit: cover;
     flex-shrink: 0;
-    border: 1px solid rgba(148, 163, 184, 0.35);
-    background: #1f2937;
-}
-.trend-context-main {
-    flex: 1;
-    min-width: 220px;
-}
-.trend-context-badge {
-    display: inline-block;
-    padding: 2px 7px;
-    border-radius: 999px;
-    background: rgba(59,130,246,0.12);
-    border: 1px solid rgba(59,130,246,0.3);
-    color: #bfdbfe;
-    font-size: 0.7rem;
-    font-weight: 800;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    margin-bottom: 4px;
-}
-.trend-context-title {
-    color: var(--text);
-    font-size: 1.06rem;
-    font-weight: 800;
-    line-height: 1.25;
-}
-.trend-context-sub {
-    color: var(--muted);
-    font-size: 0.86rem;
-    margin-top: 2px;
-}
-.trend-context-rank {
-    color: var(--muted);
-    font-size: 0.78rem;
-    font-weight: 800;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    text-align: right;
-    flex-shrink: 0;
-}
-.trend-context-rank strong {
-    display: block;
-    color: var(--text);
-    font-size: 1.7rem;
-    line-height: 1;
-    margin-top: 3px;
-}
-@media (max-width: 700px) {
-    .trend-context {
-        align-items: flex-start;
-    }
-    .trend-context-rank {
-        width: 100%;
-        text-align: left;
-        padding-left: 68px;
-    }
+    background: var(--surface-2);
 }
 
-/* ---------------------------------------------------------------------------
-   3_hero_detail.py 인라인 <style> 에서 옮겨왔다.
-   --------------------------------------------------------------------------- */
+.trend-context-main { flex: 1; min-width: 200px; }
+
+.trend-context-title {
+    color: var(--text);
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.trend-context-sub {
+    color: var(--muted);
+    font-size: 0.82rem;
+    margin-top: 2px;
+}
+
+.trend-context-rank {
+    flex-shrink: 0;
+    text-align: right;
+    color: var(--muted);
+    font-size: 0.76rem;
+    font-weight: 600;
+}
+
+.trend-context-rank strong {
+    display: block;
+    margin-top: 2px;
+    font-size: 1.6rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.kpi-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    animation: rise 0.6s 0.08s var(--ease) backwards;
+}
+
+.kpi-card {
+    border: 1px solid var(--line);
+    border-radius: var(--r-card);
+    background: var(--surface);
+    padding: 16px 18px;
+}
+
+.kpi-value {
+    color: #fff;
+    font-size: 2.5rem;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    margin-top: 10px;
+}
+
+.kpi-delta {
+    display: inline-flex;
+    align-self: flex-start;  /* 카드가 flex column 이라 stretch 로 늘어나는 것을 막는다 */
+    align-items: center;
+    gap: 5px;
+    margin-top: 12px;
+    padding: 3px 8px;
+    border-radius: var(--r-chip);
+    font-size: 0.76rem;
+    font-weight: 700;
+}
+
+.kpi-delta svg { width: 9px; height: 7px; flex-shrink: 0; }
+
+.kpi-delta.up { color: var(--good); background: rgba(62, 207, 142, 0.12); }
+.kpi-delta.down { color: var(--danger); background: rgba(255, 92, 106, 0.12); }
+
+/* 좌측 아트 카드와 우측 KPI 의 높이를 맞춘다. height:100% 는 부모 높이가 없으면
+   0 으로 접혀서 min-height 로 바닥을 깔고 stretch 로 늘린다. */
+[data-testid="stHorizontalBlock"]:has(.portrait-card) { align-items: stretch; }
+
+[data-testid="stHorizontalBlock"]:has(.portrait-card) .kpi-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.portrait-card {
+    position: relative;
+    min-height: 300px;
+    height: 100%;
+    border-radius: var(--r-card);
+    overflow: hidden;
+    border: 1px solid var(--line);
+    background:
+        radial-gradient(70% 55% at 50% 72%, color-mix(in srgb, var(--pc-accent, #f99e1a) 32%, transparent), transparent 72%),
+        var(--surface);
+    animation: rise 0.6s var(--ease) backwards;
+}
+
+.portrait-card-art {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: bottom center;
+    animation: fade-in 0.8s 0.15s var(--ease) backwards;
+}
+
+.portrait-card-art.bg { background-size: cover; }
+
+.portrait-card-body {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 28px 14px 14px;
+    background: linear-gradient(180deg, transparent, rgba(11, 12, 16, 0.92));
+}
+
+.portrait-card-name {
+    color: #fff;
+    font-size: 1.4rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+}
+
+.portrait-card-cap {
+    color: var(--text-2);
+    font-size: 0.78rem;
+    font-weight: 500;
+    margin-top: 3px;
+}
+
+[data-testid="stPlotlyChart"] { animation: fade-in 0.6s 0.15s var(--ease) backwards; }
+
+/* ===========================================================================
+   13. 영웅 상세 페이지
+   =========================================================================== */
+
 .perk-card {
     position: relative;
     display: flex;
     align-items: center;
-    gap: 8px;
-    background: rgba(15, 23, 42, 0.72);
-    border: 1px solid #334155;
+    gap: 12px;
+    margin-top: 8px;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
     border-radius: 10px;
-    padding: 6px 8px;
-    margin-top: 6px;
+    background: var(--surface);
     cursor: help;
     outline: none;
-    transition: border-color 150ms ease, background 150ms ease, transform 150ms ease;
+    transition: border-color 0.15s ease, background 0.15s ease;
+    animation: rise 0.5s 0.1s var(--ease) backwards;
 }
-[data-testid="stHorizontalBlock"]:has(.perk-card) {
-    position: relative;
-    overflow: visible;
+
+.perk-card:hover,
+.perk-card:focus-visible {
+    border-color: var(--line-2);
+    background: var(--surface-2);
 }
+
+/* 툴팁이 옆 컬럼 위로 떠야 해서 이 컬럼만 쌓임 순서를 올린다 */
+[data-testid="stHorizontalBlock"]:has(.perk-card) { position: relative; overflow: visible; }
+
 [data-testid="stColumn"]:has(.perk-card) {
     position: relative;
     z-index: 20;
     overflow: visible;
 }
+
 [data-testid="stColumn"]:has(.perk-card:hover),
 [data-testid="stColumn"]:has(.perk-card:focus-visible) {
     z-index: 10000;
 }
+
 [data-testid="stColumn"]:has(.perk-card) [data-testid="stVerticalBlock"],
 [data-testid="stColumn"]:has(.perk-card) [data-testid="stMarkdownContainer"] {
     overflow: visible;
 }
-.perk-card:hover,
-.perk-card:focus-visible {
-    border-color: rgba(255, 122, 140, 0.7);
-    background: rgba(30, 41, 59, 0.96);
-    transform: translateY(-1px);
+
+.perk-icon {
+    width: 52px;
+    height: 52px;
+    object-fit: cover;
+    border-radius: 10px;
+    border: 1px solid var(--line-2);
+    flex-shrink: 0;
 }
+
+.perk-main { flex: 1; min-width: 0; }
+
+.perk-name {
+    color: var(--text);
+    font-size: 0.88rem;
+    font-weight: 600;
+    line-height: 1.25;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.perk-bar {
+    margin-top: 8px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.07);
+    overflow: hidden;
+}
+
+.perk-bar span {
+    display: block;
+    height: 100%;
+    border-radius: 2px;
+    transform-origin: left;
+    animation: grow 0.9s 0.3s var(--ease) backwards;
+}
+
+.perk-rate {
+    min-width: 52px;
+    flex-shrink: 0;
+    text-align: right;
+    font-size: 1.1rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
 .perk-tooltip {
     position: absolute;
     left: calc(100% + 12px);
@@ -2156,85 +1745,78 @@ h1, h2, h3, h4,
     z-index: 10001;
     width: min(360px, 46vw);
     padding: 14px;
-    color: #e2e8f0;
-    background: linear-gradient(145deg, rgba(15, 31, 49, 0.99), rgba(17, 24, 39, 0.99));
-    border: 2px solid #ff4d6a;
+    color: var(--text-2);
+    background: var(--surface-2);
+    border: 1px solid var(--line-2);
     border-radius: 10px;
-    box-shadow: 0 18px 45px rgba(2, 6, 23, 0.72), 0 0 18px rgba(255, 77, 106, 0.22);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6);
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
-    transform: translate(8px, -50%);
-    transition: opacity 140ms ease, transform 140ms ease, visibility 140ms ease;
+    transform: translate(6px, -50%);
+    transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
 }
+
 .perk-card:hover .perk-tooltip,
 .perk-card:focus-visible .perk-tooltip {
     opacity: 1;
     visibility: visible;
     transform: translate(0, -50%);
 }
-.perk-tooltip-head {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
+
+.perk-tooltip-head { display: flex; align-items: center; gap: 10px; }
+
 .perk-tooltip-icon {
-    width: 42px;
-    height: 42px;
+    width: 40px;
+    height: 40px;
     object-fit: contain;
     flex-shrink: 0;
 }
+
 .perk-tooltip-name {
     flex: 1;
-    color: #a5f3fc;
-    font-size: 1rem;
-    font-weight: 800;
-    line-height: 1.25;
+    color: var(--text);
+    font-size: 0.98rem;
+    font-weight: 700;
+    line-height: 1.3;
 }
+
 .perk-tooltip-rate {
-    color: #ff9db0;
-    font-size: 1.18rem;
-    font-weight: 900;
+    color: var(--accent);
+    font-size: 1.1rem;
+    font-weight: 800;
 }
+
 .perk-tooltip-description {
     margin-top: 10px;
-    color: #cbd5e1;
-    font-size: 0.88rem;
-    line-height: 1.55;
+    font-size: 0.86rem;
+    line-height: 1.6;
     word-break: keep-all;
 }
-@media (max-width: 900px) {
-    .perk-tooltip {
-        left: 0;
-        top: calc(100% + 8px);
-        width: min(360px, 82vw);
-        transform: translateY(8px);
-    }
-    .perk-card:hover .perk-tooltip,
-    .perk-card:focus-visible .perk-tooltip {
-        transform: translateY(0);
-    }
+
+.perk-empty {
+    margin-top: 10px;
+    padding: 8px 10px;
+    border: 1px dashed var(--line-2);
+    border-radius: 8px;
+    color: var(--muted);
+    font-size: 0.8rem;
 }
 
-.rate-text.muted { color: var(--muted); }
-
-/* ---------------------------------------------------------------------------
-   영웅 상세. pages/3_hero_detail.py 인라인 style= 에서 옮겨왔다.
-   --------------------------------------------------------------------------- */
 .hero-ai-note {
     margin-top: 14px;
-    border: 1px solid rgba(255, 122, 140, 0.30);
-    border-radius: var(--radius-lg, 12px);
-    background: linear-gradient(180deg, rgba(15, 23, 42, 0.94) 0%, rgba(12, 20, 34, 0.98) 100%);
-    padding: 12px 13px;
-    font-family: var(--font);
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-left: 2px solid var(--accent);
+    border-radius: 10px;
+    background: var(--surface);
 }
 
 .hero-ai-kicker {
-    color: var(--info);
-    font-size: 0.74rem;
-    font-weight: 850;
-    letter-spacing: 0.05em;
+    color: var(--accent);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
     margin-bottom: 5px;
 }
@@ -2242,8 +1824,8 @@ h1, h2, h3, h4,
 .hero-ai-title {
     color: var(--text);
     font-size: 0.9rem;
-    font-weight: 850;
-    margin-bottom: 5px;
+    font-weight: 700;
+    margin-bottom: 4px;
 }
 
 .hero-ai-meta {
@@ -2254,82 +1836,232 @@ h1, h2, h3, h4,
 }
 
 .hero-ai-body {
-    color: var(--text);
+    color: var(--text-2);
     font-size: 0.86rem;
-    line-height: 1.55;
-}
-
-.perk-empty {
-    margin-top: 10px;
-    padding: 8px 10px;
-    border: 1px dashed var(--border);
-    border-radius: var(--radius-md);
-    color: var(--muted);
-    font-size: 0.8rem;
+    line-height: 1.6;
 }
 
 .hmap-card {
     position: relative;
     width: 100%;
-    height: 72px;
-    border-radius: var(--radius-md);
+    height: 84px;
+    margin-bottom: 8px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
     background-size: cover;
-    background-position: center;
-    margin-bottom: 10px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    background-position: center 42%;
+    /* 기본값(border-box)이면 반투명 테두리 밑으로 스크림이 안 덮인 원본이 1px 비쳐
+       밝은 전장(하바나 등)에 금색 윤곽선이 생긴다 */
+    background-clip: padding-box;
     overflow: hidden;
+    transition: border-color 0.2s ease;
+    animation: rise 0.5s 0.12s var(--ease) backwards;
 }
 
+.hmap-card:hover { border-color: var(--line-2); }
+.hmap-card:last-child { margin-bottom: 0; }
+.hmap-head { margin-bottom: 8px; }
+
+/* 카드 전체를 덮으면 전장 그림에 검은 막을 씌운 것처럼 보인다. 글자가 놓이는
+   왼쪽(전장 이름)과 오른쪽(승률) 가장자리만 어둡게 하고 가운데는 원본 그대로 둔다. */
 .hmap-scrim {
     position: absolute;
     inset: 0;
-    background: linear-gradient(90deg, rgba(15, 23, 42, 0.95) 0%,
-                rgba(15, 23, 42, 0.55) 55%, rgba(15, 23, 42, 0.82) 100%);
+    background: linear-gradient(90deg,
+        rgba(11, 12, 16, 0.78) 0%,
+        rgba(11, 12, 16, 0.4) 28%,
+        rgba(11, 12, 16, 0) 50%,
+        rgba(11, 12, 16, 0) 62%,
+        rgba(11, 12, 16, 0.45) 82%,
+        rgba(11, 12, 16, 0.76) 100%);
 }
+
+.hmap-name,
+.hmap-sub,
+.hmap-rate { text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7); }
 
 .hmap-badge {
     position: absolute;
     top: 8px;
-    right: 100px;
+    right: 96px;
     border: 1px solid;
-    border-radius: 999px;
-    padding: 2px 8px;
-    font-size: 0.68rem;
+    border-radius: var(--r-chip);
+    padding: 2px 7px;
+    font-size: 0.66rem;
     font-weight: 700;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.04em;
 }
 
-.hmap-left {
-    position: absolute;
-    top: 50%;
-    left: 18px;
-    transform: translateY(-50%);
-}
-
+.hmap-left,
 .hmap-right {
     position: absolute;
     top: 50%;
-    right: 18px;
     transform: translateY(-50%);
-    text-align: right;
 }
+
+.hmap-left { left: 16px; }
+.hmap-right { right: 16px; text-align: right; }
 
 .hmap-name {
     color: var(--text);
-    font-size: 1.05rem;
+    font-size: 1rem;
     font-weight: 700;
-    letter-spacing: 0.01em;
     line-height: 1.2;
 }
 
 .hmap-sub {
-    color: var(--muted);
-    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 0.76rem;
     margin-top: 2px;
 }
 
 .hmap-rate {
-    font-size: 1.35rem;
+    font-size: 1.25rem;
     font-weight: 800;
+    letter-spacing: -0.02em;
     line-height: 1.1;
+}
+
+/* ===========================================================================
+   14. 모션
+   =========================================================================== */
+
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } }
+@keyframes fade-in { from { opacity: 0; } }
+@keyframes art-in { from { opacity: 0; transform: translateX(28px); } }
+@keyframes grow { from { transform: scaleX(0); } }
+@keyframes row-in { from { opacity: 0; transform: translateY(4px); } }
+
+@keyframes pulse {
+    0%        { transform: scale(1); opacity: 0.55; }
+    70%, 100% { transform: scale(2.8); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 1ms !important;
+        animation-delay: 0ms !important;
+        transition-duration: 1ms !important;
+    }
+
+    /* 무한 반복 애니메이션을 1ms 로 줄이면 깜빡인다. 아예 끄고 첫 묶음만 고정한다 */
+    .rot-slide, .rot-tab, .rot-tab::after, .live-dot i::after { animation: none !important; }
+    .rot-slide:first-child { opacity: 1; visibility: visible; }
+    .rot-tab:first-child { color: var(--text); }
+    .rot-tab:first-child::after { transform: none; }
+}
+
+/* ===========================================================================
+   15. 반응형
+   =========================================================================== */
+
+@media (max-width: 1100px) {
+    .ow-card-grid,
+    .map-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .hero-showcase-left { max-width: 62%; }
+}
+
+@media (max-width: 900px) {
+    .hero-showcase-art { width: 50%; right: 0; }
+    .kpi-row { grid-template-columns: 1fr; }
+    .perk-tooltip {
+        left: 0;
+        top: calc(100% + 8px);
+        width: min(360px, 82vw);
+        transform: translateY(6px);
+    }
+    .perk-card:hover .perk-tooltip,
+    .perk-card:focus-visible .perk-tooltip { transform: translateY(0); }
+}
+
+/* 순위표 → 카드. 영웅 / 점수 한 줄, 그 아래 승률·픽률·밴률 막대 */
+@media (max-width: 860px) {
+    .table-wrap {
+        border: 0;
+        background: transparent;
+        overflow: visible;
+    }
+    .overwatch-table,
+    .overwatch-table tbody { display: block; }
+    .overwatch-table thead { display: none; }
+    .overwatch-table tr {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        column-gap: 12px;
+        row-gap: 6px;
+        margin-bottom: 8px;
+        padding: 12px 14px;
+        border: 1px solid var(--line);
+        border-radius: var(--r-card);
+        background: var(--surface);
+    }
+    .overwatch-table td {
+        min-height: 0;
+        padding: 0;
+        border: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+    }
+    .overwatch-table td.hero-cell { grid-column: 1; margin-bottom: 4px; }
+    .overwatch-table td.score-cell {
+        grid-column: 2;
+        grid-row: 1;
+        align-self: start;
+        justify-content: flex-end;
+    }
+    .overwatch-table td.rate-cell { grid-column: 1 / -1; gap: 10px; }
+    .overwatch-table .rate-cell::before {
+        flex: none;
+        width: 28px;
+        color: var(--muted);
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .overwatch-table .rate-cell.win::before { content: "승률"; }
+    .overwatch-table .rate-cell.pick::before { content: "픽률"; }
+    .overwatch-table .rate-cell.ban::before { content: "밴률"; }
+    .overwatch-table .rate-cell .rate-line { flex: 1; }
+    .patch-intel-top { display: block; }
+    .patch-meta { text-align: left; margin-top: 8px; white-space: normal; }
+}
+
+@media (max-width: 700px) {
+    .trend-context { align-items: flex-start; flex-wrap: wrap; }
+    .trend-context-rank { width: 100%; text-align: left; padding-left: 58px; }
+}
+
+@media (max-width: 640px) {
+    /* 위의 min-width:0 이 Streamlit 의 좁은 화면 컬럼 줄바꿈을 막는다. 폰에서는 한 줄씩 쌓는다 */
+    /* gap="large"(4rem)가 줄바꿈된 뒤엔 세로 간격이 된다. 빈 여백 컬럼은 한 줄을 통째로 먹는다 */
+    [data-testid="stHorizontalBlock"] { flex-wrap: wrap; row-gap: 16px !important; }
+    [data-testid="stColumn"] {
+        flex: 1 1 100% !important;
+        width: 100% !important;
+        min-width: 100% !important;
+    }
+    [data-testid="stColumn"]:has(> [data-testid="stVerticalBlock"]:empty) { display: none; }
+
+    .block-container,
+    [data-testid="stMainBlockContainer"] { padding: 3rem 1rem 2rem !important; }  /* 상단 사이드바 열기 버튼 아래부터 */
+
+    .ow-page-head { padding-bottom: 14px; }
+    .ow-page-status { gap: 10px; font-size: 0.74rem; }
+    .ow-page-src { padding-left: 10px; }
+
+    .hero-showcase-card { min-height: 320px; padding: 20px 18px; }
+    .hero-showcase-left { max-width: 66%; min-height: 278px; }
+    h2.hero-showcase-name { font-size: 2rem !important; }
+    .hero-showcase-stats {
+        display: grid;
+        grid-template-columns: repeat(2, auto);
+        justify-content: start;
+        gap: 12px 20px;
+    }
+    .hero-showcase-stat { padding: 0; border: 0; }
+    .hero-showcase-stat-value { font-size: 1.35rem; }
+    .hero-showcase-cta { margin-top: 16px; }
+
+    .ow-card-grid { gap: 8px; }
+    .ow-card { height: 160px; }
+    .rot-tabs { gap: 14px; }
 }

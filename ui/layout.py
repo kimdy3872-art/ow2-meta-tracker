@@ -9,6 +9,7 @@ page_shell 은 그 순서를 하나로 고정한다.
 from __future__ import annotations
 
 from contextlib import contextmanager
+from pathlib import Path
 
 import streamlit as st
 
@@ -23,6 +24,9 @@ COLS_ART_KPI = [1, 2.5]         # 영웅 아트 + 지표
 COLS_FILTER_WIDE = [1.25, 3.75]  # 단일 필터 + 나머지 여백
 GAP = "large"
 
+# 사이드바 브랜드 마크(ui/components.py)와 같은 도형이다.
+FAVICON = Path(__file__).resolve().parent.parent / "assets" / "favicon.png"
+
 
 @contextmanager
 def page_shell(*, page_key: str, title: str, subtitle: str = "",
@@ -33,8 +37,8 @@ def page_shell(*, page_key: str, title: str, subtitle: str = "",
     본문에서 예외가 나도 헤더가 남는다.
     """
     # auto: PC 에서는 펼치고, 폰(좁은 화면)에서는 접힌 채 시작한다.
-    st.set_page_config(page_title=title, layout="wide",
-                       initial_sidebar_state="auto")
+    st.set_page_config(page_title=f"{title} · OW2 메타 트래커", page_icon=str(FAVICON),
+                       layout="wide", initial_sidebar_state="auto")
     apply_global_theme()
     render_page_hero(title, subtitle, badge, live_label=_latest_data_date())
     render_sidebar_navigation(page_key, filters=filters)

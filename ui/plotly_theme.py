@@ -50,13 +50,13 @@ def style_chart(fig, title: str = "", height: int | None = None, scene: bool = F
         paper_bgcolor="rgba(0,0,0,0)",
         margin=dict(l=10, r=10, t=44 if title else 12, b=10),
         legend=dict(
-            bgcolor="rgba(18, 20, 33, 0.82)",
-            bordercolor="rgba(148, 150, 190, 0.22)",
+            bgcolor="rgba(19, 21, 27, 0.9)",
+            bordercolor="rgba(255, 255, 255, 0.08)",
             borderwidth=1,
             font=dict(family=GLOBAL_FONT_FAMILY, size=12, color=GLOBAL_TEXT_COLOR),
         ),
         hoverlabel=dict(
-            bgcolor="#161a2b",
+            bgcolor="#1a1d25",
             bordercolor=GLOBAL_ACCENT_COLOR,
             font=dict(family=GLOBAL_FONT_FAMILY, size=12, color=GLOBAL_TEXT_COLOR),
         ),
@@ -104,13 +104,13 @@ def _register_template() -> None:
             xaxis=axis,
             yaxis=axis,
             hoverlabel=dict(
-                bgcolor="#1e222e",
+                bgcolor="#1a1d25",
                 bordercolor=GLOBAL_ACCENT_COLOR,
                 font=dict(family=GLOBAL_FONT_FAMILY, size=12, color=GLOBAL_TEXT_COLOR),
             ),
             legend=dict(
-                bgcolor="rgba(18, 20, 33, 0.82)",
-                bordercolor="rgba(148, 150, 190, 0.22)",
+                bgcolor="rgba(19, 21, 27, 0.9)",
+                bordercolor="rgba(255, 255, 255, 0.08)",
                 borderwidth=1,
             ),
             margin=dict(l=40, r=20, t=20, b=40),

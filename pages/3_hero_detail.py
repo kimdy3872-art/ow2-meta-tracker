@@ -35,7 +35,7 @@ from ui import (
 _shell = page_shell(
     page_key="detail",
     title="영웅 상세 리포트",
-    badge="Hero Deep Dive",
+    badge="Hero Report",
     filters=("tier",),
 )
 _shell.__enter__()
@@ -48,7 +48,7 @@ def normalize_hero_key(hero_name):
     return re.sub(r"[^0-9a-z가-힣]+", "", text)
 
 
-@st.cache_data(ttl=DATA_CACHE_TTL)
+@st.cache_data(ttl=DATA_CACHE_TTL, show_spinner=False)
 def load_hero_perk_data():
     df = read_data_parquet(PERK_DATA_PATH)
     if df is None or df.empty:
@@ -162,11 +162,10 @@ render_hero_showcase(
     hero_name=hero_name,
     art=get_hero_banner_art(hero_name),
     accent=get_hero_color(hero_name),
-    watermark="-" if pd.isna(_score_val) else f"{_score_val:+.2f}",
-    eyebrow="Hero Deep Dive",
+    eyebrow="영웅 리포트",
     meta=f"{translate_tier_name(selected_tier)} · "
-         f"{translate_role_name(str(hero_row.get('role', '')))} · "
-         f"랭크 {hero_row.get('rank', '-')} · {score_strength_raw}",
+         f"{translate_role_name(str(hero_row.get('role', '')))} · {score_strength_raw}",
+    rank=str(hero_row.get("rank", "")),
     stats=[
         ("승률", _stat(hero_row.get("win_rate"))),
         ("픽률", _stat(hero_row.get("pick_rate"))),
@@ -331,17 +330,17 @@ with right_col:
         top_win_df = hero_map_df.nlargest(2, win_order_col)
         top_pick_df = hero_map_df.nlargest(2, "pick_rate")
 
-        st.markdown("**Top Winrate**")
-        st.markdown(
-            "".join(make_map_card(row, "TOP WIN", GLOBAL_GOOD_COLOR) for _, row in top_win_df.iterrows()),
-            unsafe_allow_html=True,
-        )
-
-        st.markdown("**Top Pickrate**")
-        st.markdown(
-            "".join(make_map_card(row, "TOP PICK", GLOBAL_INFO_COLOR) for _, row in top_pick_df.iterrows()),
-            unsafe_allow_html=True,
-        )
+        # 라벨과 카드를 한 마크다운에 넣어야 라벨-카드 간격이 블록 간격(16px)보다 좁아진다.
+        for label, frame, badge, color in [
+            ("승률 높은 전장", top_win_df, "TOP WIN", GLOBAL_GOOD_COLOR),
+            ("많이 고르는 전장", top_pick_df, "TOP PICK", GLOBAL_INFO_COLOR),
+        ]:
+            st.markdown(
+                f"<div><div class='eyebrow hmap-head'>{label}</div>"
+                + "".join(make_map_card(row, badge, color) for _, row in frame.iterrows())
+                + "</div>",
+                unsafe_allow_html=True,
+            )
 
         with st.expander(f"모두 보기 ({len(hero_map_df)}개 전장)"):
             st.markdown(

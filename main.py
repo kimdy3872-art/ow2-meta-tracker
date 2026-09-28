@@ -47,9 +47,9 @@ from ui import (
 # -------------------------------------------------
 _shell = page_shell(
     page_key="main",
-    title="오버워치 2 경쟁전 메타 센터",
+    title="경쟁전 메타 순위",
     subtitle="",
-    badge="Live Competitive Meta",
+    badge="Overwatch 2 · Tier List",
 )
 _shell.__enter__()
 
@@ -210,7 +210,8 @@ selected_tier = resolve_tier(tiers)
 selected_role = selected_role_value()
 _s_col, _ = st.columns(COLS_FILTER_WIDE, gap=GAP)
 with _s_col:
-    search_hero = st.text_input("영웅 검색", key="search_hero", placeholder="영웅 이름")
+    search_hero = st.text_input("영웅 검색", key="search_hero", placeholder="영웅 이름으로 검색",
+                                label_visibility="collapsed")
 
 # 정렬은 드롭다운을 없애고 표 헤더 클릭으로 받는다(?sort= 쿼리 파라미터).
 SORT_COLUMNS = {
@@ -299,14 +300,13 @@ def render_rank_table_html(df):
 
     styles = ""  # 표 스타일은 assets/style.css 에 있다
     rows = []
-    for _, row in df.iterrows():
+    for row_no, (_, row) in enumerate(df.iterrows(), start=1):
         hero_name = str(row["hero"])
         hero = html.escape(hero_name)
         hero_query = urllib.parse.quote(hero_name, safe="")
         hero_link = (
-            f"<a href='?hero={hero_query}&tier={selected_tier}' target='_self' "
-            f"style='color:{GLOBAL_TEXT_COLOR}; text-decoration: underline; text-underline-offset: 3px;'>"
-            f"{hero}</a>"
+            f"<a class='hero-link' href='?hero={hero_query}&tier={selected_tier}' "
+            f"target='_self'>{hero}</a>"
         )
         meta_type_raw = str(row.get("score_strength", "") or "보통")
         meta_type = html.escape(meta_type_raw)
@@ -378,8 +378,8 @@ def render_rank_table_html(df):
             )
 
         rows.append(
-            "<tr>"
-            f"<td class='hero-cell'>{img_html}"
+            f"<tr style='--i:{min(row_no, 16)}'>"
+            f"<td class='hero-cell'><span class='row-num'>{row_no}</span>{img_html}"
             f"<div class='hero-cell-text'>"
             f"<div class='hero-cell-name nowrap'>{hero_cell_html}{low_html}</div>"
             f"<div class='hero-cell-sub nowrap'>{html.escape(sub_text)}</div>"
@@ -512,22 +512,15 @@ with _main_col:
     def _pct(v):
         return "-" if pd.isna(v) else f"{float(v):.1f}<span class='unit'>%</span>"
 
-    _watermark = _top.get(sort_col)
-    if pd.isna(_watermark):
-        _watermark_text = "-"
-    elif sort_col == "total_score":
-        _watermark_text = f"{float(_watermark):.1f}"
-    else:
-        _watermark_text = f"{float(_watermark):.1f}%"
-
     render_hero_showcase(
         hero_name=_top_hero,
         art=get_hero_banner_art(_top_hero),
         accent=get_hero_color(_top_hero),
-        watermark=_watermark_text,
         eyebrow=f"{sort_by} 1위",
         meta=f"{translate_tier_name(selected_tier)} · "
-             f"{translate_role_name(str(_top.get('role', '')))} · 랭크 {_top.get('rank', '-')}",
+             f"{translate_role_name(str(_top.get('role', '')))}",
+        rank=str(_top.get("rank", "")),
+        href=f"?hero={urllib.parse.quote(_top_hero, safe='')}&tier={selected_tier}",
         stats=[
             ("승률", _pct(_top.get("win_rate"))),
             ("픽률", _pct(_top.get("pick_rate"))),
@@ -539,25 +532,24 @@ with _main_col:
 
     # TOP Winrate / Pickrate / Banrate 를 자동 순환시킨다(제목도 함께 전환).
     render_rotating_card_groups([
-        (f"TOP {label}", _build_top_cards(col, name, frame, color))
-        for label, name, col, frame, color in [
-            ("WINRATE", "승률", "win_rate", _win_top4, GLOBAL_GOOD_COLOR),
-            ("PICKRATE", "픽률", "pick_rate", _pick_top4, GLOBAL_INFO_COLOR),
-            ("BANRATE", "밴률", "ban_rate", _ban_top4, GLOBAL_DANGER_COLOR),
+        (f"{name} TOP 4", _build_top_cards(col, name, frame, color))
+        for name, col, frame, color in [
+            ("승률", "win_rate", _win_top4, GLOBAL_GOOD_COLOR),
+            ("픽률", "pick_rate", _pick_top4, GLOBAL_INFO_COLOR),
+            ("밴률", "ban_rate", _ban_top4, GLOBAL_DANGER_COLOR),
         ]
     ])
 
     _maps = _map_cards(_top_hero)
     if _maps:
-        st.markdown("<div class='eyebrow'>Top Maps</div>", unsafe_allow_html=True)
-        render_map_cards(_maps)
+        render_map_cards(_maps, title=f"{_top_hero} · 승률 높은 전장")
 
-    section("영웅 랭크 순위표", "픽률·승률·밴률을 합친 종합 점수 순")
-    st.caption("영웅 이름을 클릭하면 상세 페이지로 이동합니다. 헤더를 눌러 정렬합니다.")
+    _order = "높은" if st.session_state.sort_desc else "낮은"
+    section("영웅 랭크 순위표",
+            f"{sort_by} {_order} 순 · {len(display_df)}명 · 열 제목을 누르면 정렬이 바뀝니다")
     st.markdown(render_rank_table_html(display_df), unsafe_allow_html=True)
 
 with _rail_col2:
-    st.markdown("<div class='ow-rail-sticky'>", unsafe_allow_html=True)
     # 정규화 풀에 그 영웅이 1위로 들어있으면 항상 1000 이 나온다. 전 티어를 기준으로 펴서
     # "다른 티어까지 통틀어 어느 위치인가"를 보여준다.
     # 같은 영웅이 티어마다 행을 가지므로 hero 로 dict 를 만들면 값이 덮어써진다.
@@ -606,7 +598,6 @@ with _rail_col2:
         _rank_distribution_rows(display_df),
         footnote=f"{translate_tier_name(selected_tier)} · 총 {len(display_df)}명",
     )
-    st.markdown("</div>", unsafe_allow_html=True)
 
 # 2차 지시서 PART C: 참조용 블록은 전부 최하단으로.
 st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)

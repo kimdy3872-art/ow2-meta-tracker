@@ -25,7 +25,6 @@ from .components import (  # noqa: F401
     _latest_data_date,
     icon_selectbox,
     render_rotating_card_groups,
-    render_hero_scroller,
     render_hero_portrait_card,
     render_hero_showcase,
     render_kpi_row,

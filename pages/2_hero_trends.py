@@ -19,7 +19,6 @@ from app_data import (
 )
 from ui import (
     COLS_ART_KPI,
-    COLS_HALF,
     GAP,
     page_shell,
     resolve_tier,
@@ -38,8 +37,8 @@ from ui import (
 
 _shell = page_shell(
     page_key="hero_trends",
-    title="영웅별 지표 추이",
-    badge="Hero Metric Trend",
+    title="영웅 추이",
+    badge="Trends",
 )
 _shell.__enter__()
 
@@ -73,7 +72,7 @@ def rank_color(rank):
     return GLOBAL_RANK_COLORS.get(str(rank), GLOBAL_TEXT_COLOR)
 
 
-@st.cache_data(ttl=DATA_CACHE_TTL)
+@st.cache_data(ttl=DATA_CACHE_TTL, show_spinner="추이 데이터를 불러오는 중…")
 def load_history_data():
     frames = []
     weekly_paths = list_data_files(os.path.join("data", "history", "weekly"), suffix=".parquet")
@@ -148,8 +147,10 @@ if history_df.empty:
     st.stop()
 
 # 티어/포지션은 사이드바 전역 필터. 본문에는 이 페이지 고유 필터(영웅·전장)만
-# 한 줄로 둔다. 전장 목록이 영웅·티어에 의존해서, 열만 먼저 잡고 나중에 채운다.
-_controls = st.columns(COLS_HALF, gap=GAP)
+# 한 줄로 붙여 둔다. 전장 목록이 영웅·티어에 의존해서, 줄만 먼저 잡고 나중에 채운다.
+# (반반 컬럼에 두면 드롭다운 폭 제한 때문에 전장 필터가 화면 가운데로 떨어진다.)
+_controls = st.container(horizontal=True, gap="small")
+FILTER_WIDTH = 220
 role_options = get_ordered_roles(history_df)
 selected_role = selected_role_value()
 if selected_role not in role_options:
@@ -176,12 +177,13 @@ _richest_hero = (
     else hero_options[0]
 )
 preferred_hero = st.session_state.get("detail_hero") or _richest_hero
-with _controls[0]:
+with _controls:
     selected_hero = st.selectbox(
         "영웅",
         hero_options,
         index=get_initial_index(hero_options, preferred_hero),
         placeholder="영웅 선택",
+        width=FILTER_WIDTH,
     )
 
 hero_df = role_df[role_df["hero"].astype(str) == selected_hero].copy()
@@ -193,13 +195,14 @@ tier_df = hero_df[hero_df["data_tier"].astype(str) == selected_tier].copy()
 map_options = sorted(tier_df["map"].dropna().astype(str).unique().tolist())
 if "all-maps" in map_options:
     map_options = ["all-maps"] + [m for m in map_options if m != "all-maps"]
-with _controls[1]:
+with _controls:
     selected_map = st.selectbox(
         "전장",
         map_options,
         index=0,
         format_func=lambda value: format_map_option(value, tier_df),
         placeholder="전장 선택",
+        width=FILTER_WIDTH,
     )
 
 map_df = tier_df[tier_df["map"].astype(str) == selected_map].copy()
@@ -256,7 +259,6 @@ st.markdown(
     <div class="trend-context">
         {portrait_html}
         <div class="trend-context-main">
-            <div class="trend-context-badge">Hero Trend</div>
             <div class="trend-context-title">{context_title}</div>
             <div class="trend-context-sub">표시 기간: {html.escape(date_text)}</div>
         </div>

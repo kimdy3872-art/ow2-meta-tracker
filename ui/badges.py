@@ -165,34 +165,25 @@ def role_icon(role: str, size: int = 18, color: str | None = None) -> str:
 # ═══════════════════════════════════════════════════════
 # 오버워치에 이런 등급은 없다. 티어리스트 관용 표기이므로 구할 에셋 자체가 없고,
 # 직접 만드는 것이 유일한 방법이자 저작권상 가장 안전한 방법이다.
+# A 는 노랑 쪽으로 둔다. 액센트(오버워치 오렌지)와 붙어 보이면 등급이 UI 강조로 읽힌다.
 RANK_COLORS: dict[str, str] = {
-    "S": "#ff4655",
-    "A": "#f59e0b",
-    "B": "#34d399",
-    "C": "#60a5fa",
-    "D": "#8b93a7",
+    "S": "#ff5c6a",
+    "A": "#f2c14e",
+    "B": "#3ecf8e",
+    "C": "#4ea8ff",
+    "D": "#7d8394",
 }
 
 
 def rank_badge(rank: str, size: int = 26) -> str:
-    """육각형 랭크 뱃지. 표 행·HERO 카드 공용."""
+    """랭크 글자 타일. 표 행·카드 공용. 색은 CSS(.rank-tag)가 --rank 로 받는다.
+
+    예전 육각형 SVG 는 26px 에서 글자가 뭉개졌다. 텍스트 타일은 어느 크기에서나 선명하다.
+    """
     c = RANK_COLORS.get(rank, RANK_COLORS["D"])
-    gid = _nid("rg")
     return (
-        f'<svg width="{size}" height="{size}" viewBox="0 0 32 32" '
-        f'style="vertical-align:middle;flex:none">'
-        f"<defs>"
-        f'<linearGradient id="{gid}" x1="16" y1="2" x2="16" y2="30" '
-        f'gradientUnits="userSpaceOnUse">'
-        f'<stop stop-color="{c}" stop-opacity=".34"/>'
-        f'<stop offset="1" stop-color="{c}" stop-opacity=".08"/>'
-        f"</linearGradient></defs>"
-        f'<path d="M16 1.8 28 8.6v14.8L16 30.2 4 23.4V8.6z" '
-        f'fill="url(#{gid})" stroke="{c}" stroke-width="1.4"/>'
-        f'<text x="16" y="21.4" text-anchor="middle" '
-        f'font-family="Bebas Neue, sans-serif" font-size="15" '
-        f'font-weight="700" fill="{c}">{rank}</text>'
-        f"</svg>"
+        f'<span class="rank-tag" style="--rank:{c};width:{size}px;height:{size}px;'
+        f'font-size:{size * 0.52:.0f}px">{rank}</span>'
     )
 
 
@@ -202,7 +193,7 @@ def rank_badge(rank: str, size: int = 26) -> str:
 # 영웅 추이 페이지의 "▲ 4.7%" 텍스트 화살표와 HEROES 카드의 ♡ 이모지를 대체한다.
 
 def delta_arrow(up: bool, size: int = 8) -> str:
-    c = "#34d399" if up else "#f87171"
+    c = "#3ecf8e" if up else "#ff5c6a"
     pts = "5,1 9.5,8 0.5,8" if up else "5,9 9.5,2 0.5,2"
     return (
         f'<svg width="{size}" height="{size}" viewBox="0 0 10 10" '
@@ -212,7 +203,7 @@ def delta_arrow(up: bool, size: int = 8) -> str:
 
 
 def heart_icon(filled: bool = False, size: int = 16) -> str:
-    c = "#ff4655" if filled else "rgba(255,255,255,.42)"
+    c = "#f99e1a" if filled else "rgba(255,255,255,.42)"
     fill = c if filled else "none"
     return (
         f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" '

@@ -502,7 +502,7 @@ def add_meta_type_label(df):
     return df
 
 
-@st.cache_data(ttl=DATA_CACHE_TTL)
+@st.cache_data(ttl=DATA_CACHE_TTL, show_spinner=False)
 def load_latest_stats():
     df = read_data_parquet(os.path.join("data", "latest", "latest_tier.parquet"))
 
@@ -556,7 +556,7 @@ def get_initial_index(options, preferred):
     return 0
 
 
-@st.cache_data
+@st.cache_data(show_spinner=False)
 def load_hero_portrait_map():
     url = "https://overfast-api.tekrop.fr/heroes"
     try:
@@ -580,7 +580,7 @@ def get_hero_image_url(hero_name):
     )
 
 
-@st.cache_data(ttl=DATA_CACHE_TTL)
+@st.cache_data(ttl=DATA_CACHE_TTL, show_spinner=False)
 def load_score_deltas(data_tier):
     """최근 원본 갱신 전후의 종합 점수 변화. ({영웅명: delta}, 비교 기준 날짜)
 
@@ -647,7 +647,7 @@ HERO_COLORS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "assets", "hero_colors.json")
 
 
-@st.cache_data
+@st.cache_data(show_spinner=False)
 def load_hero_colors():
     """영웅 대표색. scripts/extract_hero_colors.py 가 만든다."""
     try:
@@ -667,7 +667,7 @@ def get_hero_color(hero_name, fallback="#3b1a5c"):
     return fallback
 
 
-@st.cache_data
+@st.cache_data(show_spinner=False)
 def load_hero_art_manifest():
     """scripts/fetch_hero_art.py 가 만들어 둔 배너 아트 매니페스트.
 
@@ -736,7 +736,7 @@ def _load_json_list(path):
     return payload if isinstance(payload, list) else []
 
 
-@st.cache_data(ttl=DATA_CACHE_TTL)
+@st.cache_data(ttl=DATA_CACHE_TTL, show_spinner=False)
 def load_latest_patch_note():
     notes = _load_json_list(PATCH_NOTES_PATH)
     if not notes:
@@ -750,7 +750,7 @@ def load_latest_patch_note():
     )
 
 
-@st.cache_data(ttl=DATA_CACHE_TTL)
+@st.cache_data(ttl=DATA_CACHE_TTL, show_spinner=False)
 def load_latest_balance_patch_note():
     notes = _load_json_list(PATCH_NOTES_PATH)
     balance_notes = [
@@ -768,7 +768,7 @@ def load_latest_balance_patch_note():
     )
 
 
-@st.cache_data(ttl=DATA_CACHE_TTL)
+@st.cache_data(ttl=DATA_CACHE_TTL, show_spinner=False)
 def load_latest_patch_ai_analysis(patch_note_id=None):
     analyses = _load_json_list(PATCH_AI_ANALYSIS_PATH)
     if patch_note_id:
@@ -787,7 +787,7 @@ def load_latest_patch_ai_analysis(patch_note_id=None):
     )
 
 
-@st.cache_data
+@st.cache_data(show_spinner=False)
 def load_map_image_map():
     url = "https://overfast-api.tekrop.fr/maps"
     try:

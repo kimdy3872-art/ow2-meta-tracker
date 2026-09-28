@@ -22,8 +22,8 @@ from ui import (
 
 _shell = page_shell(
     page_key="pick_win",
-    title="픽률 · 승률 · 밴률 3D 분포",
-    badge="Meta Positioning 3D",
+    title="픽률 · 승률 · 밴률 분포",
+    badge="Meta Map",
 )
 _shell.__enter__()
 
@@ -94,9 +94,9 @@ META_TYPES = ["메타 지배", "과열 주의", "밴 압박", "저평가 픽", "
 # 보조 필터라서, 제목 위에 있으면 범례로 읽힌다.
 _t2d, _t3d = st.columns(COLS_HALF, gap=GAP)
 with _t2d:
-    section("판단용 2D", "픽률 x 승률")
+    section("픽률 × 승률", "원 크기는 밴률, 점선은 승률 50%")
 with _t3d:
-    section("탐색용 3D", "픽률 x 승률 x 밴률")
+    section("3D 보기", "드래그로 회전, 점을 누르면 영웅 리포트로 이동")
 
 # 칩에 색 점을 달지 않는다. 같은 화면에서 차트 점 색이 이미 랭크(S~D)를 뜻해서,
 # 유형 색을 같이 쓰면 빨간 점을 "밴 압박"으로 오독한다.

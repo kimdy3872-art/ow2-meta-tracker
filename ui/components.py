@@ -62,15 +62,18 @@ def _glow(accent: str, alpha: float = 0.45) -> str:
 
 def render_page_hero(title: str, subtitle: str, badge: str = "Overwatch 2 Meta",
                      live_label: str = "") -> None:
+    """페이지 머리. 박스·글로우 배너 대신 제목 한 줄 + 상태 줄로 둔다."""
     live = (f"<span class='live-dot' title='마지막 갱신'><i></i>"
-            f"{html.escape(live_label)}</span>") if live_label else ""
-    sub = f"<p class='ow-hero-sub'>{html.escape(subtitle)}</p>" if subtitle else ""
+            f"{html.escape(live_label)} 업데이트</span>"
+            f"<span class='ow-page-src'>한국 서버 · 경쟁전</span>") if live_label else ""
+    sub = f"<p class='ow-page-sub'>{html.escape(subtitle)}</p>" if subtitle else ""
     # 조각이 비면 빈 줄이 생기고 뒤따르는 들여쓴 줄이 코드 블록으로 파싱된다. 한 줄로 낸다.
     st.markdown(
-        f"<section class='ow-hero-wrap'>"
-        f"<div class='ow-hero-badge'>{html.escape(badge)}</div>{live}"
-        f"<h1 class='ow-hero-title'>{html.escape(title)}</h1>{sub}"
-        f"</section>",
+        f"<header class='ow-page-head'>"
+        f"<div><div class='ow-page-kicker'>{html.escape(badge)}</div>"
+        f"<h1 class='ow-page-title'>{html.escape(title)}</h1>{sub}</div>"
+        f"<div class='ow-page-status'>{live}</div>"
+        f"</header>",
         unsafe_allow_html=True,
     )
 
@@ -83,7 +86,7 @@ def _hero_card_markup(card, featured: bool = False) -> str:
                f"{html.escape(str(card['art_url']), quote=True)}');"
                f"background-position:{pos:.0f}% 28%;\"></div>")
     else:
-        art = "<div class='ow-card-art' style='background:#1b1e2e;'></div>"
+        art = "<div class='ow-card-art' style='background:#1a1d25;'></div>"
 
     rank_html = ""
     if card.get("rank"):
@@ -166,7 +169,7 @@ def render_sidebar_navigation(current_page: str, data_date: str | None = None,
         st.markdown(
             """
             <div class="ow-nav-brand">
-                <div class="ow-nav-brand-mark">OW2</div>
+                <div class="ow-nav-brand-mark"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 19V11M12 19V5M19 19v-5" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"/></svg></div>
                 <div>
                     <div class="ow-nav-brand-title">META TRACKER</div>
                     <div class="ow-nav-brand-sub">경쟁전 메타 분석</div>
@@ -221,28 +224,29 @@ def render_hero_showcase(
     hero_name: str,
     art: dict | None,
     accent: str,
-    watermark: str,
     stats,
     eyebrow: str = "TOP HERO",
     meta: str = "",
+    rank: str = "",
+    href: str = "",
 ) -> None:
     """페이지 시그니처 HERO 카드.
 
-    위젯을 조합하지 않고 HTML 한 덩어리로 렌더한다. 아트가 카드 위로 삐져나와야 해서
-    래퍼에 여백을 주고 카드만 overflow: hidden 으로 둔다.
+    위젯을 조합하지 않고 HTML 한 덩어리로 렌더한다. 카드는 overflow:hidden 이고
+    아트는 그 안쪽 레이어라 밖으로 새지 않는다. href 가 있으면 카드 전체가 링크다.
     """
     art = art or {}
     cutout = art.get("cutout_url")
     splash = art.get("splash_url")
     focal = art.get("focal_x") or 0.66
 
-    # 2차 지시서 D-4: 아트를 <img> 로 카드 밖에 띄우지 않는다. 카드는 overflow:hidden
-    # 이고 아트는 그 안쪽 레이어라 밖으로 새지 않는다. 아트가 없어도 그라디언트 +
-    # 워터마크만으로 성립해야 한다(검은 빈 칸 금지).
-    base = f"linear-gradient(115deg, {accent} 0%, #2a1440 58%, #140d24 100%)"
-    scrim = ("linear-gradient(100deg, rgba(10,12,18,0.96) 0%, "
-             "rgba(10,12,18,0.75) 42%, transparent 78%)")
-    bg_style = f"background-image:{scrim},{base};background-size:cover,cover;"
+    # 아트가 없어도 영웅색 글로우만으로 카드가 성립해야 한다(검은 빈 칸 금지).
+    # 보라 그라디언트 대신 중성 바탕 위에 영웅색을 인물 뒤쪽에만 번지게 한다.
+    base = (f"radial-gradient(60% 95% at 76% 55%, {_glow(accent, 0.30)}, transparent 70%),"
+            "linear-gradient(180deg, #16181f 0%, #0f1015 100%)")
+    scrim = ("linear-gradient(90deg, rgba(11,12,16,0.94) 0%, "
+             "rgba(11,12,16,0.7) 38%, transparent 70%)")
+    bg_style = f"background-image:{scrim},{base};background-size:cover,cover,cover;"
     art_html = ""
 
     if cutout:
@@ -265,13 +269,13 @@ def render_hero_showcase(
         safe = html.escape(str(splash), quote=True)
         pos = f"{min(max(focal * 100, 55), 88):.0f}% 26%"
         bg_style = (f"background-image:{scrim},url('{safe}'),{base};"
-                    f"background-position:center,{pos},center;"
-                    "background-size:cover,cover,cover;"
-                    "background-repeat:no-repeat,no-repeat,no-repeat;")
+                    f"background-position:center,{pos},center,center;"
+                    "background-size:cover,cover,cover,cover;"
+                    "background-repeat:no-repeat;")
 
     stat_html = "".join(
         "<div class='hero-showcase-stat'>"
-        f"<div class='eyebrow'>{html.escape(str(label))}</div>"
+        f"<div class='hero-showcase-stat-label'>{html.escape(str(label))}</div>"
         f"<div class='hero-showcase-stat-value nowrap'>{value}</div>"
         "</div>"
         for label, value in stats
@@ -279,61 +283,39 @@ def render_hero_showcase(
     meta_html = (
         f"<div class='hero-showcase-meta nowrap'>{html.escape(meta)}</div>" if meta else ""
     )
+    rank_html = rank_badge(rank, size=34) if rank else ""
+    tag, link_attrs, cta = "div", "", ""
+    if href:
+        tag = "a"
+        link_attrs = f" href='{html.escape(href, quote=True)}' target='_self'"
+        cta = ("<span class='hero-showcase-cta'>상세 리포트 보기"
+               "<svg viewBox='0 0 16 16' width='14' height='14' aria-hidden='true'>"
+               "<path d='M6 3.5 10.5 8 6 12.5' fill='none' stroke='currentColor' "
+               "stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/></svg></span>")
 
     st.markdown(
         _one_line(f"""
         <section class="hero-showcase">
-            <div class="hero-showcase-card" style="{bg_style}">
+            <{tag} class="hero-showcase-card"{link_attrs} style="{bg_style}">
                 {art_html}
-                <div class="hero-showcase-num">{html.escape(watermark)}</div>
                 <div class="hero-showcase-left">
-                    <span class="eyebrow">{html.escape(eyebrow)}</span>
-                    <h2 class="hero-showcase-name display">{html.escape(hero_name)}</h2>
+                    <span class="hero-showcase-eyebrow">{html.escape(eyebrow)}</span>
+                    <div class="hero-showcase-title">
+                        <h2 class="hero-showcase-name">{html.escape(hero_name)}</h2>{rank_html}
+                    </div>
                     {meta_html}
                     <div class="hero-showcase-stats">{stat_html}</div>
+                    {cta}
                 </div>
-            </div>
+            </{tag}>
         </section>
         """),
         unsafe_allow_html=True,
     )
 
 
-def render_hero_scroller(cards, favorites=None) -> None:
-    """상위 영웅 세로 카드 가로 스크롤. 우상단 하트로 즐겨찾기 토글."""
-    favorites = favorites or set()
-    items = []
-    for card in cards:
-        name = str(card.get("name", "-"))
-        art_url = card.get("art_url")
-        pos = min(max(float(card.get("focal_x") or 0.62) * 100, 25), 85)
-        art = (
-            f"<div class='hero-tile-art' style=\"background-image:url('"
-            f"{html.escape(str(art_url), quote=True)}');background-position:{pos:.0f}% 24%;\"></div>"
-            if art_url else "<div class='hero-tile-art' style='background:#1b1e2e;'></div>"
-        )
-        is_fav = name in favorites
-        heart = (
-            f"<a class='hero-tile-fav{' on' if is_fav else ''}' target='_self' "
-            f"href='?fav={urllib.parse.quote(name, safe='')}' "
-            f"title='즐겨찾기' aria-label='즐겨찾기'>"
-            f"{heart_icon(is_fav)}</a>"
-        )
-        items.append(
-            f"<div class='hero-tile'>"
-            f"<a class='hero-tile-link' target='_self' "
-            f"href='?hero={urllib.parse.quote(name, safe='')}{_tier_qs()}'>{art}"
-            f"<div class='hero-tile-body'>"
-            f"<div class='hero-tile-metric nowrap' style=\"color:{card.get('metric_color', '#fff')};\">"
-            f"{html.escape(str(card.get('metric', '-')))}</div>"
-            f"<div class='hero-tile-name nowrap'>{html.escape(name)}</div>"
-            f"</div></a>{heart}</div>"
-        )
-    st.markdown(f"<div class='hero-scroller'>{''.join(items)}</div>", unsafe_allow_html=True)
-
-
-def render_map_cards(cards) -> None:
-    """전장 카드. 첫 카드(승률 1위)만 위로 띄운다. 표본 부족 조합은 흐리게 그린다."""
+def render_map_cards(cards, title: str = "") -> None:
+    """전장 카드. 표본 부족 조합은 흐리게 그린다. title 은 그리드 바로 위 라벨."""
     items = []
     for index, card in enumerate(cards):
         cls = "map-card featured" if index == 0 else "map-card"
@@ -350,7 +332,9 @@ def render_map_cards(cards) -> None:
             f"<div class='map-card-metric nowrap'>{html.escape(str(card.get('metric', '-')))}{sample_html}</div>"
             f"</div></div>"
         )
-    st.markdown(f"<div class='map-grid'>{''.join(items)}</div>", unsafe_allow_html=True)
+    head = f"<div class='eyebrow'>{html.escape(title)}</div>" if title else ""
+    st.markdown(f"<div>{head}<div class='map-grid'>{''.join(items)}</div></div>",
+                unsafe_allow_html=True)
 
 
 def render_meta_score_card(score, rank, hero_name) -> None:
@@ -360,6 +344,7 @@ def render_meta_score_card(score, rank, hero_name) -> None:
         <div class="rail-card meta-score-card">
             <div class="eyebrow">Meta Score</div>
             <div class="meta-score-value nowrap">{int(round(score))}<span class="unit">/1000</span></div>
+            <div class="meta-meter"><i style="width:{min(max(score / 10, 0), 100):.1f}%"></i></div>
             <div class="meta-score-sub nowrap">{html.escape(str(hero_name))} · 랭크 {html.escape(str(rank))}</div>
         </div>
         """),
@@ -453,27 +438,22 @@ def render_rotating_card_groups(groups, interval: int = 6) -> None:
     """
     if not groups:
         return
+    # ponytail: style.css 의 rot-* 키프레임 구간(33.33%)이 3묶음 기준이다. 묶음 수가
+    # 바뀌면 키프레임 퍼센트도 1/N 로 바꿔야 한다.
     count = len(groups)
     total = interval * count
-    blocks = []
+    tabs, slides = [], []
     for index, (title, cards) in enumerate(groups):
-        delay = -interval * (count - index) % total
+        # 양수 지연: 0번이 먼저 들어오고, 앞 묶음이 빠지는 순간 다음 묶음이 들어온다.
+        timing = f"--rot-total:{total}s;--rot-delay:{interval * index}s;"
         items = "".join(_hero_card_markup(c, featured=(i == 0))
                         for i, c in enumerate(cards))
-        blocks.append(
-            f"<div class='rot-slide' style='animation-duration:{total}s;"
-            f"animation-delay:{-interval * index}s;'>"
-            f"<div class='eyebrow rot-title'>{html.escape(str(title))}</div>"
-            f"<div class='ow-card-grid'>{items}</div>"
-            f"</div>"
-        )
-    dots = "".join(
-        f"<i style='animation-duration:{total}s;animation-delay:{-interval * i}s;'></i>"
-        for i in range(count)
-    )
+        tabs.append(f"<span class='rot-tab' style='{timing}'>{html.escape(str(title))}</span>")
+        slides.append(f"<div class='rot-slide' style='{timing}'>"
+                      f"<div class='ow-card-grid'>{items}</div></div>")
     st.markdown(
-        f"<div class='rot-wrap' style='--rot-total:{total}s;'>{''.join(blocks)}"
-        f"<div class='rot-dots'>{dots}</div></div>",
+        f"<div class='rot-wrap'><div class='rot-tabs'>{''.join(tabs)}</div>"
+        f"<div class='rot-stage'>{''.join(slides)}</div></div>",
         unsafe_allow_html=True,
     )
 
