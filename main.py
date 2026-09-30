@@ -47,9 +47,9 @@ from ui import (
 # -------------------------------------------------
 _shell = page_shell(
     page_key="main",
-    title="경쟁전 메타 순위",
+    title="영웅 순위",
     subtitle="",
-    badge="Overwatch 2 · Tier List",
+    badge="Ranking",
 )
 _shell.__enter__()
 
@@ -498,7 +498,7 @@ with _main_col:
     # 표보다 늦게 끝나도 표가 먼저 그려지도록 자리만 잡아 두고 아래에서 채운다.
     _rail_strip = st.empty()
     _order = "높은" if st.session_state.sort_desc else "낮은"
-    section("영웅 랭크 순위표", f"{sort_by} {_order} 순 · {len(display_df)}명")
+    section("전체 순위", f"{sort_by} {_order} 순 · {len(display_df)}명")
     st.markdown(render_rank_table_html(display_df), unsafe_allow_html=True)
 
 # 정규화 풀에 그 영웅이 1위로 들어있으면 항상 1000 이 나온다. 전 티어를 기준으로 펴서

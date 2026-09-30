@@ -21,10 +21,13 @@
 
 | 페이지 | 파일 | 설명 |
 |---|---|---|
-| 메인 | `main.py` | 티어, 포지션, 영웅 필터와 S/A/B/C/D 랭크 테이블, 메타 유형 라벨, 최신 패치노트/AI 분석 요약 |
-| 픽률/승률 분포 | `pages/1_pick_win_distribution.py` | 선택 티어/포지션 기준 픽률, 승률, 밴률 3D 분포 시각화 |
+| 영웅 순위 | `main.py` | 티어, 포지션, 영웅 필터와 S/A/B/C/D 랭크 테이블, 메타 유형 라벨, 최신 패치노트/AI 분석 요약 |
+| 전장별 영웅 | `pages/4_map_heroes.py` | 전장마다 포지션별 보정 승률 상위 2명과 전체 전장 승률 대비 차이. 모드(쟁탈·호위·혼합·밀기·플래시포인트)별로 묶음 |
 | 영웅 추이 | `pages/2_hero_trends.py` | 주간 스냅샷과 최신 데이터를 합쳐 영웅별 승률, 픽률, 밴률 추이 확인 |
-| 영웅 상세 | `pages/3_hero_detail.py` | 특정 영웅의 티어별 지표, 전장별 성능, 퍼크 선호도, 패치 영향 정보 확인 |
+| 메타 분포 | `pages/1_pick_win_distribution.py` | 선택 티어/포지션 기준 픽률, 승률, 밴률 2D·3D 분포 시각화 |
+| 영웅 상세 | `pages/3_hero_detail.py` | 특정 영웅의 티어별 지표, 전장별 성능, 퍼크 선호도, 패치 영향 정보 확인 (메뉴에는 없고 영웅을 눌러 진입) |
+
+페이지 이름은 메뉴, 페이지 제목, 이 표에서 같은 두 단어를 씁니다.
 
 ---
 
@@ -49,7 +52,8 @@
 ├── pages/
 │   ├── 1_pick_win_distribution.py
 │   ├── 2_hero_trends.py
-│   └── 3_hero_detail.py
+│   ├── 3_hero_detail.py
+│   └── 4_map_heroes.py
 ├── app_data.py
 ├── ui/
 │   ├── tokens.py · theme.py · layout.py
@@ -65,6 +69,7 @@
 ├── .streamlit/config.toml
 ├── update.py
 ├── test_sample_size.py
+├── test_map_heroes.py
 ├── requirements.txt
 ├── CLAUDE.md
 ├── .github/workflows/
@@ -101,6 +106,7 @@
 - `assets/style.css`: 대시보드 스타일시트입니다. `assets/ranks/`는 티어·포지션 아이콘, `static/`은 영웅·전장 아트입니다.
 - `update.py`: 경쟁전 통계, 퍼크, 패치노트, 패치 AI 분석을 수집/가공/저장하는 핵심 배치 스크립트입니다.
 - `test_sample_size.py`: 표본 크기 추정·보정 셀프 체크입니다. `python test_sample_size.py`로 실행합니다.
+- `test_map_heroes.py`: 전장별 영웅 선정 셀프 체크입니다. `python test_map_heroes.py`로 실행합니다.
 - `.github/workflows/main.yml`: 매일 데이터를 갱신해 커밋하는 GitHub Actions 워크플로입니다.
 - `.github/workflows/keep-alive.yml`: 6시간마다 `scripts/keep_alive.py`로 배포 앱을 방문해 잠들지 않게 합니다.
 - `scripts/ui_check.py`: 헤드리스 Chrome으로 기기별 레이아웃과 터치 동작을 재는 UI 검증 스크립트입니다.
@@ -370,7 +376,7 @@ macOS에서는 `scripts/run_local_ai_patch_update.sh`와 `scripts/com.da.overwat
 
 ## 향후 개선 아이디어
 
-- 테스트 코드와 데이터 검증 파이프라인 확대 (지금은 `test_sample_size.py` 하나)
+- 테스트 코드와 데이터 검증 파이프라인 확대 (지금은 `test_sample_size.py`, `test_map_heroes.py` 둘)
 - 수집 실패, 빈 데이터, 스키마 변경을 검증하는 smoke test 추가
 - 패치노트의 버프/너프 이력을 영웅별 라벨로 구조화해 랭크 산식 검증에 활용
 

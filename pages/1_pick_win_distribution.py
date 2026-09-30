@@ -24,8 +24,8 @@ from ui import (
 
 _shell = page_shell(
     page_key="pick_win",
-    title="픽률 · 승률 · 밴률 분포",
-    badge="Meta Map",
+    title="메타 분포",
+    badge="Distribution",
 )
 _shell.__enter__()
 
@@ -237,7 +237,7 @@ with _c2d:
     st.plotly_chart(fig_2d, key="pick_win_scatter_2d",
                     config={"displayModeBar": False}, use_container_width=True)
 with _c3d:
-    section("3D 보기", "드래그로 회전, 오른쪽 위 버튼으로 시점 초기화, 점을 누르면 영웅 리포트로 이동")
+    section("3D 보기", "드래그로 회전, 오른쪽 위 버튼으로 시점 초기화, 점을 누르면 영웅 상세로 이동")
     event = st.plotly_chart(
         fig,
         key="pick_win_scatter_3d",

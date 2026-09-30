@@ -7,7 +7,7 @@
 검사:
     layout    페이지별 PC 1440×900 / 폰 390×844 블록 위치·가로 넘침·작은 탭 영역·작은 글자
     sidebar   아이패드 820×1180 · 1180×820, PC 에서 사이드바 펼침/접힘
-    interact  폰 필터·정렬, 차트 위 스와이프, 3D 회전·시점 초기화, 특전 탭, TOP 4 순환, 표 전체화면
+    interact  폰 필터·정렬, 전장별 영웅 탭, 차트 위 스와이프, 3D 회전·시점 초기화, 특전 탭, TOP 4 순환, 표 전체화면
 
 수치는 표준 출력, 스크린샷은 logs/ui_check/ (gitignore 됨). 가로 넘침이 있거나 검사가
 예외로 끝나면 종료 코드 1. websocket-client 가 필요하다(selenium 이 끌고 온다).
@@ -44,6 +44,7 @@ CHART = "[data-testid=stPlotlyChart]"
 # (경로, 다 그려졌다고 볼 셀렉터)
 PAGES = {
     "main": ("/", ".table-wrap"),
+    "maps": ("/map_heroes", ".mh-card"),
     "dist": ("/pick_win_distribution", CHART),
     "trends": ("/hero_trends", ".kpi-row"),
     "detail": ("/?hero=%EC%95%84%EB%82%98&tier=Gold", ".hmap-card"),
@@ -192,7 +193,7 @@ MEASURE = r"""
     carousel: '.rot-wrap', maps: '.map-grid', tableTitle: '.ow-section', table: '.table-wrap',
     metaScore: '.meta-score-card', rankRail: '.ow-rail', firstExpander: '[data-testid=stExpander]',
     trendContext: '.trend-context', portrait: '.portrait-card', kpi: '.kpi-row', tabs: '.stTabs',
-    perks: '.perk-card', mapCards: '.hmap-card', pills: '[data-testid=stPills]',
+    perks: '.perk-card', mapCards: '.hmap-card', pills: '[data-testid=stPills]', mapHeroes: '.mh-grid',
   };
   const out = {vw, vh, scrollHeight: sc.scrollHeight, blocks: {}};
   for (const [k, s] of Object.entries(parts)) { const e = document.querySelector(s); if (e) out.blocks[k] = box(e); }
@@ -391,6 +392,28 @@ def dist_page():
     tab.close()
 
 
+def maps_page():
+    """전장별 영웅: 카드 칸 수, 탭 영역, 영웅을 누르면 같은 티어의 영웅 상세로 가는지."""
+    tab = Tab("phone", *PAGES["maps"], settle=5)
+    info = tab.js("""(() => { const cards = [...document.querySelectorAll('.mh-card')], picks = [...document.querySelectorAll('.mh-pick')];
+        const p = picks[0], r = p.getBoundingClientRect();
+        return {cards: cards.length, picks: picks.length,
+                columns: new Set(cards.slice(0, 7).map(c => Math.round(c.getBoundingClientRect().left))).size,
+                pickSize: [Math.round(r.width), Math.round(r.height)], hero: p.querySelector('.mh-hero').textContent,
+                clipped: picks.filter(a => { const h = a.querySelector('.mh-hero'); return h.scrollWidth > h.clientWidth + 1; }).length}; })()""")
+    print("[maps]", json.dumps(info, ensure_ascii=False))
+    assert info["pickSize"][1] >= 44, "영웅 탭 영역이 44px 보다 낮다"
+    tab.tap(".mh-pick")
+    for _ in range(24):
+        time.sleep(0.5)
+        if tab.js("!!document.querySelector('.hmap-card')"):
+            break
+    landed = tab.js("(document.querySelector('.hero-showcase-card') || document.body).innerText.split('\\n').slice(0, 4).join(' / ')")
+    print("[maps] tap", info["hero"], "->", tab.js("location.pathname"), "|", landed)
+    assert info["hero"] in landed, "누른 영웅의 상세로 가지 않았다"
+    tab.close()
+
+
 def trends_page():
     tab = Tab("phone", *PAGES["trends"], settle=5)
     print("[trends]", json.dumps(tab.js("""(() => ({
@@ -455,7 +478,7 @@ def dataframe_fullscreen():
 def interact():
     """예외로 끝난 검사 목록을 돌려준다. 한 항목이 실패해도 나머지는 본다."""
     failed = []
-    for fn in (main_filter_and_sort, dist_page, trends_page, detail_page, rot_cycle, dataframe_fullscreen):
+    for fn in (main_filter_and_sort, maps_page, dist_page, trends_page, detail_page, rot_cycle, dataframe_fullscreen):
         try:
             fn()
         except Exception as e:

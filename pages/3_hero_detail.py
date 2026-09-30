@@ -34,8 +34,8 @@ from ui import (
 
 _shell = page_shell(
     page_key="detail",
-    title="영웅 상세 리포트",
-    badge="Hero Report",
+    title="영웅 상세",
+    badge="Hero",
     filters=("tier",),
 )
 _shell.__enter__()
@@ -158,11 +158,17 @@ def _stat(value, suffix="%"):
 
 
 _score_val = pd.to_numeric(hero_row.get("total_score"), errors="coerce")
+# 카드 머리글은 메인의 "종합 점수 1위"와 같은 형식으로, 이 티어 전체 영웅 중 몇 위인지를 쓴다.
+# (페이지 제목과 같은 "영웅 상세"를 한 번 더 쓰던 자리다.)
+_tier_scores = df_raw[
+    (df_raw["data_tier"] == hero_row.get("data_tier")) & (df_raw["map"] == "all-maps")
+]["total_score"]
+_eyebrow = "" if pd.isna(_score_val) else f"종합 점수 {int((_tier_scores > _score_val).sum()) + 1}위"
 render_hero_showcase(
     hero_name=hero_name,
     art=get_hero_banner_art(hero_name),
     accent=get_hero_color(hero_name),
-    eyebrow="영웅 리포트",
+    eyebrow=_eyebrow,
     meta=f"{translate_tier_name(selected_tier)} · "
          f"{translate_role_name(str(hero_row.get('role', '')))} · {score_strength_raw}",
     rank=str(hero_row.get("rank", "")),

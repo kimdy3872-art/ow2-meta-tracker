@@ -138,9 +138,10 @@ LEGAL_HTML = ('Blizzard Entertainment와 무관한 비공식 사이트입니다.
               '영웅 아트 출처: Overwatch Wiki (CC BY-NC-SA).')
 
 NAV_ITEMS = [
-    ("main", "랭크 순위표", ":material/leaderboard:", "main.py"),
-    ("pick_win", "3D 메타 분포", ":material/scatter_plot:", "pages/1_pick_win_distribution.py"),
+    ("main", "영웅 순위", ":material/leaderboard:", "main.py"),
+    ("map_heroes", "전장별 영웅", ":material/map:", "pages/4_map_heroes.py"),
     ("hero_trends", "영웅 추이", ":material/show_chart:", "pages/2_hero_trends.py"),
+    ("pick_win", "메타 분포", ":material/scatter_plot:", "pages/1_pick_win_distribution.py"),
 ]
 
 
@@ -195,7 +196,7 @@ def render_sidebar_navigation(current_page: str, data_date: str | None = None,
         if current_page == "detail":
             st.markdown(
                 '<div class="ow-nav-standalone">'
-                '<span class="ow-nav-standalone-dot"></span>영웅 상세 리포트</div>',
+                '<span class="ow-nav-standalone-dot"></span>영웅 상세</div>',
                 unsafe_allow_html=True,
             )
 
@@ -307,7 +308,7 @@ def render_hero_showcase(
     if href:
         tag = "a"
         link_attrs = f" href='{html.escape(href, quote=True)}' target='_self'"
-        cta = ("<span class='hero-showcase-cta'>상세 리포트 보기"
+        cta = ("<span class='hero-showcase-cta'>상세 보기"
                "<svg viewBox='0 0 16 16' width='14' height='14' aria-hidden='true'>"
                "<path d='M6 3.5 10.5 8 6 12.5' fill='none' stroke='currentColor' "
                "stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/></svg></span>")

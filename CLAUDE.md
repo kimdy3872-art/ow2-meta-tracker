@@ -32,7 +32,7 @@
 - 배포: Streamlit Community Cloud (https://ow2metatracker.streamlit.app). keep-alive 워크플로가 앱을 늘 깨워 둬서 push만으로는 코드가 바뀌지 않는다. push 후 대시보드에서 **Reboot**. 문서·스크립트만 바뀐 push는 Reboot이 필요 없다.
 - GitHub Actions가 매일 09:00 KST에 `main`으로 `data/`를 커밋한다. push 전에 `git pull --rebase`.
 - `git add -A`·`git add .` 금지. 루트에 추적하지 않는 참고 이미지(`2hEW9.jpg`, `Overwatch_logo_1024.png`)가 있다. 커밋할 파일을 지정한다.
-- 테스트: `.venv/bin/python test_sample_size.py` (`update.py`의 표본 크기 보정. `ok`가 나오면 통과).
+- 테스트: `.venv/bin/python test_sample_size.py`(`update.py`의 표본 크기 보정), `.venv/bin/python test_map_heroes.py`(전장별 영웅 선정). `ok`가 나오면 통과.
 
 ## UI 구조
 
@@ -40,6 +40,7 @@
 - 모든 페이지는 `page_shell`로 시작한다: 페이지 머리 → 사이드바(메뉴·필터·고지) → 본문 메뉴·필터 줄 → 본문 → 하단 고지. 본문 메뉴 줄과 하단 고지는 사이드바가 접혔을 때만 보인다.
 - 카드류는 위젯 조합이 아니라 HTML 한 덩어리(`st.markdown(..., unsafe_allow_html=True)`)다.
 - 우측 레일 카드는 `*_html()`로 만들어 두 번 낸다: 우측 칸(`.rail-side`)과 좁을 때 표 위 스와이프 줄(`.rail-strip`).
+- 영웅 상세는 메뉴에 없다. 카드의 `?hero=` 링크를 그 페이지(메인, 전장별 영웅)가 받아 `st.switch_page`로 넘긴다.
 - 필터 정본은 `st.session_state["selected_tier" | "selected_role"]`. 사이드바 위젯과 본문 필터 사본(`render_inline_filters`)이 이것을 공유한다.
 
 ## 디자인 규칙
@@ -59,6 +60,7 @@
   - `page` 520px 이하: 본문 필터 줄·영웅 추이 필터를 한 줄 반반으로
   - `board`(순위표) 700px 이하: 5열 표 → 한 줄 요약 목록 + 정렬 칩
   - `hero` 880 / 760 / 560, `rot`·`maps` 620, `kpi` 460
+  - 전장별 영웅 격자(`.mh-grid`)는 `auto-fill minmax(320px)`라 query 없이 영역 폭을 따른다(PC 3열, 아이패드 가로 2열, 폰 1열).
 - 창 폭(`@media`)은 툴팁 위치(900px), 폰 전용 처리(640px, » 버튼 숨김)에만 쓴다. 예외로 `.patch-intel-top` 줄바꿈(860px)이 창 폭 기준으로 남아 있다. 새 레이아웃 규칙은 container query로 쓴다.
 - 카드·표 행·정렬 칩의 hover 효과는 `@media (hover: hover)` 안에 있고, 새로 넣는 hover도 거기에 둔다. 그 밖의 `:hover`(사이드바 링크, Streamlit 위젯, 표 머리·영웅·패치 링크, 퍼크 카드·툴팁, TOP 4 순환 정지)는 블록 밖에 있다.
 - 터치는 `:active` 눌림 피드백을 쓰고, TOP 4는 터치에서 자동 순환 대신 스와이프다.
@@ -72,6 +74,7 @@
 - `st.markdown` 링크(`?hero=`, `?sort=`)는 전체 리로드라 세션이 새로 뜬다. `filter_qs()`로 tier·role을 URL에 붙인다.
 - 한 `st.markdown`에서 연 div를 다른 `st.markdown`에서 닫을 수 없다(빈 div가 된다).
 - HTML 조각 사이 빈 줄·들여쓰기는 코드 블록으로 파싱된다. `_one_line()`을 쓴다.
+- 마크다운 안 `<img>`에는 Streamlit이 `object-fit: scale-down`을 건다. `cover`로 채우려면 `!important`가 필요하다.
 - `icon_selectbox`는 옆에 `<style>` 마크다운을 하나 더 낸다. 가로 컨테이너에서는 그 칸을 숨긴다.
 - `data-testid` 셀렉터에 기대므로 streamlit은 1.50.0으로 고정. 올리면 셀렉터부터 확인한다.
 - 로컬 파이썬은 3.9라 f-string 안에 같은 따옴표를 중첩할 수 없다.

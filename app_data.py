@@ -815,3 +815,35 @@ def get_map_image_url(map_id):
     if alias and alias != "all-maps":
         return f"https://overfast-api.tekrop.fr/static/maps/{alias}.jpg"
     return f"https://dummyimage.com/600x100/1f2937/475569.png&text={map_id}"
+
+
+# 전장 모드. 게임 안 표기 순서대로 둔다. 여기 없는 전장(새로 추가된 전장)은 화면에서 "기타"로 묶인다.
+MAP_MODES = {
+    "쟁탈": ["antarctic-peninsula", "busan", "ilios", "lijiang-tower", "nepal", "oasis", "samoa"],
+    "호위": ["circuit-royal", "dorado", "havana", "junkertown", "rialto", "route-66",
+             "shambali-monastery", "watchpoint-gibraltar"],
+    "혼합": ["blizzard-world", "eichenwalde", "hollywood", "kings-row", "midtown", "neon-junction",
+             "numbani", "paraiso"],
+    "밀기": ["colosseo", "esperanca", "new-queen-street", "runasapi"],
+    "플래시포인트": ["aatlis", "new-junk-city", "suravasa"],
+}
+
+
+def top_heroes_by_map(df, tier, per_role=2):
+    """전장·포지션별 보정 승률 상위 영웅. 전장마다 포지션별로 per_role 명, 승률 높은 순.
+
+    영웅 상세의 전장 카드와 같은 기준(shrunk_win_rate)으로 줄 세운다. 원래 승률로 세우면
+    픽률이 아주 낮은 영웅의 0%/100% 가 맨 위로 온다.
+    lift 는 같은 티어 전체 전장 승률과의 차이(%p)다. 어디서나 센 영웅과 이 전장에서 특히
+    센 영웅을 가른다.
+    """
+    tier_df = df[df["data_tier"].astype(str) == str(tier)]
+    is_all = tier_df["map"].astype(str) == "all-maps"
+    overall = tier_df[is_all].drop_duplicates("hero").set_index("hero")["win_rate"]
+    maps = tier_df[~is_all & tier_df["shrunk_win_rate"].notna()].copy()
+    maps["lift"] = maps["shrunk_win_rate"] - maps["hero"].map(overall)
+    return (
+        maps.sort_values("shrunk_win_rate", ascending=False)
+        .groupby(["map", "role"], sort=False)
+        .head(per_role)
+    )
