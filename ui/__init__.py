@@ -6,7 +6,6 @@
 from .tokens import *  # noqa: F401,F403
 from .badges import (  # noqa: F401
     RANK_COLORS,
-    TIER_COLORS,
     delta_arrow,
     heart_icon,
     rank_badge,

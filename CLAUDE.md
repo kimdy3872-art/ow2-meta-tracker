@@ -2,6 +2,7 @@
 
 오버워치 2 경쟁전 메타 대시보드 (Streamlit 멀티페이지). 데이터 수집·랭크 산식·환경변수는 `README.md`를 본다.
 이 파일은 README에 없는 것 — 체크포인트, 실행·배포 주의점, UI 구조, 디자인·반응형 규칙, Streamlit 함정 — 만 적는다.
+`ow2_streamlit_refine_v2.md`는 과거 지시서(2026-08-17)다. 수치가 다르면 CLAUDE.md가 우선이다.
 
 ## 체크포인트
 
@@ -14,9 +15,10 @@
 - 그때 모습만 보기: `git switch --detach checkpoint-2026-09-30` → 로컬 실행 → `git switch main`
 - **되돌리기(기본)** — UI 코드만 되돌리고 데이터는 최신으로 둔다:
   ```bash
-  git restore --source=checkpoint-2026-09-30 -- main.py ui pages assets .streamlit
-  git commit -m "revert: UI 를 checkpoint-2026-09-30 으로" && git push
+  git restore --source=checkpoint-2026-09-30 --staged --worktree -- main.py ui pages assets .streamlit
+  git commit -m "revert: UI 를 checkpoint-2026-09-30 으로" && git pull --rebase && git push
   ```
+  복원 범위에 `app_data.py`·`requirements.txt`는 없다. 페이지가 `app_data`를 import하므로 커밋 전에 로컬에서 네 페이지가 뜨는지 본다.
   push 후 Streamlit Cloud에서 Reboot(아래 배포 참고).
 - 파일 하나만: `git restore --source=checkpoint-2026-09-30 -- assets/style.css`
 - **하지 말 것**: `git reset --hard <태그>` 후 강제 push. GitHub Actions가 매일 `data/`를 커밋하므로 태그 이후 데이터가 전부 사라진다.
@@ -27,7 +29,10 @@
 - `.venv/bin/streamlit` 런처는 옛 경로를 가리켜 깨져 있다. `.venv/bin/python -m streamlit run main.py`로 띄운다.
 - 앱은 기본으로 GitHub raw에서 데이터를 읽는다(30분 TTL). 로컬 파일로 보려면 `OW2_LOCAL_DATA=1`.
 - `assets/style.css`는 `st.cache_data`로 캐시되고 `.streamlit/config.toml`은 시작할 때만 읽는다. 둘 다 고치면 서버를 재시작해야 반영된다.
-- 배포: Streamlit Community Cloud (https://ow2metatracker.streamlit.app). keep-alive 워크플로가 앱을 늘 깨워 둬서 push만으로는 코드가 바뀌지 않는다. push 후 대시보드에서 **Reboot**.
+- 배포: Streamlit Community Cloud (https://ow2metatracker.streamlit.app). keep-alive 워크플로가 앱을 늘 깨워 둬서 push만으로는 코드가 바뀌지 않는다. push 후 대시보드에서 **Reboot**. 문서·스크립트만 바뀐 push는 Reboot이 필요 없다.
+- GitHub Actions가 매일 09:00 KST에 `main`으로 `data/`를 커밋한다. push 전에 `git pull --rebase`.
+- `git add -A`·`git add .` 금지. 루트에 추적하지 않는 참고 이미지(`2hEW9.jpg`, `Overwatch_logo_1024.png`)가 있다. 커밋할 파일을 지정한다.
+- 테스트: `.venv/bin/python test_sample_size.py` (`update.py`의 표본 크기 보정. `ok`가 나오면 통과).
 
 ## UI 구조
 
@@ -51,10 +56,12 @@
 
 - 기준은 창 폭이 아니라 영역 폭(container query)이다. 사이드바를 펼친 아이패드는 창이 820px이어도 본문은 500px이다.
   - `page`(본문) 780px 이하: 컬럼을 한 줄로 쌓고, 우측 레일은 표 위 스와이프 줄로
+  - `page` 520px 이하: 본문 필터 줄·영웅 추이 필터를 한 줄 반반으로
   - `board`(순위표) 700px 이하: 5열 표 → 한 줄 요약 목록 + 정렬 칩
   - `hero` 880 / 760 / 560, `rot`·`maps` 620, `kpi` 460
-- 창 폭(`@media`)은 툴팁 위치, 폰 전용 처리(» 버튼 숨김)에만 쓴다.
-- hover 효과는 `@media (hover: hover)` 안에만 둔다. 터치는 `:active` 눌림 피드백을 쓰고, TOP 4는 터치에서 자동 순환 대신 스와이프다.
+- 창 폭(`@media`)은 툴팁 위치(900px), 폰 전용 처리(640px, » 버튼 숨김)에만 쓴다. 예외로 `.patch-intel-top` 줄바꿈(860px)이 창 폭 기준으로 남아 있다. 새 레이아웃 규칙은 container query로 쓴다.
+- 카드·표 행·정렬 칩의 hover 효과는 `@media (hover: hover)` 안에 있고, 새로 넣는 hover도 거기에 둔다. 그 밖의 `:hover`(사이드바 링크, Streamlit 위젯, 표 머리·영웅·패치 링크, 퍼크 카드·툴팁, TOP 4 순환 정지)는 블록 밖에 있다.
+- 터치는 `:active` 눌림 피드백을 쓰고, TOP 4는 터치에서 자동 순환 대신 스와이프다.
 - 사이드바 펼침 여부는 `[data-testid="stSidebar"][aria-expanded]`로 판단한다.
 
 ## Streamlit 함정 (한 번씩 밟은 것)
@@ -73,4 +80,12 @@
 ## 검증
 
 UI를 고치면 폰 390×844(터치), 아이패드 820×1180 사이드바 펼침·접힘, 1180×820, PC 1440×900에서 본다.
-헤드리스 Chrome(DevTools 프로토콜)으로 요소 위치·가로 넘침·터치 스크롤을 재서 확인해 왔다.
+`scripts/ui_check.py`가 헤드리스 Chrome으로 요소 위치·가로 넘침·터치 동작을 잰다. 서버를 띄운 뒤 다른 셸에서 돌린다:
+
+```bash
+OW2_LOCAL_DATA=1 .venv/bin/python -m streamlit run main.py --server.port 8599 --server.headless true
+.venv/bin/python scripts/ui_check.py                      # layout · sidebar · interact 전부
+.venv/bin/python scripts/ui_check.py layout --page main   # 일부만
+```
+
+수치는 표준 출력으로, 스크린샷은 `logs/ui_check/`(gitignore)에 남는다. 가로 넘침이나 검사 예외가 있으면 종료 코드 1.

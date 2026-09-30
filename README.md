@@ -51,11 +51,30 @@
 │   ├── 2_hero_trends.py
 │   └── 3_hero_detail.py
 ├── app_data.py
-├── ui.py
+├── ui/
+│   ├── tokens.py · theme.py · layout.py
+│   ├── components.py · filters.py
+│   └── badges.py · plotly_theme.py
+├── assets/
+│   ├── style.css
+│   ├── hero_colors.json
+│   └── ranks/
+├── static/
+│   ├── hero_art/
+│   └── map_art/
+├── .streamlit/config.toml
 ├── update.py
+├── test_sample_size.py
 ├── requirements.txt
-├── main.yml
+├── CLAUDE.md
+├── .github/workflows/
+│   ├── main.yml
+│   └── keep-alive.yml
 ├── scripts/
+│   ├── ui_check.py
+│   ├── keep_alive.py
+│   ├── fetch_hero_art.py
+│   ├── extract_hero_colors.py
 │   ├── LOCAL_AI_PATCH_AUTOMATION.md
 │   ├── com.da.overwatch.ai-patch.plist
 │   └── run_local_ai_patch_update.sh
@@ -67,9 +86,10 @@
     ├── history/
     │   ├── daily/year=YYYY/month=MM/tier_snapshot.parquet
     │   └── weekly/year=YYYY/week=WW/tier_snapshot.parquet
-    └── patch_notes/
-        ├── patch_notes.json
-        └── patch_ai_analysis.json
+    ├── patch_notes/
+    │   ├── patch_notes.json
+    │   └── patch_ai_analysis.json
+    └── hero_art_manifest.json
 ```
 
 ### 주요 파일 역할
@@ -77,9 +97,14 @@
 - `main.py`: Streamlit 진입점입니다. 메인 대시보드와 최신 패치 인텔리전스 블록을 렌더링합니다.
 - `pages/*.py`: Streamlit 멀티페이지 화면입니다.
 - `app_data.py`: 대시보드에서 쓰는 데이터 로딩, 라벨 번역, 영웅/맵 이미지 URL 보조 함수가 모여 있습니다.
-- `ui.py`: 전역 다크 테마, 상단 네비게이션, 공통 페이지 히어로 UI를 정의합니다.
+- `ui/`: UI 패키지입니다. 팔레트, CSS 주입, 페이지 셸, HTML 카드, 전역 필터, 뱃지, Plotly 테마를 정의합니다. 구조와 디자인·반응형 규칙은 `CLAUDE.md`에 있습니다.
+- `assets/style.css`: 대시보드 스타일시트입니다. `assets/ranks/`는 티어·포지션 아이콘, `static/`은 영웅·전장 아트입니다.
 - `update.py`: 경쟁전 통계, 퍼크, 패치노트, 패치 AI 분석을 수집/가공/저장하는 핵심 배치 스크립트입니다.
-- `main.yml`: 매일 데이터를 갱신하는 GitHub Actions 워크플로 예시입니다. 일반적인 저장소에서는 `.github/workflows/main.yml` 위치에 두는 것을 권장합니다.
+- `test_sample_size.py`: 표본 크기 추정·보정 셀프 체크입니다. `python test_sample_size.py`로 실행합니다.
+- `.github/workflows/main.yml`: 매일 데이터를 갱신해 커밋하는 GitHub Actions 워크플로입니다.
+- `.github/workflows/keep-alive.yml`: 6시간마다 `scripts/keep_alive.py`로 배포 앱을 방문해 잠들지 않게 합니다.
+- `scripts/ui_check.py`: 헤드리스 Chrome으로 기기별 레이아웃과 터치 동작을 재는 UI 검증 스크립트입니다.
+- `scripts/fetch_hero_art.py`, `scripts/extract_hero_colors.py`: 영웅 아트와 대표색을 만드는 빌드 타임 스크립트입니다.
 - `scripts/LOCAL_AI_PATCH_AUTOMATION.md`: 로컬 Ollama 기반 패치 분석 자동화 운영 문서입니다.
 
 ---
@@ -89,15 +114,15 @@
 ### 1. 가상환경 생성
 
 ```bash
-python3 -m venv venv
-source venv/bin/activate
+python3 -m venv .venv
+source .venv/bin/activate
 ```
 
 Windows PowerShell:
 
 ```powershell
-python -m venv venv
-.\venv\Scripts\Activate.ps1
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
 ```
 
 ### 2. 패키지 설치
@@ -109,10 +134,16 @@ pip install -r requirements.txt
 ### 3. 대시보드 실행
 
 ```bash
-streamlit run main.py
+python -m streamlit run main.py
 ```
 
 브라우저에서 `http://localhost:8501`에 접속합니다.
+
+대시보드는 기본으로 GitHub 저장소의 최신 데이터를 읽습니다. 로컬 `data/` 파일로 보려면 `OW2_LOCAL_DATA=1`을 붙입니다.
+
+```bash
+OW2_LOCAL_DATA=1 python -m streamlit run main.py
+```
 
 ---
 
@@ -188,6 +219,16 @@ python update.py --mode all
 | `OLLAMA_GENERATE_URL` | `http://localhost:11434/api/generate` | Ollama generate API URL |
 | `OLLAMA_TIMEOUT` | `90` | Ollama 응답 제한 시간(초) |
 | `FORCE_PATCH_AI_ANALYSIS` | `0` | 기존 분석이 있어도 강제 재생성 |
+
+위는 `update.py`(수집)용이고, 아래는 대시보드(`app_data.py`)용입니다.
+
+| 환경변수 | 기본값 | 설명 |
+|---|---:|---|
+| `OW2_LOCAL_DATA` | 꺼짐 | `1`이면 GitHub raw 대신 로컬 `data/` 파일을 읽음 |
+| `OW2_DATA_CACHE_TTL` | `1800` | 데이터 캐시 유지 시간(초) |
+| `OW2_DATA_REPO` | `kimdy3872-art/ow2-meta-tracker` | 데이터를 읽어 올 GitHub 저장소 |
+| `OW2_DATA_BRANCH` | `main` | 데이터를 읽어 올 브랜치 |
+| `OW2_DATA_HTTP_TIMEOUT` | `20` | 데이터 요청 제한 시간(초) |
 
 ---
 
@@ -297,13 +338,8 @@ D: total_score <= -1.00
 
 ### GitHub Actions
 
-`main.yml`은 매일 00:00 UTC, 한국 시간 09:00에 `python update.py --mode all`을 실행하고 변경된 데이터를 커밋/푸시하는 워크플로 예시입니다.
-
-GitHub Actions에서 사용하려면 일반적으로 다음 위치로 배치합니다.
-
-```text
-.github/workflows/main.yml
-```
+- `.github/workflows/main.yml`: 매일 00:00 UTC, 한국 시간 09:00에 `python update.py --mode all`을 실행하고 변경된 데이터를 `main`에 커밋/푸시합니다. 로컬에서 push하기 전에 `git pull --rebase`가 필요한 이유입니다.
+- `.github/workflows/keep-alive.yml`: 6시간마다 헤드리스 브라우저로 배포 앱을 방문해 Streamlit Community Cloud의 슬립을 막습니다.
 
 ### 로컬 Ollama 패치 분석
 
@@ -316,7 +352,7 @@ macOS에서는 `scripts/run_local_ai_patch_update.sh`와 `scripts/com.da.overwat
 - Selenium 수집을 위해 Chrome 또는 Chromium이 필요합니다.
 - Parquet 파일을 읽고 쓰기 위해 `pyarrow`가 필요합니다.
 - 패치 AI 분석을 사용하려면 Ollama 서버가 `OLLAMA_GENERATE_URL`에서 응답해야 합니다.
-- 대시보드는 기본적으로 `data/latest/latest_tier.parquet`가 있어야 정상 동작합니다.
+- 대시보드는 기본으로 GitHub raw에서 데이터를 읽으므로 네트워크가 필요합니다. `OW2_LOCAL_DATA=1`일 때는 `data/latest/latest_tier.parquet`가 있어야 정상 동작합니다.
 - `data/patch_notes/patch_notes.json` 등 데이터 파일은 수집 결과이므로, 수동 변경분이 있는 상태에서 자동화나 갱신 스크립트를 실행하면 변경 사항이 섞일 수 있습니다.
 
 ---
@@ -324,7 +360,7 @@ macOS에서는 `scripts/run_local_ai_patch_update.sh`와 `scripts/com.da.overwat
 ## 새 AI 에이전트를 위한 작업 가이드
 
 1. 먼저 `git status --short`로 사용자의 기존 변경분을 확인하세요.
-2. 대시보드 동작을 이해하려면 `main.py`, `app_data.py`, `ui.py`, `pages/*.py` 순서로 읽으세요.
+2. 대시보드 동작을 이해하려면 `main.py`, `app_data.py`, `ui/`, `pages/*.py` 순서로 읽으세요. UI를 고칠 때는 `CLAUDE.md`의 디자인·반응형 규칙과 Streamlit 함정을 먼저 봅니다.
 3. 데이터 생성 로직을 바꿀 때는 `update.py`의 상수, 저장 경로, CLI 옵션, `STATS_COLUMNS`를 함께 확인하세요.
 4. 데이터 파일을 직접 수정하기보다 가능하면 `python update.py --mode ...`로 재생성하세요.
 5. 패치 AI 분석은 로컬 Ollama 상태와 환경변수에 따라 결과가 달라질 수 있습니다.
@@ -334,8 +370,7 @@ macOS에서는 `scripts/run_local_ai_patch_update.sh`와 `scripts/com.da.overwat
 
 ## 향후 개선 아이디어
 
-- `main.yml`을 `.github/workflows/main.yml`로 이동해 GitHub Actions 기본 구조에 맞추기
-- 테스트 코드와 데이터 검증 파이프라인 추가
+- 테스트 코드와 데이터 검증 파이프라인 확대 (지금은 `test_sample_size.py` 하나)
 - 수집 실패, 빈 데이터, 스키마 변경을 검증하는 smoke test 추가
 - 패치노트의 버프/너프 이력을 영웅별 라벨로 구조화해 랭크 산식 검증에 활용
 
