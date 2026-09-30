@@ -7,7 +7,7 @@
 검사:
     layout    페이지별 PC 1440×900 / 폰 390×844 블록 위치·가로 넘침·작은 탭 영역·작은 글자
     sidebar   아이패드 820×1180 · 1180×820, PC 에서 사이드바 펼침/접힘
-    interact  폰 필터·정렬, 차트 위 스와이프, 특전 탭, TOP 4 순환, 표 전체화면
+    interact  폰 필터·정렬, 차트 위 스와이프, 3D 회전·시점 초기화, 특전 탭, TOP 4 순환, 표 전체화면
 
 수치는 표준 출력, 스크린샷은 logs/ui_check/ (gitignore 됨). 가로 넘침이 있거나 검사가
 예외로 끝나면 종료 코드 1. websocket-client 가 필요하다(selenium 이 끌고 온다).
@@ -95,6 +95,9 @@ class Tab:
         self.send("Emulation.setTouchEmulationEnabled", enabled=touch, maxTouchPoints=5 if touch else 1)
         if touch:
             self.send("Emulation.setUserAgentOverride", userAgent=ua)
+        # Streamlit 이 사이드바 펼침 상태를 localStorage 에 남긴다. 지우지 않으면 앞 탭에서 펼쳐 둔
+        # 사이드바가 폰 탭에서도 펼쳐진 채 떠서 본문 터치를 전부 가로챈다.
+        self.send("Storage.clearDataForOrigin", origin=BASE, storageTypes="local_storage")
         if path is not None:
             self.goto(path, wait_selector, settle)
 
@@ -146,6 +149,16 @@ class Tab:
         time.sleep(0.4)
         self.send("Input.dispatchTouchEvent", type="touchStart", touchPoints=[{"x": x, "y": y}])
         self.send("Input.dispatchTouchEvent", type="touchEnd", touchPoints=[])
+
+    def drag(self, x, y, dx, dy, steps=12):
+        """한 손가락으로 (x, y) 에서 (dx, dy) 만큼 끈다."""
+        self.send("Input.dispatchTouchEvent", type="touchStart", touchPoints=[{"x": x, "y": y}])
+        for i in range(1, steps + 1):
+            self.send("Input.dispatchTouchEvent", type="touchMove",
+                      touchPoints=[{"x": x + dx * i / steps, "y": y + dy * i / steps}])
+            time.sleep(0.02)
+        self.send("Input.dispatchTouchEvent", type="touchEnd", touchPoints=[])
+        time.sleep(0.5)
 
     def swipe_scroll(self, x, y, dist=300):
         """손가락으로 밀어 스크롤하는 제스처. 움직인 scrollTop 크기를 돌려준다.
@@ -296,7 +309,7 @@ def sidebar():
         res = {}
         for _ in range(2):
             state = tab.js(SIDEBAR_STATE)
-            # 시작 상태는 Chrome 프로필에 남은 값이라 그때그때 다르다. 잰 값으로 이름을 붙인다.
+            # 시작 상태는 Streamlit 이 창 폭을 보고 정한다. 잰 값으로 이름을 붙인다.
             name = "expanded" if state["expanded"] == "true" else "collapsed"
             res[name] = state
             tab.shot(f"{dev}_{name}.png")
@@ -332,21 +345,49 @@ def main_filter_and_sort():
     tab.close()
 
 
+# 3D 차트의 실제 GL 카메라. _fullLayout.scene.camera 는 드래그 중에 갱신되지 않아 늘 처음 값이다.
+CAMERA_3D = """(() => { const c = document.querySelectorAll('.js-plotly-plot')[1]._fullLayout.scene._scene.getCamera();
+    const r = v => [v.x, v.y, v.z].map(n => +n.toFixed(2));
+    return {eye: r(c.eye), center: r(c.center)}; })()"""
+
+
 def dist_page():
     tab = Tab("phone", *PAGES["dist"], settle=6)
-    order = tab.js("""(() => [...document.querySelectorAll('.ow-section-title, [data-testid=stPlotlyChart], .touch-note')]
+    order = tab.js("""(() => [...document.querySelectorAll('.ow-section-title, [data-testid=stPlotlyChart]')]
         .filter(e => e.getBoundingClientRect().height > 0)
-        .map(e => (e.classList.contains('ow-section-title') ? 'T:' + e.textContent : e.classList.contains('touch-note') ? 'note' : 'chart')
+        .map(e => (e.classList.contains('ow-section-title') ? 'T:' + e.textContent : 'chart')
              + '@' + Math.round(e.getBoundingClientRect().top)))()""")
     print("[dist] order:", order)
-    # 글자 위 / 2D 차트 위 / 3D 차트 위에서 같은 스와이프
-    for name, sel, index in (("text", ".ow-page-head", 0), ("2D chart", CHART, 0), ("3D chart", CHART, 1)):
-        x, y = tab.center_of(sel, index)
+    # 글자 위와 2D 차트 위의 스와이프는 페이지를 내린다
+    for name, sel in (("text", ".ow-page-head"), ("2D chart", CHART)):
+        x, y = tab.center_of(sel)
         if name == "text" and y < 400:
             y += 100
         time.sleep(0.5)
         print(f"[dist] swipe on {name} -> {tab.swipe_scroll(x, y)}px scrolled")
     print("[dist] legend orientation (2D):", tab.js("(() => { const g = document.querySelector('.legend'); if (!g) return null; const r = g.getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height)]; })()"))
+
+    # 3D 차트 위의 스와이프는 큐브를 돌린다. 어떻게 밀어도 중심과 거리가 그대로여야 틀 안에 남는다.
+    x, y = tab.center_of(CHART, 1)
+    time.sleep(0.5)
+    start = tab.js(CAMERA_3D)
+    for dx, dy in ((0, -250), (230, 0), (0, 400), (0, 400), (-200, 300)):
+        tab.drag(x, y, dx, dy)
+    moved = tab.js(CAMERA_3D)
+    print("[dist] 3D camera:", start, "->", moved)
+
+    def distance(cam):
+        return round(sum((e - c) ** 2 for e, c in zip(cam["eye"], cam["center"])) ** 0.5, 1)
+
+    assert moved["eye"] != start["eye"], "3D 차트가 터치 드래그로 회전하지 않는다"
+    assert moved["center"] == start["center"] and distance(moved) == distance(start), "3D 차트가 틀 밖으로 밀려났다"
+    tab.shot("interact_dist_3d_rotated.png")
+    tab.tap(".st-key-pick_win_scatter_3d .modebar-btn")
+    time.sleep(1)
+    reset = tab.js(CAMERA_3D)
+    print("[dist] 3D camera after reset:", reset)
+    assert reset == start, "시점 초기화 버튼이 처음 시점으로 되돌리지 않는다"
+    tab.shot("interact_dist_3d_reset.png")
     tab.close()
 
 

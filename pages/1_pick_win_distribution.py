@@ -14,8 +14,10 @@ from ui import (
     section,
     resolve_tier,
     selected_role as selected_role_value,
+    GLOBAL_ACCENT_COLOR,
     GLOBAL_CHART_HILITE_COLOR,
     GLOBAL_CHART_LABEL_COLOR,
+    GLOBAL_MUTED_TEXT_COLOR,
     GLOBAL_RANK_COLORS,
     style_chart,
 )
@@ -214,11 +216,16 @@ fig.update_layout(
         zaxis=dict(title=dict(text="밴률 (%)", font=dict(size=11)), nticks=5),
         bgcolor="rgba(0,0,0,0)",
         aspectmode="cube",
+        # 점 선택 모드에서 Streamlit 이 layout.dragmode 를 "pan" 으로 두고 scene 이 그걸 물려받는다.
+        # 그러면 드래그가 회전이 아니라 이동이라 큐브가 화면 밖으로 밀려나고 돌아올 방법이 없었다.
+        # turntable 은 중심을 고정하고 위아래 각도도 막혀 있어 어떻게 밀어도 틀 안에 남는다.
+        dragmode="turntable",
     ),
     margin=dict(l=0, r=0, t=10, b=0),
     clickmode="event+select",
     hovermode="closest",
     showlegend=False,
+    modebar=dict(bgcolor="rgba(0,0,0,0)", color=GLOBAL_MUTED_TEXT_COLOR, activecolor=GLOBAL_ACCENT_COLOR),
 )
 
 # 지시서 STEP 3: 2D 와 3D 를 세로로 쌓지 않고 나란히. 제목은 각 차트와 같은 칸에 둔다.
@@ -230,17 +237,16 @@ with _c2d:
     st.plotly_chart(fig_2d, key="pick_win_scatter_2d",
                     config={"displayModeBar": False}, use_container_width=True)
 with _c3d:
-    section("3D 보기", "드래그로 회전, 점을 누르면 영웅 리포트로 이동")
-    # 3D 차트는 터치 드래그로 회전하지 않는다(스와이프는 페이지 스크롤로 넘어간다).
-    # 터치 기기에서만 CSS 가 이 안내를 보인다.
-    st.markdown("<div class='touch-note'>3D 회전은 마우스로 할 수 있습니다. 점을 누르면 영웅 리포트로 이동합니다.</div>",
-                unsafe_allow_html=True)
+    section("3D 보기", "드래그로 회전, 오른쪽 위 버튼으로 시점 초기화, 점을 누르면 영웅 리포트로 이동")
     event = st.plotly_chart(
         fig,
         key="pick_win_scatter_3d",
         on_select="rerun",
         selection_mode="points",
-        config={"displayModeBar": False},
+        # 모드바에는 시점 초기화 버튼 하나만 둔다. 휠 확대는 끈다(페이지를 내리다 차트 위에서
+        # 휠이 걸리면 큐브가 점으로 줄어들었다).
+        config={"displayModeBar": True, "displaylogo": False, "scrollZoom": False,
+                "modeBarButtons": [["resetCameraDefault3d"]]},
         use_container_width=True,
     )
 

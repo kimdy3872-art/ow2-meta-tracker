@@ -2202,8 +2202,9 @@ a.hero-link:hover { color: var(--accent) !important; }
     .sort-chip a:hover { color: var(--text) !important; border-color: rgba(255, 255, 255, 0.24); }
 }
 
-[data-testid="stElementContainer"]:has(.touch-note) { display: none; }
-.touch-note { color: var(--muted); font-size: 0.78rem; }
+/* 3D 차트 시점 초기화 버튼의 영문 툴팁("Reset camera to default")은 숨긴다. 설명은 섹션 부제에 있다. */
+.st-key-pick_win_scatter_3d .modebar-btn::before,
+.st-key-pick_win_scatter_3d .modebar-btn::after { display: none !important; }
 
 @media (hover: none) {
     .ow-card,
@@ -2247,14 +2248,13 @@ a.hero-link:hover { color: var(--accent) !important; }
     }
     .rot-slide-title { display: flex; }
 
-    /* 차트 모드바는 hover 가 없으면 늘 떠서 차트 위를 가린다 */
+    /* 차트 모드바는 hover 가 없으면 늘 떠서 차트 위를 가린다.
+       3D 차트는 시점 초기화 버튼 하나뿐이라 남기고, 22px 아이콘을 44px 탭 영역으로 키운다. */
     .modebar-container { display: none !important; }
-}
-
-/* 3D 차트는 터치 드래그로 회전하지 않는다(실측: 카메라 변화 없음, 스와이프는 스크롤로 넘어간다).
-   터치 기기에서는 "드래그로 회전" 안내가 틀리므로 안내 한 줄을 대신 보인다. */
-@media (hover: none) {
-    [data-testid="stElementContainer"]:has(.touch-note) { display: block; }
+    .st-key-pick_win_scatter_3d .modebar-container { display: block !important; }
+    .st-key-pick_win_scatter_3d .modebar-btn { height: 44px !important; padding: 14px !important; }
+    .st-key-pick_win_scatter_3d .modebar-btn:hover .icon path { fill: var(--muted) !important; }
+    .st-key-pick_win_scatter_3d .modebar-btn:active .icon path { fill: var(--accent) !important; }
 }
 
 /* ===========================================================================

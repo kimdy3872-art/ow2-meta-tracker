@@ -75,7 +75,9 @@
 - `icon_selectbox`는 옆에 `<style>` 마크다운을 하나 더 낸다. 가로 컨테이너에서는 그 칸을 숨긴다.
 - `data-testid` 셀렉터에 기대므로 streamlit은 1.50.0으로 고정. 올리면 셀렉터부터 확인한다.
 - 로컬 파이썬은 3.9라 f-string 안에 같은 따옴표를 중첩할 수 없다.
-- Plotly 2D·추이 차트는 `dragmode=False`(폰에서 스와이프를 확대가 먹었다). 3D는 터치 드래그로 회전되지 않는다.
+- Plotly 2D·추이 차트는 `dragmode=False`(폰에서 스와이프를 확대가 먹었다).
+- 3D 차트는 `scene.dragmode="turntable"`을 명시한다. 점 선택 모드(`on_select`)에서 Streamlit이 `layout.dragmode`를 `pan`으로 두고 scene이 그걸 물려받아, 드래그가 회전이 아니라 이동이 되어 큐브가 화면 밖으로 나갔다. 휠 확대는 끄고(`scrollZoom: False`) 모드바에는 시점 초기화 버튼만 둔다. 3D 캔버스 위 스와이프는 회전이라 페이지가 스크롤되지 않는다.
+- 3D 카메라를 잴 때는 `_fullLayout.scene._scene.getCamera()`를 읽는다. `_fullLayout.scene.camera`는 드래그 중에 갱신되지 않아 "회전하지 않는다"로 잘못 읽힌다.
 
 ## 검증
 
