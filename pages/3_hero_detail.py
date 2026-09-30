@@ -310,15 +310,14 @@ with right_col:
             dim = " dim" if sample == "표본 부족" else ""
             sample_note = f" · {html.escape(sample)}" if sample else ""
             badge = (
-                f'<div class="hmap-badge" style="background:{badge_color}22;border-color:{badge_color}88;color:{badge_color};">{badge_label}</div>'
+                f'<span class="hmap-badge" style="background:{badge_color}22;border-color:{badge_color}88;color:{badge_color};">{badge_label}</span>'
                 if badge_label else ""
             )
             return (
                 f'<div class="hmap-card{dim}" style="background-image:url(\'{bg_image}\');">'
                 f'<div class="hmap-scrim"></div>'
-                f'{badge}'
                 f'<div class="hmap-left">'
-                f'<div class="hmap-name">{m_name}</div>'
+                f'<div class="hmap-name">{m_name}{badge}</div>'
                 f'<div class="hmap-sub">픽률 {p_rate:.1f}%{sample_note}</div>'
                 f'</div>'
                 f'<div class="hmap-right">'

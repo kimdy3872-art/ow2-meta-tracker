@@ -51,15 +51,26 @@ def init_filter_state() -> None:
         else:
             st.session_state[key] = st.session_state[store]
 
-    # 영웅 링크(?hero=X&tier=Y)는 전체 리로드라 세션이 새로 뜬다. 그때만 URL 의
-    # 티어를 받아들인다. 이후 실행에서도 계속 받으면 사용자가 바꾼 값을 덮어쓴다.
+    # 마크다운 링크(?hero=, ?sort=)는 전체 리로드라 세션이 새로 뜬다. 그때만 URL 의
+    # 티어·포지션을 받아들인다. 이후 실행에서도 계속 받으면 사용자가 바꾼 값을 덮어쓴다.
     if fresh:
-        incoming = st.query_params.get("tier")
-        if isinstance(incoming, list):
-            incoming = incoming[0] if incoming else None
-        if incoming:
-            st.session_state["selected_tier"] = str(incoming)
-            st.session_state["selected_tier" + _STORE] = str(incoming)
+        for param, key in (("tier", "selected_tier"), ("role", "selected_role")):
+            incoming = st.query_params.get(param)
+            if isinstance(incoming, list):
+                incoming = incoming[0] if incoming else None
+            if incoming:
+                st.session_state[key] = str(incoming)
+                st.session_state[key + _STORE] = str(incoming)
+
+
+def filter_qs() -> str:
+    """마크다운 링크에 붙일 &tier=&role=. 링크 클릭은 전체 리로드라 URL 로 넘기지
+    않으면 전역 필터가 기본값(골드·전체)으로 돌아간다."""
+    from urllib.parse import quote
+
+    init_filter_state()
+    return (f"&tier={quote(st.session_state['selected_tier'], safe='')}"
+            f"&role={quote(st.session_state['selected_role'], safe='')}")
 
 
 def _options():
@@ -110,6 +121,40 @@ def render_global_filters(which=("tier", "role")) -> None:
 
     for key in ("selected_tier", "selected_role"):
         st.session_state[key + _STORE] = st.session_state[key]
+
+
+def _sync_from(widget_key: str, canon: str) -> None:
+    st.session_state[canon] = st.session_state[widget_key]
+    st.session_state[canon + _STORE] = st.session_state[widget_key]
+
+
+def render_inline_filters(which=("tier", "role")) -> None:
+    """사이드바가 접혔을 때(폰·접은 태블릿) 본문 위에 보이는 필터 사본.
+
+    사이드바 필터와 같은 정본(selected_*)을 쓴다. 사본은 key 가 있어서 매 실행 정본
+    값으로 다시 채우고, 사용자가 바꾸면 on_change 콜백이 스크립트보다 먼저 정본을 고친다.
+    그래서 사이드바 쪽(render_global_filters, 이보다 먼저 렌더)도 같은 실행에서 새 값을 본다.
+    """
+    from app_data import role_option_label, tier_option_label
+
+    from .components import icon_selectbox
+
+    if not which:
+        return
+    tiers, roles = _options()
+    if len(tiers) <= 1:
+        return
+    specs = [("tier", "티어", tiers, "selected_tier", tier_option_label),
+             ("role", "포지션", roles, "selected_role", role_option_label)]
+    with st.container(horizontal=True, gap="small", key="mfilters"):
+        for name, label, options, canon, fmt in specs:
+            if name not in which or st.session_state[canon] not in options:
+                continue
+            widget_key = f"m_{name}"
+            st.session_state[widget_key] = st.session_state[canon]
+            icon_selectbox(label, options, f"m{name}sel", key=widget_key, format_func=fmt,
+                           label_visibility="collapsed",
+                           on_change=_sync_from, args=(widget_key, canon))
 
 
 def selected_tier() -> str:

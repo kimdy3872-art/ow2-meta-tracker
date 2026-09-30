@@ -90,14 +90,6 @@ rank_color_map = GLOBAL_RANK_COLORS
 # 지시서 STEP 3: 문장으로 나열하던 메타 유형을 클릭 가능한 칩으로.
 META_TYPES = ["메타 지배", "과열 주의", "밴 압박", "저평가 픽", "전문가 픽", "비주류"]
 
-# 차트 제목을 칩보다 위에 둔다. 칩은 페이지 범례가 아니라 아래 두 차트만 거르는
-# 보조 필터라서, 제목 위에 있으면 범례로 읽힌다.
-_t2d, _t3d = st.columns(COLS_HALF, gap=GAP)
-with _t2d:
-    section("픽률 × 승률", "원 크기는 밴률, 점선은 승률 50%")
-with _t3d:
-    section("3D 보기", "드래그로 회전, 점을 누르면 영웅 리포트로 이동")
-
 # 칩에 색 점을 달지 않는다. 같은 화면에서 차트 점 색이 이미 랭크(S~D)를 뜻해서,
 # 유형 색을 같이 쓰면 빨간 점을 "밴 압박"으로 오독한다.
 _available = [t for t in META_TYPES if (filtered_df["meta_type"].astype(str) == t).any()]
@@ -159,6 +151,13 @@ fig_2d.update_traces(
     marker=dict(line=dict(width=1, color="rgba(226,232,240,0.55)")),
 )
 style_chart(fig_2d, height=460)
+# 드래그 확대를 끈다. 폰에서는 차트 위 스와이프를 확대가 먹어 페이지가 안 내려갔고,
+# PC 에서도 모드바를 숨겨 둬서 한 번 확대하면 되돌릴 버튼이 없었다. hover 는 그대로다.
+# 범례는 위 한 줄로. 오른쪽 세로 범례는 폰 폭(358px)의 30% 를 먹었다.
+# style_chart 가 범례·여백을 덮어쓰므로 그 뒤에 건다.
+fig_2d.update_layout(dragmode=False, margin=dict(t=36),
+                     legend=dict(orientation="h", x=0, y=1.02, yanchor="bottom",
+                                 title_text="", bgcolor="rgba(0,0,0,0)", borderwidth=0))
 
 fig = px.scatter_3d(
     filtered_df,
@@ -222,12 +221,20 @@ fig.update_layout(
     showlegend=False,
 )
 
-# 지시서 STEP 3: 2D 와 3D 를 세로로 쌓지 않고 나란히.
+# 지시서 STEP 3: 2D 와 3D 를 세로로 쌓지 않고 나란히. 제목은 각 차트와 같은 칸에 둔다.
+# 제목 줄과 차트 줄을 따로 만들면 좁은 화면에서 제목 둘이 먼저 쌓이고 차트 둘이 뒤에 와서
+# "3D 보기" 아래에 2D 차트가 나왔다. 칩은 두 차트를 함께 거르는 필터라 그 위에 둔다.
 _c2d, _c3d = st.columns(COLS_HALF, gap=GAP)
 with _c2d:
+    section("픽률 × 승률", "원 크기는 밴률, 점선은 승률 50%")
     st.plotly_chart(fig_2d, key="pick_win_scatter_2d",
                     config={"displayModeBar": False}, use_container_width=True)
 with _c3d:
+    section("3D 보기", "드래그로 회전, 점을 누르면 영웅 리포트로 이동")
+    # 3D 차트는 터치 드래그로 회전하지 않는다(스와이프는 페이지 스크롤로 넘어간다).
+    # 터치 기기에서만 CSS 가 이 안내를 보인다.
+    st.markdown("<div class='touch-note'>3D 회전은 마우스로 할 수 있습니다. 점을 누르면 영웅 리포트로 이동합니다.</div>",
+                unsafe_allow_html=True)
     event = st.plotly_chart(
         fig,
         key="pick_win_scatter_3d",

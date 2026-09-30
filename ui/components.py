@@ -30,13 +30,12 @@ def _one_line(markup: str) -> str:
     return "".join(line.strip() for line in markup.splitlines())
 
 
-def _tier_qs() -> str:
-    """영웅 링크에 붙일 &tier=. 링크 클릭은 전체 리로드라 세션이 새로 뜨는데,
-    URL 로 넘기지 않으면 전역 티어 선택이 기본값으로 돌아간다."""
+def _filter_qs() -> str:
+    """영웅 링크에 붙일 &tier=&role=. 링크 클릭은 전체 리로드라 세션이 새로 뜬다."""
     try:
-        from .filters import selected_tier
+        from .filters import filter_qs
 
-        return f"&tier={urllib.parse.quote(selected_tier(), safe='')}"
+        return filter_qs()
     except Exception:
         return ""
 
@@ -109,8 +108,8 @@ def _hero_card_markup(card, featured: bool = False) -> str:
     return f"<div class='{classes}'>{art}{rank_html}{body}</div>"
 
 
-def render_rank_rail(title: str, rows, footnote: str = "") -> None:
-    """우측 요약 패널. rows 는 (라벨, 개수, 색) 튜플 리스트."""
+def rank_rail_html(title: str, rows, footnote: str = "") -> str:
+    """랭크 분포 카드. rows 는 (라벨, 개수, 색) 튜플 리스트."""
     total = max(sum(int(count) for _, count, _ in rows), 1)
     body = []
     for label, count, color in rows:
@@ -124,12 +123,19 @@ def render_rank_rail(title: str, rows, footnote: str = "") -> None:
             f"</div>"
         )
     foot = f"<div class='ow-rail-foot'>{html.escape(footnote)}</div>" if footnote else ""
-    st.markdown(
-        f"<div class='ow-rail'><div class='ow-rail-title'>{html.escape(title)}</div>"
-        f"{''.join(body)}{foot}</div>",
-        unsafe_allow_html=True,
-    )
+    return (f"<div class='ow-rail'><div class='ow-rail-title'>{html.escape(title)}</div>"
+            f"{''.join(body)}{foot}</div>")
 
+
+def render_rank_rail(title: str, rows, footnote: str = "") -> None:
+    st.markdown(rank_rail_html(title, rows, footnote), unsafe_allow_html=True)
+
+
+# 영웅 아트는 Overwatch Wiki(Fandom, CC BY-NC-SA)에서 받아 저장소에 미러링한 것이고
+# 원화 저작권은 블리자드에 있다. 비공식 사이트임을 밝혀 둔다.
+LEGAL_HTML = ('Blizzard Entertainment와 무관한 비공식 사이트입니다.<br>'
+              'Overwatch®는 Blizzard Entertainment, Inc.의 상표입니다.<br>'
+              '영웅 아트 출처: Overwatch Wiki (CC BY-NC-SA).')
 
 NAV_ITEMS = [
     ("main", "랭크 순위표", ":material/leaderboard:", "main.py"),
@@ -204,16 +210,29 @@ def render_sidebar_navigation(current_page: str, data_date: str | None = None,
                 unsafe_allow_html=True,
             )
 
-        # 영웅 아트는 Overwatch Wiki(Fandom, CC BY-NC-SA)에서 받아 저장소에 미러링한 것이고
-        # 원화 저작권은 블리자드에 있다. 비공식 사이트임을 밝혀 둔다.
-        st.markdown(
-            '<div class="ow-nav-legal">'
-            'Blizzard Entertainment와 무관한 비공식 사이트입니다.<br>'
-            'Overwatch®는 Blizzard Entertainment, Inc.의 상표입니다.<br>'
-            '영웅 아트 출처: Overwatch Wiki (CC BY-NC-SA).'
-            '</div>',
-            unsafe_allow_html=True,
-        )
+        st.markdown(f'<div class="ow-nav-legal">{LEGAL_HTML}</div>', unsafe_allow_html=True)
+
+
+def render_inline_nav(current_page: str, filters=("tier", "role")) -> None:
+    """사이드바가 접혀 있을 때(폰·접은 태블릿·접은 PC) 본문 맨 위에 보이는 메뉴·필터 줄.
+
+    폰에서는 사이드바가 화면 밖에 접혀 있고 여는 버튼은 설명 없는 아이콘뿐이라, 다른
+    페이지가 있다는 것도, 지금 어떤 티어를 보고 있는지도 드러나지 않았다. 표시 여부는
+    CSS 가 사이드바의 aria-expanded 로 정한다(펼쳐져 있으면 숨긴다).
+    """
+    with st.container(key="mbar"):
+        with st.container(horizontal=True, gap="small", key="mnav"):
+            for page_key, label, _icon, target in NAV_ITEMS:
+                state = "active" if page_key == current_page else "idle"
+                with st.container(key=f"mnav-{state}-{page_key}"):
+                    st.page_link(target, label=label)
+        from .filters import render_inline_filters
+        render_inline_filters(filters)
+
+
+def render_page_footer() -> None:
+    """사이드바가 접혔을 때만 보이는 하단 고지. 펼쳐져 있으면 사이드바에 같은 문구가 있다."""
+    st.markdown(f'<footer class="ow-page-foot">{LEGAL_HTML}</footer>', unsafe_allow_html=True)
 
 
 # ---------------------------------------------------------------------------
@@ -333,33 +352,34 @@ def render_map_cards(cards, title: str = "") -> None:
             f"</div></div>"
         )
     head = f"<div class='eyebrow'>{html.escape(title)}</div>" if title else ""
-    st.markdown(f"<div>{head}<div class='map-grid'>{''.join(items)}</div></div>",
+    st.markdown(f"<div class='map-wrap'>{head}<div class='map-grid'>{''.join(items)}</div></div>",
                 unsafe_allow_html=True)
 
 
-def render_meta_score_card(score, rank, hero_name) -> None:
+def meta_score_html(score, rank, hero_name) -> str:
     """META SCORE 카드. 종합 점수를 0~1000 으로 편 표시용 값."""
-    st.markdown(
-        _one_line(f"""
+    return _one_line(f"""
         <div class="rail-card meta-score-card">
             <div class="eyebrow">Meta Score</div>
             <div class="meta-score-value nowrap">{int(round(score))}<span class="unit">/1000</span></div>
             <div class="meta-meter"><i style="width:{min(max(score / 10, 0), 100):.1f}%"></i></div>
             <div class="meta-score-sub nowrap">{html.escape(str(hero_name))} · 랭크 {html.escape(str(rank))}</div>
         </div>
-        """),
-        unsafe_allow_html=True,
-    )
+        """)
 
 
-def render_rail_rows(title: str, rows, empty_text: str = "") -> None:
+def render_meta_score_card(score, rank, hero_name) -> None:
+    st.markdown(meta_score_html(score, rank, hero_name), unsafe_allow_html=True)
+
+
+def rail_rows_html(title: str, rows, empty_text: str = "") -> str:
     """우측 레일 공통 행 목록. rows: (초상화 url, 이름, 값 텍스트, 값 색)."""
     if not rows:
         body = f"<div class='rail-empty'>{html.escape(empty_text)}</div>" if empty_text else ""
     else:
         body = "".join(
             f"<a class='rail-row' target='_self' "
-            f"href='?hero={urllib.parse.quote(str(name), safe='')}{_tier_qs()}'>"
+            f"href='?hero={urllib.parse.quote(str(name), safe='')}{_filter_qs()}'>"
             + (f"<img class='rail-row-img' src='{html.escape(str(img), quote=True)}' alt=''>"
                if img else "<div class='rail-row-img'></div>")
             + f"<div class='rail-row-name nowrap'>{html.escape(str(name))}</div>"
@@ -367,10 +387,11 @@ def render_rail_rows(title: str, rows, empty_text: str = "") -> None:
             "</a>"
             for img, name, value, color in rows
         )
-    st.markdown(
-        f"<div class='rail-card'><div class='eyebrow'>{html.escape(title)}</div>{body}</div>",
-        unsafe_allow_html=True,
-    )
+    return f"<div class='rail-card'><div class='eyebrow'>{html.escape(title)}</div>{body}</div>"
+
+
+def render_rail_rows(title: str, rows, empty_text: str = "") -> None:
+    st.markdown(rail_rows_html(title, rows, empty_text), unsafe_allow_html=True)
 
 
 def render_kpi_row(items) -> None:
@@ -395,7 +416,8 @@ def render_kpi_row(items) -> None:
             f"<div class='kpi-value nowrap'>{html.escape(str(value))}{unit_html}</div>"
             f"{delta_html}</div>"
         )
-    st.markdown(f"<div class='kpi-row'>{''.join(cells)}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='kpi-wrap'><div class='kpi-row'>{''.join(cells)}</div></div>",
+                unsafe_allow_html=True)
 
 
 def render_hero_portrait_card(hero_name: str, art: dict | None, accent: str, caption: str = "") -> None:
@@ -433,6 +455,8 @@ def render_rotating_card_groups(groups, interval: int = 6) -> None:
     Streamlit 에서 타이머 재실행을 걸면 매 주기마다 전체 스크립트가 다시 돌아 비싸고
     상호작용도 끊긴다. 그래서 세 묶음을 모두 렌더해 두고 CSS 키프레임으로만 전환한다.
     (rerun 0회, 사용자가 필터를 만지는 동안에도 끊기지 않는다.)
+    hover 가 없는 터치 기기에서는 멈출 방법이 없어서, CSS 가 자동 순환을 끄고 좌우
+    스와이프 캐러셀로 바꾼다(묶음마다 .rot-slide-title 이 그때 제목 역할을 한다).
 
     groups: [(제목, [카드 dict, ...]), ...]
     """
@@ -450,6 +474,8 @@ def render_rotating_card_groups(groups, interval: int = 6) -> None:
                         for i, c in enumerate(cards))
         tabs.append(f"<span class='rot-tab' style='{timing}'>{html.escape(str(title))}</span>")
         slides.append(f"<div class='rot-slide' style='{timing}'>"
+                      f"<div class='rot-slide-title'>{html.escape(str(title))}"
+                      f"<span>{index + 1} / {count}</span></div>"
                       f"<div class='ow-card-grid'>{items}</div></div>")
     st.markdown(
         f"<div class='rot-wrap'><div class='rot-tabs'>{''.join(tabs)}</div>"

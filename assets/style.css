@@ -73,6 +73,12 @@ header[data-testid="stHeader"],
     background: transparent !important;
 }
 
+/* 헤더는 투명하지만 화면 맨 위 60px 를 늘 덮고 있어서, 스크롤해 그 자리에 온 카드·링크
+   탭을 가로챘다(elementFromPoint 로 확인). 버튼만 클릭을 받게 한다. */
+header[data-testid="stHeader"],
+header[data-testid="stHeader"] * { pointer-events: none; }
+header[data-testid="stHeader"] :is(button, a, [role="button"]) { pointer-events: auto; }
+
 /* 상단 무지개 띠, 제목 옆 앵커 아이콘: 방문자에겐 개발 도구의 흔적이다 */
 [data-testid="stDecoration"],
 [data-testid="stHeaderActionElements"] {
@@ -116,6 +122,12 @@ a:focus-visible,
 
 [data-testid="stVerticalBlock"] { gap: 16px; }
 
+/* 반응형 기준은 창 폭이 아니라 실제로 쓸 수 있는 폭이다. 사이드바를 펼친 태블릿은 창이
+   820px 이어도 본문은 500px 뿐이라, 창 폭 미디어 쿼리로는 좁은 레이아웃이 걸리지 않고
+   레일이 121px 로 눌렸다. 페이지·카드 묶음마다 컨테이너를 두고 그 폭으로 판단한다
+   (15. 반응형). */
+[data-testid="stMainBlockContainer"] { container: page / inline-size; }
+
 /* 마크다운 컨테이너의 margin-bottom:-1rem 은 마지막 <p> 여백을 상쇄하려는 것이다.
    HTML 카드(div/section/header)로 끝나면 블록 간격만 먹어서 카드끼리 붙는다. */
 [data-testid="stMarkdownContainer"]:has(> :is(div, section, header):last-child) {
@@ -132,8 +144,12 @@ a:focus-visible,
 
 [data-testid="stSidebarCollapseButton"] button { color: var(--muted) !important; }
 
-[data-testid="stSidebar"] {
-    background: transparent !important;
+[data-testid="stSidebar"] { background: transparent !important; }
+
+/* 폭 고정은 펼친 상태에만 건다. 접으면 Streamlit 이 max-width:0 + translateX 로 숨기는데,
+   min-width 가 남아 있으면 min 이 max 를 이겨 보이지 않는 사이드바가 256px 자리를 계속
+   차지한다(태블릿에서 접어도 본문이 오른쪽으로 눌린 채 남던 원인). */
+[data-testid="stSidebar"][aria-expanded="true"] {
     width: 256px !important;
     min-width: 256px !important;
 }
@@ -642,6 +658,7 @@ h1.ow-page-title {
    =========================================================================== */
 
 .hero-showcase {
+    container: hero / inline-size;
     position: relative;
     min-width: 0;
 }
@@ -664,8 +681,6 @@ h1.ow-page-title {
     animation: rise 0.6s var(--ease) backwards;
 }
 
-a.hero-showcase-card:hover { border-color: var(--line-2); }
-
 /* 전신 렌더는 배경이 아니라 카드 안쪽 <img> 레이어다. drop-shadow 림라이트가 실루엣을
    따라가려면 알파를 가진 자기 박스가 필요하다. 카드가 overflow:hidden 이라 밖으로 새지 않는다. */
 .hero-showcase-art {
@@ -684,8 +699,6 @@ a.hero-showcase-card:hover { border-color: var(--line-2); }
     transition: transform 0.7s var(--ease);
     animation: art-in 0.9s 0.1s var(--ease) backwards;
 }
-
-a.hero-showcase-card:hover .hero-showcase-art { transform: translateX(-6px) scale(1.015); }
 
 /* 어두운 영웅은 대표색도 어둡다. --hero-glow 는 components._glow 가 밝혀서 넘긴다 */
 .hero-showcase-art,
@@ -790,14 +803,6 @@ h2.hero-showcase-name {
 
 .hero-showcase-cta svg { transition: transform 0.2s var(--ease); }
 
-a.hero-showcase-card:hover .hero-showcase-cta {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #111216;
-}
-
-a.hero-showcase-card:hover .hero-showcase-cta svg { transform: translateX(2px); }
-
 /* ===========================================================================
    7. TOP 카드 자동 순환
    rerun 없이 CSS 키프레임만으로 전환한다. 세 묶음을 같은 칸에 겹쳐 두고 시작을
@@ -807,6 +812,7 @@ a.hero-showcase-card:hover .hero-showcase-cta svg { transform: translateX(2px); 
    =========================================================================== */
 
 .rot-wrap {
+    container: rot / inline-size;
     position: relative;
     animation: rise 0.6s 0.1s var(--ease) backwards;
 }
@@ -840,6 +846,24 @@ a.hero-showcase-card:hover .hero-showcase-cta svg { transform: translateX(2px); 
     transform: scaleX(0);
     transform-origin: left;
     animation: rot-progress var(--rot-total) linear var(--rot-delay) infinite both;
+}
+
+.rot-slide-title {
+    display: none;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+    color: var(--text);
+    font-size: 0.84rem;
+    font-weight: 600;
+}
+
+.rot-slide-title span {
+    color: var(--muted);
+    font-size: 0.76rem;
+    font-weight: 500;
 }
 
 .rot-stage {
@@ -901,11 +925,6 @@ a.hero-showcase-card:hover .hero-showcase-cta svg { transform: translateX(2px); 
     transition: transform 0.25s var(--ease), border-color 0.25s ease;
 }
 
-.ow-card:hover {
-    transform: translateY(-3px);
-    border-color: var(--line-2);
-}
-
 .ow-card.featured { border-color: rgba(249, 158, 26, 0.4); }
 
 .ow-card-art {
@@ -915,8 +934,6 @@ a.hero-showcase-card:hover .hero-showcase-cta svg { transform: translateX(2px); 
     background-repeat: no-repeat;
     transition: transform 0.5s var(--ease);
 }
-
-.ow-card:hover .ow-card-art { transform: scale(1.05); }
 
 .ow-card-art::after {
     content: "";
@@ -977,6 +994,8 @@ a.hero-showcase-card:hover .hero-showcase-cta svg { transform: translateX(2px); 
    8. 전장 카드
    =========================================================================== */
 
+.map-wrap { container: maps / inline-size; }
+
 .map-grid {
     display: grid;
     margin-top: 10px;
@@ -995,11 +1014,6 @@ a.hero-showcase-card:hover .hero-showcase-cta svg { transform: translateX(2px); 
     transition: transform 0.25s var(--ease), border-color 0.25s ease;
 }
 
-.map-card:hover {
-    transform: translateY(-2px);
-    border-color: var(--line-2);
-}
-
 .map-card-art {
     position: absolute;
     inset: 0;
@@ -1007,8 +1021,6 @@ a.hero-showcase-card:hover .hero-showcase-cta svg { transform: translateX(2px); 
     background-position: center;
     transition: transform 0.5s var(--ease);
 }
-
-.map-card:hover .map-card-art { transform: scale(1.05); }
 
 .map-card-art::after {
     content: "";
@@ -1058,6 +1070,30 @@ a.hero-showcase-card:hover .hero-showcase-cta svg { transform: translateX(2px); 
 /* ===========================================================================
    9. 우측 레일
    =========================================================================== */
+
+.rail-side {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* 좁은 화면에서만 보인다(15. 반응형). 옆 카드가 살짝 보이게 해서 밀 수 있다는 걸 알린다 */
+.rail-strip {
+    display: none;
+    align-items: flex-start;  /* 가장 긴 카드에 맞춰 늘리면 Meta Score 카드 절반이 빈다 */
+    gap: 10px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+}
+
+.rail-strip::-webkit-scrollbar { display: none; }
+
+.rail-strip > * {
+    flex: 0 0 min(280px, 82%);
+    scroll-snap-align: start;
+}
 
 .rail-card,
 .ow-rail {
@@ -1112,8 +1148,6 @@ a.hero-showcase-card:hover .hero-showcase-cta svg { transform: translateX(2px); 
     text-decoration: none !important;
     transition: background 0.15s ease;
 }
-
-.rail-row:hover { background: rgba(255, 255, 255, 0.04); }
 
 .rail-row-img {
     width: 32px;
@@ -1208,6 +1242,37 @@ a.hero-showcase-card:hover .hero-showcase-cta svg { transform: translateX(2px); 
    --i 는 행 번호(최대 16)라 위에서부터 순서대로 들어온다.
    =========================================================================== */
 
+.rank-board { container: board / inline-size; }
+
+/* 좁을 때만 보인다(표 머리줄이 숨어 정렬할 곳이 없어지므로) */
+.sort-chips {
+    display: none;
+    gap: 6px;
+    margin-bottom: 10px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.sort-chip a {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    border: 1px solid var(--line-2);
+    border-radius: 999px;
+    color: var(--text-2) !important;
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+    text-decoration: none !important;
+}
+
+.sort-chip.active a {
+    border-color: rgba(249, 158, 26, 0.55);
+    background: var(--accent-soft);
+    color: var(--text) !important;
+}
+
 .table-wrap {
     overflow-x: auto;
     min-width: 0;
@@ -1269,9 +1334,6 @@ a.hero-showcase-card:hover .hero-showcase-cta svg { transform: translateX(2px); 
 
 .overwatch-table tbody tr:last-child td { border-bottom: 0 !important; }
 
-.overwatch-table tbody tr:hover td { background: rgba(255, 255, 255, 0.03); }
-.overwatch-table tbody tr:hover td:first-child { box-shadow: inset 2px 0 0 var(--accent); }
-
 .overwatch-table th.sortable a {
     display: inline-flex;
     align-items: center;
@@ -1287,7 +1349,15 @@ a.hero-showcase-card:hover .hero-showcase-cta svg { transform: translateX(2px); 
 .sort-caret { width: 9px; height: 6px; }
 .caret-wrap.flip { display: inline-flex; transform: rotate(180deg); }
 
-.hero-cell { gap: 12px; }
+.hero-cell { gap: 12px; position: relative; }
+
+/* 영웅 이름 링크가 영웅 칸 전체(목록 모드에서는 행 전체)를 덮는다. 이름 글자(약 50x18px)만
+   눌러야 넘어가던 것을 칸 단위로 넓힌다. */
+a.hero-link::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+}
 
 .row-num {
     width: 20px;
@@ -1516,7 +1586,7 @@ a.hero-link:hover { color: var(--accent) !important; }
     background: var(--surface-2);
 }
 
-.trend-context-main { flex: 1; min-width: 200px; }
+.trend-context-main { flex: 1; min-width: 0; }
 
 .trend-context-title {
     color: var(--text);
@@ -1546,6 +1616,8 @@ a.hero-link:hover { color: var(--accent) !important; }
     font-weight: 800;
     line-height: 1;
 }
+
+.kpi-wrap { container: kpi / inline-size; }
 
 .kpi-row {
     display: grid;
@@ -1858,22 +1930,23 @@ a.hero-link:hover { color: var(--accent) !important; }
     animation: rise 0.5s 0.12s var(--ease) backwards;
 }
 
-.hmap-card:hover { border-color: var(--line-2); }
 .hmap-card:last-child { margin-bottom: 0; }
 .hmap-head { margin-bottom: 8px; }
 
 /* 카드 전체를 덮으면 전장 그림에 검은 막을 씌운 것처럼 보인다. 글자가 놓이는
-   왼쪽(전장 이름)과 오른쪽(승률) 가장자리만 어둡게 하고 가운데는 원본 그대로 둔다. */
+   왼쪽(전장 이름)과 오른쪽(승률) 가장자리만 어둡게 하고 가운데는 원본 그대로 둔다.
+   구간은 글자 폭에 맞춰 px 로 잡는다. % 로 잡으면 폰의 좁은 카드에서 어두운 구간이
+   글자보다 짧아져 하바나처럼 밝은 그림 위에서 "픽률 60.9%" 가 안 읽혔다. */
 .hmap-scrim {
     position: absolute;
     inset: 0;
     background: linear-gradient(90deg,
-        rgba(11, 12, 16, 0.78) 0%,
-        rgba(11, 12, 16, 0.4) 28%,
-        rgba(11, 12, 16, 0) 50%,
-        rgba(11, 12, 16, 0) 62%,
-        rgba(11, 12, 16, 0.45) 82%,
-        rgba(11, 12, 16, 0.76) 100%);
+        rgba(11, 12, 16, 0.8) 0,
+        rgba(11, 12, 16, 0.55) 150px,
+        rgba(11, 12, 16, 0) 240px,
+        rgba(11, 12, 16, 0) calc(100% - 180px),
+        rgba(11, 12, 16, 0.5) calc(100% - 100px),
+        rgba(11, 12, 16, 0.8) 100%);
 }
 
 .hmap-name,
@@ -1881,9 +1954,10 @@ a.hero-link:hover { color: var(--accent) !important; }
 .hmap-rate { text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7); }
 
 .hmap-badge {
-    position: absolute;
-    top: 8px;
-    right: 96px;
+    display: inline-block;
+    margin-left: 8px;
+    vertical-align: 2px;
+    text-shadow: none;
     border: 1px solid;
     border-radius: var(--r-chip);
     padding: 2px 7px;
@@ -1952,18 +2026,140 @@ a.hero-link:hover { color: var(--accent) !important; }
 }
 
 /* ===========================================================================
-   15. 반응형
+   15. 반응형 — 창 폭이 아니라 영역 폭(container query) 기준
+   사이드바를 펼친 태블릿, 접은 PC 모두 "그 영역이 실제로 받은 폭"으로 판단한다.
+   툴팁처럼 화면 밖으로 나가는지가 기준인 것만 창 폭(@media)을 쓴다.
    =========================================================================== */
 
-@media (max-width: 1100px) {
-    .ow-card-grid,
-    .map-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+/* 페이지: 본문+우측 레일 두 칸이 안 들어가면 한 줄로 쌓는다.
+   레일이 220px 아래로 줄면 숫자가 카드 밖으로 넘친다 → 본문 폭 780px 이 경계다. */
+@container page (max-width: 780px) {
+    [data-testid="stHorizontalBlock"] { flex-wrap: wrap; row-gap: 16px !important; }
+    [data-testid="stColumn"] {
+        flex: 1 1 100% !important;
+        width: 100% !important;
+        min-width: 100% !important;
+    }
+    [data-testid="stColumn"]:has(> [data-testid="stVerticalBlock"]:empty) { display: none; }
+    /* 우측 레일은 53명 표 뒤(열 몇 화면 아래)로 밀려나 사실상 안 보였다. 표 위 스와이프 줄이 대신한다 */
+    [data-testid="stColumn"]:has(.rail-side) { display: none; }
+    .rail-strip { display: flex; }
+    /* 영웅 추이: 큰 초상화는 바로 위 요약 줄의 썸네일과 겹친다. 지표·차트를 위로 올린다 */
+    [data-testid="stColumn"]:has(.portrait-card) { display: none; }
+}
+
+@container page (max-width: 520px) {
+    /* 영웅 추이 필터: 220px 고정 두 개가 두 줄로 쌓이던 것을 한 줄 반반으로 */
+    .st-key-trend-filters > [data-testid="stElementContainer"] {
+        flex: 1 1 0 !important;
+        width: auto !important;
+        min-width: 0 !important;
+    }
+    .st-key-trend-filters .stSelectbox { max-width: none; }
+    .stTextInput,
+    [data-testid="stTextInput"] { max-width: none; }
+    .ow-page-head { padding-bottom: 14px; }
+    .ow-page-status { gap: 10px; font-size: 0.74rem; }
+    .ow-page-src { padding-left: 10px; }
+}
+
+/* HERO 카드 */
+@container hero (max-width: 880px) {
+    /* 지표 4개가 한 줄에 안 들어가 마지막만 줄바꿈되던 것(PC 1440 + 사이드바)을 의도된 2x2 로 */
+    .hero-showcase-stats {
+        display: grid;
+        grid-template-columns: repeat(2, max-content);
+        justify-content: start;
+        gap: 14px 28px;
+    }
+    .hero-showcase-stat,
+    .hero-showcase-stat:first-child { padding: 0; border: 0; }
+}
+
+@container hero (max-width: 760px) {
+    .hero-showcase-art { width: 50%; right: 0; }
     .hero-showcase-left { max-width: 62%; }
 }
 
+@container hero (max-width: 560px) {
+    .hero-showcase-card { min-height: 320px; padding: 20px 18px; }
+    .hero-showcase-left { max-width: 66%; min-height: 278px; }
+    h2.hero-showcase-name { font-size: 2rem !important; }
+    .hero-showcase-stats { gap: 12px 20px; }
+    .hero-showcase-stat-value { font-size: 1.35rem; }
+    .hero-showcase-cta { margin-top: 16px; }
+}
+
+/* TOP 4 · 전장 카드: 한 장이 150px 아래로 줄면 2열 */
+@container rot (max-width: 620px) {
+    .ow-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .ow-card { height: 160px; }
+    .rot-tabs { gap: 14px; }
+}
+
+@container maps (max-width: 620px) {
+    .map-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+}
+
+/* 영웅 추이 지표: 폰에서도 3칸 가로 유지(세로 3장은 448px 을 먹었다) */
+@container kpi (max-width: 460px) {
+    .kpi-row { gap: 8px; }
+    .kpi-card { padding: 12px; }
+    .kpi-value { font-size: 1.55rem; margin-top: 6px; }
+    .kpi-delta { margin-top: 8px; padding: 2px 6px; font-size: 0.7rem; }
+}
+
+/* 순위표 → 한 줄 요약 목록. 표 폭이 5열에 모자라면(가로 스크롤이 생기기 전) 바꾼다.
+   1행: 번호·초상화·이름 | 점수·랭크 / 2행: 이름 아래에 맞춘 승·픽·밴 미니 막대.
+   한 명당 159px → 약 85px. 첫 칸(62px)은 번호+초상화 폭만큼 비워 2행을 이름 아래에 맞춘다. */
+@container board (max-width: 700px) {
+    .sort-chips { display: flex; }
+    .table-wrap { overflow: visible; }
+    .overwatch-table,
+    .overwatch-table tbody { display: block; }
+    .overwatch-table thead { display: none; }
+    .overwatch-table tr {
+        position: relative;
+        display: grid;
+        grid-template-columns: 62px repeat(3, minmax(0, 1fr)) auto;
+        align-items: center;
+        gap: 6px 10px;
+        padding: 10px 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        transition: background 0.15s ease;
+    }
+    .overwatch-table tbody tr:last-child { border-bottom: 0; }
+    .overwatch-table td {
+        min-height: 0;
+        padding: 0;
+        border: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+    }
+    /* 링크 ::after 가 칸이 아니라 행 전체를 덮도록 기준 상자를 행으로 넘긴다 */
+    .overwatch-table td.hero-cell { grid-column: 1 / 5; gap: 10px; position: static; }
+    .overwatch-table td.score-cell {
+        grid-column: 5;
+        grid-row: 1;
+        justify-content: flex-end;
+        gap: 8px;
+    }
+    .overwatch-table td.rate-cell { grid-row: 2; display: block; }
+    .overwatch-table td.rate-cell.win { grid-column: 2; }
+    .overwatch-table td.rate-cell.pick { grid-column: 3; }
+    .overwatch-table td.rate-cell.ban { grid-column: 4; }
+    .overwatch-table .rate-line { flex-direction: column-reverse; align-items: stretch; gap: 4px; }
+    .overwatch-table .rate-bar { flex: none; height: 3px; }
+    .overwatch-table .rate-text { width: auto; text-align: left; font-size: 0.8rem; }
+    .overwatch-table .rate-text::before { color: var(--muted); font-weight: 500; }
+    .overwatch-table .rate-cell.win .rate-text::before { content: "승 "; }
+    .overwatch-table .rate-cell.pick .rate-text::before { content: "픽 "; }
+    .overwatch-table .rate-cell.ban .rate-text::before { content: "밴 "; }
+    .hero-cell-img { width: 32px; height: 32px; }
+}
+
+/* 툴팁은 화면 밖으로 나가는지가 기준이라 창 폭으로 판단한다 */
 @media (max-width: 900px) {
-    .hero-showcase-art { width: 50%; right: 0; }
-    .kpi-row { grid-template-columns: 1fr; }
     .perk-tooltip {
         left: 0;
         top: calc(100% + 8px);
@@ -1974,94 +2170,171 @@ a.hero-link:hover { color: var(--accent) !important; }
     .perk-card:focus-visible .perk-tooltip { transform: translateY(0); }
 }
 
-/* 순위표 → 카드. 영웅 / 점수 한 줄, 그 아래 승률·픽률·밴률 막대 */
 @media (max-width: 860px) {
-    .table-wrap {
-        border: 0;
-        background: transparent;
-        overflow: visible;
-    }
-    .overwatch-table,
-    .overwatch-table tbody { display: block; }
-    .overwatch-table thead { display: none; }
-    .overwatch-table tr {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        column-gap: 12px;
-        row-gap: 6px;
-        margin-bottom: 8px;
-        padding: 12px 14px;
-        border: 1px solid var(--line);
-        border-radius: var(--r-card);
-        background: var(--surface);
-    }
-    .overwatch-table td {
-        min-height: 0;
-        padding: 0;
-        border: 0 !important;
-        background: transparent !important;
-        box-shadow: none !important;
-    }
-    .overwatch-table td.hero-cell { grid-column: 1; margin-bottom: 4px; }
-    .overwatch-table td.score-cell {
-        grid-column: 2;
-        grid-row: 1;
-        align-self: start;
-        justify-content: flex-end;
-    }
-    .overwatch-table td.rate-cell { grid-column: 1 / -1; gap: 10px; }
-    .overwatch-table .rate-cell::before {
-        flex: none;
-        width: 28px;
-        color: var(--muted);
-        font-size: 0.75rem;
-        font-weight: 600;
-    }
-    .overwatch-table .rate-cell.win::before { content: "승률"; }
-    .overwatch-table .rate-cell.pick::before { content: "픽률"; }
-    .overwatch-table .rate-cell.ban::before { content: "밴률"; }
-    .overwatch-table .rate-cell .rate-line { flex: 1; }
     .patch-intel-top { display: block; }
     .patch-meta { text-align: left; margin-top: 8px; white-space: normal; }
 }
 
-@media (max-width: 700px) {
-    .trend-context { align-items: flex-start; flex-wrap: wrap; }
-    .trend-context-rank { width: 100%; text-align: left; padding-left: 58px; }
+/* ===========================================================================
+   16. 입력 기기별 상호작용
+   hover 효과는 마우스가 있을 때만 건다. 터치에서 hover 는 탭한 뒤 들린 채 남는다.
+   터치에는 대신 누르는 순간의 눌림 피드백을 준다.
+   =========================================================================== */
+
+@media (hover: hover) {
+    a.hero-showcase-card:hover { border-color: var(--line-2); }
+    a.hero-showcase-card:hover .hero-showcase-art { transform: translateX(-6px) scale(1.015); }
+    a.hero-showcase-card:hover .hero-showcase-cta {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #111216;
+    }
+    a.hero-showcase-card:hover .hero-showcase-cta svg { transform: translateX(2px); }
+    .ow-card:hover { transform: translateY(-3px); border-color: var(--line-2); }
+    .ow-card:hover .ow-card-art { transform: scale(1.05); }
+    .map-card:hover { transform: translateY(-2px); border-color: var(--line-2); }
+    .map-card:hover .map-card-art { transform: scale(1.05); }
+    .rail-row:hover { background: rgba(255, 255, 255, 0.04); }
+    .overwatch-table tbody tr:hover,
+    .overwatch-table tbody tr:hover td { background: rgba(255, 255, 255, 0.03); }
+    .overwatch-table tbody tr:hover td:first-child { box-shadow: inset 2px 0 0 var(--accent); }
+    .hmap-card:hover { border-color: var(--line-2); }
+    .sort-chip a:hover { color: var(--text) !important; border-color: rgba(255, 255, 255, 0.24); }
 }
 
+[data-testid="stElementContainer"]:has(.touch-note) { display: none; }
+.touch-note { color: var(--muted); font-size: 0.78rem; }
+
+@media (hover: none) {
+    .ow-card,
+    .map-card,
+    a.hero-showcase-card,
+    .rail-row,
+    .overwatch-table tr,
+    .perk-card,
+    .sort-chip a { -webkit-tap-highlight-color: transparent; }
+
+    a.hero-showcase-card { transition: transform 0.12s ease, border-color 0.25s ease; }
+    .ow-card:active,
+    .map-card:active,
+    a.hero-showcase-card:active { transform: scale(0.98); transition-duration: 0.12s; }
+    a.hero-showcase-card:active .hero-showcase-cta {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #111216;
+    }
+    .rail-row:active,
+    .overwatch-table tbody tr:active { background: rgba(255, 255, 255, 0.06); }
+
+    /* TOP 4: 멈출 방법(hover)이 없어 읽는 중에 6초마다 넘어갔다.
+       자동 순환을 끄고 좌우 스와이프로 바꾼다. 옆 묶음이 살짝 보여 밀 수 있다는 걸 알린다. */
+    .rot-tabs { display: none; }
+    .rot-stage {
+        display: flex;
+        gap: 12px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scroll-snap-type: x mandatory;
+        scrollbar-width: none;
+    }
+    .rot-stage::-webkit-scrollbar { display: none; }
+    .rot-slide {
+        flex: 0 0 92%;
+        opacity: 1;
+        visibility: visible;
+        animation: none;
+        scroll-snap-align: start;
+    }
+    .rot-slide-title { display: flex; }
+
+    /* 차트 모드바는 hover 가 없으면 늘 떠서 차트 위를 가린다 */
+    .modebar-container { display: none !important; }
+}
+
+/* 3D 차트는 터치 드래그로 회전하지 않는다(실측: 카메라 변화 없음, 스와이프는 스크롤로 넘어간다).
+   터치 기기에서는 "드래그로 회전" 안내가 틀리므로 안내 한 줄을 대신 보인다. */
+@media (hover: none) {
+    [data-testid="stElementContainer"]:has(.touch-note) { display: block; }
+}
+
+/* ===========================================================================
+   17. 사이드바가 접혔을 때
+   폰은 사이드바가 기본으로 접혀 있고 여는 버튼은 설명 없는 » 아이콘뿐이라, 메뉴와
+   필터와 고지가 전부 숨었다. 접혀 있는 동안에는 본문에 메뉴·필터 줄과 하단 고지를 낸다.
+   =========================================================================== */
+
+[data-testid="stLayoutWrapper"]:has(> .st-key-mbar),
+[data-testid="stElementContainer"]:has(.ow-page-foot) { display: none; }
+
+body:has([data-testid="stSidebar"][aria-expanded="false"]) [data-testid="stLayoutWrapper"]:has(> .st-key-mbar),
+body:has([data-testid="stSidebar"][aria-expanded="false"]) [data-testid="stElementContainer"]:has(.ow-page-foot) {
+    display: block;
+}
+
+.st-key-mbar { gap: 10px; }
+
+/* 항목 3개라 폰 폭에 다 들어간다. 스크롤 상자로 두면 알약 테두리 위아래가 잘렸다 */
+.st-key-mnav { flex-wrap: wrap !important; gap: 6px !important; }
+.st-key-mnav > [data-testid="stLayoutWrapper"] { flex: 0 0 auto !important; width: auto !important; }
+
+.st-key-mnav [data-testid="stPageLink"] a {
+    display: flex;
+    justify-content: center;
+    padding: 7px 10px !important;
+    border: 1px solid var(--line-2);
+    border-radius: 999px;
+    text-decoration: none !important;
+    white-space: nowrap;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.st-key-mnav [data-testid="stPageLink"] a :is(p, span) {
+    color: var(--text-2) !important;
+    font-size: 0.82rem !important;
+    font-weight: 600 !important;
+}
+
+[class*="st-key-mnav-active"] [data-testid="stPageLink"] a {
+    background: var(--accent-soft);
+    border-color: rgba(249, 158, 26, 0.55);
+}
+
+[class*="st-key-mnav-active"] [data-testid="stPageLink"] a :is(p, span) { color: var(--text) !important; }
+
+.st-key-mfilters { gap: 8px !important; }
+
+/* icon_selectbox 는 셀렉트박스(컨테이너) 옆에 뱃지용 <style> 마크다운을 하나씩 낸다. 가로 줄에서는
+   그것도 한 칸을 차지해 두 필터가 양 끝으로 벌어졌다. 칸만 없앤다(<style> 은 숨겨도 적용된다). */
+.st-key-mfilters > [data-testid="stElementContainer"] { display: none; }
+.st-key-mfilters > [data-testid="stLayoutWrapper"] { flex: 0 0 220px !important; }
+
+/* 폰: 한 줄 반반으로 채운다(위 기본값보다 뒤에 있어야 이긴다) */
+@container page (max-width: 520px) {
+    .st-key-mfilters > [data-testid="stLayoutWrapper"] { flex: 1 1 0 !important; min-width: 0 !important; }
+    .st-key-mfilters .stSelectbox { max-width: none; }
+}
+
+.ow-page-foot {
+    margin-top: 8px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+    color: rgba(134, 140, 156, 0.72);
+    font-size: 0.7rem;
+    line-height: 1.6;
+}
+
+/* 사이드바 여는 버튼: 본문 위에 떠 있으니 떠 있는 버튼답게 바탕을 준다 */
+[data-testid="stExpandSidebarButton"] {
+    background: rgba(19, 21, 27, 0.9) !important;
+    border: 1px solid var(--line-2) !important;
+    border-radius: 8px !important;
+    backdrop-filter: blur(6px);
+}
+
+/* 폰: » 버튼은 스크롤할 때마다 카드 위에 겹쳤다. 메뉴·필터가 본문 줄에 있으니 숨기고,
+   그 버튼 자리로 비워 두던 위쪽 여백도 돌려받는다. */
 @media (max-width: 640px) {
-    /* 위의 min-width:0 이 Streamlit 의 좁은 화면 컬럼 줄바꿈을 막는다. 폰에서는 한 줄씩 쌓는다 */
-    /* gap="large"(4rem)가 줄바꿈된 뒤엔 세로 간격이 된다. 빈 여백 컬럼은 한 줄을 통째로 먹는다 */
-    [data-testid="stHorizontalBlock"] { flex-wrap: wrap; row-gap: 16px !important; }
-    [data-testid="stColumn"] {
-        flex: 1 1 100% !important;
-        width: 100% !important;
-        min-width: 100% !important;
-    }
-    [data-testid="stColumn"]:has(> [data-testid="stVerticalBlock"]:empty) { display: none; }
-
+    [data-testid="stExpandSidebarButton"] { display: none !important; }
     .block-container,
-    [data-testid="stMainBlockContainer"] { padding: 3rem 1rem 2rem !important; }  /* 상단 사이드바 열기 버튼 아래부터 */
-
-    .ow-page-head { padding-bottom: 14px; }
-    .ow-page-status { gap: 10px; font-size: 0.74rem; }
-    .ow-page-src { padding-left: 10px; }
-
-    .hero-showcase-card { min-height: 320px; padding: 20px 18px; }
-    .hero-showcase-left { max-width: 66%; min-height: 278px; }
-    h2.hero-showcase-name { font-size: 2rem !important; }
-    .hero-showcase-stats {
-        display: grid;
-        grid-template-columns: repeat(2, auto);
-        justify-content: start;
-        gap: 12px 20px;
-    }
-    .hero-showcase-stat { padding: 0; border: 0; }
-    .hero-showcase-stat-value { font-size: 1.35rem; }
-    .hero-showcase-cta { margin-top: 16px; }
-
-    .ow-card-grid { gap: 8px; }
-    .ow-card { height: 160px; }
-    .rot-tabs { gap: 14px; }
+    [data-testid="stMainBlockContainer"] { padding: 1rem 1rem 2rem !important; }
 }

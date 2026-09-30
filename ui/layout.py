@@ -13,15 +13,19 @@ from pathlib import Path
 
 import streamlit as st
 
-from .components import _latest_data_date, render_page_hero, render_sidebar_navigation
+from .components import (
+    _latest_data_date,
+    render_inline_nav,
+    render_page_footer,
+    render_page_hero,
+    render_sidebar_navigation,
+)
 from .theme import apply_global_theme
 
 # st.columns 비율. 페이지마다 다른 값을 쓰던 것을 여기로 모은다.
 COLS_HALF = [1, 1]              # 나란한 필터/차트 2개
-COLS_THIRDS = [1, 1, 1.4]       # 필터 2개 + 넓은 입력
 COLS_MAIN_SIDE = [3.4, 1.5]     # 본문 + 우측 레일
 COLS_ART_KPI = [1, 2.5]         # 영웅 아트 + 지표
-COLS_FILTER_WIDE = [1.25, 3.75]  # 단일 필터 + 나머지 여백
 GAP = "large"
 
 # 사이드바 브랜드 마크(ui/components.py)와 같은 도형이다.
@@ -42,12 +46,14 @@ def page_shell(*, page_key: str, title: str, subtitle: str = "",
     apply_global_theme()
     render_page_hero(title, subtitle, badge, live_label=_latest_data_date())
     render_sidebar_navigation(page_key, filters=filters)
-    st.markdown("<div style='height: 0.25rem;'></div>", unsafe_allow_html=True)
+    # 사이드바 필터보다 뒤에 그려야 사본이 이번 실행의 정본 값으로 채워진다.
+    render_inline_nav(page_key, filters=filters)
     try:
         yield
     except Exception:
         st.error("데이터를 불러오지 못했습니다.")
         raise
+    render_page_footer()
 
 
 def section(title: str, sub: str = "") -> None:

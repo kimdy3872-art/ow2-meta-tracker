@@ -20,7 +20,6 @@ from app_data import (
     translate_tier_name,
 )
 from ui import (
-    COLS_FILTER_WIDE,
     COLS_MAIN_SIDE,
     FILTER_DEFAULTS,
     GAP,
@@ -37,9 +36,10 @@ from ui import (
     render_rotating_card_groups,
     render_hero_showcase,
     render_map_cards,
-    render_meta_score_card,
-    render_rail_rows,
-    render_rank_rail,
+    filter_qs,
+    meta_score_html,
+    rail_rows_html,
+    rank_rail_html,
 )
 
 # -------------------------------------------------
@@ -208,10 +208,8 @@ def reset_filters():
 # 본문에는 이 페이지 고유 필터인 검색만 남는다.
 selected_tier = resolve_tier(tiers)
 selected_role = selected_role_value()
-_s_col, _ = st.columns(COLS_FILTER_WIDE, gap=GAP)
-with _s_col:
-    search_hero = st.text_input("영웅 검색", key="search_hero", placeholder="영웅 이름으로 검색",
-                                label_visibility="collapsed")
+search_hero = st.text_input("영웅 검색", key="search_hero", placeholder="영웅 이름으로 검색",
+                            label_visibility="collapsed")
 
 # 정렬은 드롭다운을 없애고 표 헤더 클릭으로 받는다(?sort= 쿼리 파라미터).
 SORT_COLUMNS = {
@@ -285,124 +283,75 @@ ICON_CARET = ("<svg class='sort-caret' viewBox='0 0 10 6' fill='currentColor' "
               "aria-hidden='true'><path d='M5 6 0 0h10z'/></svg>")
 
 
-def _sort_header(key, label):
-    """표 헤더를 정렬 링크로. 드롭다운을 없앤 자리를 대신한다."""
+def _sort_link(key, label, tag_open, tag_close, cls):
+    """정렬 링크. 전체 리로드라 필터를 URL 로 넘겨야 티어·포지션이 유지된다."""
     active = st.session_state.get("sort_col") == key
     caret = ICON_CARET if active else ""
-    cls = "sortable active" if active else "sortable"
     flip = " flip" if active and not st.session_state.get("sort_desc", True) else ""
-    return (f"<th class='{cls}'><a href='?sort={key}' target='_self'>"
-            f"{html.escape(label)}<span class='caret-wrap{flip}'>{caret}</span></a></th>")
+    cls = f"{cls} active" if active else cls
+    return (f"{tag_open.format(cls=cls)}<a href='?sort={key}{filter_qs()}' target='_self'>"
+            f"{html.escape(label)}<span class='caret-wrap{flip}'>{caret}</span></a>{tag_close}")
+
+
+def _rate_bar(kind, value, text):
+    if pd.isna(value):
+        return "<div class='rate-text muted'>-</div>"
+    w = min(max(float(value), 0), 100)
+    return (f"<div class='rate-line'><div class='rate-bar'>"
+            f"<div class='rate-fill {kind}' style='width:{w}%'></div></div>"
+            f"<div class='rate-text'>{text}</div></div>")
 
 
 def render_rank_table_html(df):
-    rank_color_map = GLOBAL_RANK_COLORS
+    """순위표. 넓으면 5열 표, 좁으면(표 폭 기준, CSS 컨테이너 쿼리) 한 줄 요약 목록.
 
-    styles = ""  # 표 스타일은 assets/style.css 에 있다
+    목록 모드에서는 머리줄이 숨어 정렬할 곳이 없어지므로 정렬 칩을 같이 낸다.
+    영웅 링크는 ::after 로 행(목록 모드) 또는 영웅 칸(표 모드) 전체를 덮는다.
+    """
+    qs = filter_qs()
     rows = []
     for row_no, (_, row) in enumerate(df.iterrows(), start=1):
         hero_name = str(row["hero"])
-        hero = html.escape(hero_name)
-        hero_query = urllib.parse.quote(hero_name, safe="")
-        hero_link = (
-            f"<a class='hero-link' href='?hero={hero_query}&tier={selected_tier}' "
-            f"target='_self'>{hero}</a>"
-        )
-        meta_type_raw = str(row.get("score_strength", "") or "보통")
-        meta_type = html.escape(meta_type_raw)
-        meta_type_class = {
-            "메타 지배": "meta-dominant",
-            "과열 주의": "meta-overheated",
-            "과열주의": "meta-overheated",
-            "밴 압박": "meta-ban-pressure",
-            "밴압박": "meta-ban-pressure",
-            "저평가 픽": "meta-underrated",
-            "저평가픽": "meta-underrated",
-            "전문가 픽": "meta-expert",
-            "전문가픽": "meta-expert",
-            "비주류": "meta-niche",
-        }.get(meta_type_raw)
-        badge_html = (
-            f"<span class='meta-type-badge {meta_type_class}'>{meta_type}</span>"
-            if meta_type_class
-            else ""
-        )
+        hero_link = (f"<a class='hero-link' target='_self' "
+                     f"href='?hero={urllib.parse.quote(hero_name, safe='')}{qs}'>"
+                     f"{html.escape(hero_name)}</a>")
+        meta_type = str(row.get("score_strength", "") or "보통")
+        sub_text = " · ".join(b for b in [translate_role_name(str(row["role"])), meta_type] if b)
         low_pick_warning = str(row.get("pick_rate_warning", "") or "").strip()
-        low_pick_html = ""
-        if low_pick_warning:
-            low_pick_html = f"<span class='low-pick-badge'>{html.escape(low_pick_warning)}</span>"
-        hero_cell_html = hero_link  # 포지션/메타 라벨은 아래 부제 줄로 흡수한다
-        role = html.escape(translate_role_name(str(row["role"])))
-        win_rate = f"{row['win_rate']:.1f}%"
-        pick_rate = f"{row['pick_rate']:.1f}%"
-        ban_rate_val = pd.to_numeric(row.get("ban_rate", None), errors="coerce")
+        low_html = (f"<span class='cell-warn'>{html.escape(low_pick_warning)}</span>"
+                    if low_pick_warning else "")
+        ban_val = pd.to_numeric(row.get("ban_rate", None), errors="coerce")
         score_val = pd.to_numeric(row.get("total_score", None), errors="coerce")
-        score = f"{score_val:+.2f}" if pd.notna(score_val) else "-"
-        score_html = score
-        rank = html.escape(str(row["rank"]))
-        rank_color = rank_color_map.get(str(row["rank"]), GLOBAL_TEXT_COLOR)
         hero_url = get_hero_image_url(row["hero"])
         img_html = (f'<img class="hero-cell-img" src="{hero_url}" alt=""/>' if hero_url
                     else '<div class="hero-cell-img"></div>')
-
-        pick_html = (
-            f"<div class='rate-line'><div class='rate-bar'><div class='rate-fill pick' style='width:{min(max(row['pick_rate'],0),100)}%'></div></div>"
-            f"<div class='rate-text'>{pick_rate}</div></div>"
-        )
-        win_html = (
-            f"<div class='rate-line'><div class='rate-bar'><div class='rate-fill win' style='width:{min(max(row['win_rate'],0),100)}%'></div></div>"
-            f"<div class='rate-text'>{win_rate}</div></div>"
-        )
-        if pd.notna(ban_rate_val):
-            ban_rate_str = f"{ban_rate_val:.1f}%"
-            ban_html = (
-                f"<div class='rate-line'><div class='rate-bar'><div class='rate-fill ban' style='width:{min(max(ban_rate_val,0),100)}%'></div></div>"
-                f"<div class='rate-text'>{ban_rate_str}</div></div>"
-            )
-        else:
-            ban_html = "<div class='rate-text muted'>-</div>"
-        low_html = f"<span class='cell-warn'>{html.escape(low_pick_warning)}</span>" if low_pick_warning else ""
-        sub_bits = [role]
-        if meta_type:
-            sub_bits.append(meta_type)
-        sub_text = " · ".join(b for b in sub_bits if b)
-
-        def _bar(kind, value, text):
-            if pd.isna(value):
-                return "<div class='rate-text muted'>-</div>"
-            w = min(max(float(value), 0), 100)
-            return (
-                f"<div class='rate-line'><div class='rate-bar'>"
-                f"<div class='rate-fill {kind}' style='width:{w}%'></div></div>"
-                f"<div class='rate-text'>{text}</div></div>"
-            )
-
+        win_text = f"{row['win_rate']:.1f}%"
+        pick_text = f"{row['pick_rate']:.1f}%"
+        ban_text = f"{ban_val:.1f}%" if pd.notna(ban_val) else "-"
+        score_text = f"{score_val:+.2f}" if pd.notna(score_val) else "-"
         rows.append(
             f"<tr style='--i:{min(row_no, 16)}'>"
             f"<td class='hero-cell'><span class='row-num'>{row_no}</span>{img_html}"
             f"<div class='hero-cell-text'>"
-            f"<div class='hero-cell-name nowrap'>{hero_cell_html}{low_html}</div>"
+            f"<div class='hero-cell-name nowrap'>{hero_link}{low_html}</div>"
             f"<div class='hero-cell-sub nowrap'>{html.escape(sub_text)}</div>"
             f"</div></td>"
-            f"<td class='rate-cell win'>{_bar('win', row['win_rate'], win_rate)}</td>"
-            f"<td class='rate-cell pick'>{_bar('pick', row['pick_rate'], pick_rate)}</td>"
-            f"<td class='rate-cell ban'>{_bar('ban', ban_rate_val, f'{ban_rate_val:.1f}%' if pd.notna(ban_rate_val) else '-')}</td>"
-            f"<td class='score-cell nowrap'>{score_html}"
-            f"{rank_badge(rank)}</td>"
+            f"<td class='rate-cell win'>{_rate_bar('win', row['win_rate'], win_text)}</td>"
+            f"<td class='rate-cell pick'>{_rate_bar('pick', row['pick_rate'], pick_text)}</td>"
+            f"<td class='rate-cell ban'>{_rate_bar('ban', ban_val, ban_text)}</td>"
+            f"<td class='score-cell nowrap'>{score_text}"
+            f"{rank_badge(html.escape(str(row['rank'])))}</td>"
             "</tr>"
         )
-    table_html = (
-        styles
-        + "<div class='table-wrap'><table class='overwatch-table'><thead><tr>"
-        + "<th>영웅</th>"
-        + "".join(_sort_header(key, label) for key, label in
-                 [("win_rate", "승률"), ("pick_rate", "픽률"),
-                  ("ban_rate", "밴률"), ("total_score", "종합 점수")])
-        + "</tr></thead><tbody>"
-        + "".join(rows)
-        + "</tbody></table></div>"
-    )
-    return table_html
+    header = "<th>영웅</th>" + "".join(
+        _sort_link(key, label, "<th class='{cls}'>", "</th>", "sortable")
+        for key, label in [("win_rate", "승률"), ("pick_rate", "픽률"),
+                           ("ban_rate", "밴률"), ("total_score", "종합 점수")])
+    chips = "".join(_sort_link(key, label, "<span class='{cls}'>", "</span>", "sort-chip")
+                    for key, label in SORT_COLUMNS.items())
+    return (f"<div class='rank-board'><div class='sort-chips'>{chips}</div>"
+            f"<div class='table-wrap'><table class='overwatch-table'><thead><tr>{header}</tr></thead>"
+            f"<tbody>{''.join(rows)}</tbody></table></div></div>")
 
 # -------------------------------------------------
 # 9. 데이터 없는 경우 처리
@@ -445,7 +394,7 @@ def _build_top_cards(metric_col, label, top_df, metric_color, limit=4):
             "sub": f"{label} {i + 1}위 · {translate_role_name(str(row.get('role', '')))}",
             "rank": str(row.get("rank", "")),
             "rank_color": rank_color_map.get(str(row.get("rank", "")), GLOBAL_TEXT_COLOR),
-            "href": f"?hero={urllib.parse.quote(hero_name, safe='')}&tier={selected_tier}",
+            "href": f"?hero={urllib.parse.quote(hero_name, safe='')}{filter_qs()}",
         })
     return cards
 
@@ -520,7 +469,7 @@ with _main_col:
         meta=f"{translate_tier_name(selected_tier)} · "
              f"{translate_role_name(str(_top.get('role', '')))}",
         rank=str(_top.get("rank", "")),
-        href=f"?hero={urllib.parse.quote(_top_hero, safe='')}&tier={selected_tier}",
+        href=f"?hero={urllib.parse.quote(_top_hero, safe='')}{filter_qs()}",
         stats=[
             ("승률", _pct(_top.get("win_rate"))),
             ("픽률", _pct(_top.get("pick_rate"))),
@@ -544,60 +493,63 @@ with _main_col:
     if _maps:
         render_map_cards(_maps, title=f"{_top_hero} · 승률 높은 전장")
 
+    # 좁은 화면에서는 우측 레일이 53명 표 뒤(열 몇 화면 아래)로 밀려나 사실상 안 보였다.
+    # 같은 카드를 표 위에 가로 스와이프 줄로 한 번 더 낸다. 레일 계산(최근 변동 로드)이
+    # 표보다 늦게 끝나도 표가 먼저 그려지도록 자리만 잡아 두고 아래에서 채운다.
+    _rail_strip = st.empty()
     _order = "높은" if st.session_state.sort_desc else "낮은"
-    section("영웅 랭크 순위표",
-            f"{sort_by} {_order} 순 · {len(display_df)}명 · 열 제목을 누르면 정렬이 바뀝니다")
+    section("영웅 랭크 순위표", f"{sort_by} {_order} 순 · {len(display_df)}명")
     st.markdown(render_rank_table_html(display_df), unsafe_allow_html=True)
 
+# 정규화 풀에 그 영웅이 1위로 들어있으면 항상 1000 이 나온다. 전 티어를 기준으로 펴서
+# "다른 티어까지 통틀어 어느 위치인가"를 보여준다.
+# 같은 영웅이 티어마다 행을 가지므로 hero 로 dict 를 만들면 값이 덮어써진다.
+# 기준 분포(전 티어)와 조회 값(현재 행)을 분리해서 환산한다.
+_pool = df_raw[df_raw["map"].astype(str) == "all-maps"]["total_score"]
+_meta_score = float(
+    normalize_meta_score(pd.Series([_top.get("total_score")]), reference=_pool).iloc[0]
+)
+_rail_cards = [meta_score_html(_meta_score, _top.get("rank", "-"), _top_hero)]
+
+_deltas, _delta_since = load_score_deltas(selected_tier)
+_delta_rows = []
+if _deltas:
+    _ranked = sorted(
+        ((h, d) for h, d in _deltas.items()
+         if h in set(display_df["hero"].astype(str))),
+        key=lambda x: -abs(x[1]),
+    )[:4]
+    _delta_rows = [
+        (get_hero_image_url(h), h, f"{d:+.2f}",
+         GLOBAL_GOOD_COLOR if d >= 0 else GLOBAL_DANGER_COLOR)
+        for h, d in _ranked
+    ]
+# 넥슨 원본은 며칠에 한 번 갱신되므로, 원본이 달랐던 마지막 날짜를 기준으로 비교한다.
+_delta_title = (f"최근 변동 · {_delta_since[5:].replace('-', '/')} 대비"
+                if _delta_since else "최근 변동")
+_rail_cards.append(rail_rows_html(_delta_title, _delta_rows,
+                                  empty_text="비교할 이전 스냅샷이 아직 없습니다."))
+
+if "ban_rate" in display_df.columns:
+    _ban3 = display_df[display_df["ban_rate"].notna()].sort_values(
+        "ban_rate", ascending=False).head(3)
+    _rail_cards.append(rail_rows_html(
+        "밴률 TOP 3",
+        [(get_hero_image_url(str(r["hero"])), str(r["hero"]),
+          f"{float(r['ban_rate']):.1f}%", GLOBAL_DANGER_COLOR)
+         for _, r in _ban3.iterrows()],
+    ))
+
+_rail_cards.append(rank_rail_html(
+    "랭크 분포",
+    _rank_distribution_rows(display_df),
+    footnote=f"{translate_tier_name(selected_tier)} · 총 {len(display_df)}명",
+))
+
 with _rail_col2:
-    # 정규화 풀에 그 영웅이 1위로 들어있으면 항상 1000 이 나온다. 전 티어를 기준으로 펴서
-    # "다른 티어까지 통틀어 어느 위치인가"를 보여준다.
-    # 같은 영웅이 티어마다 행을 가지므로 hero 로 dict 를 만들면 값이 덮어써진다.
-    # 기준 분포(전 티어)와 조회 값(현재 행)을 분리해서 환산한다.
-    _pool = df_raw[df_raw["map"].astype(str) == "all-maps"]["total_score"]
-    _meta_score = float(
-        normalize_meta_score(pd.Series([_top.get("total_score")]), reference=_pool).iloc[0]
-    )
-    render_meta_score_card(
-        _meta_score,
-        _top.get("rank", "-"),
-        _top_hero,
-    )
-
-    _deltas, _delta_since = load_score_deltas(selected_tier)
-    _delta_rows = []
-    if _deltas:
-        _ranked = sorted(
-            ((h, d) for h, d in _deltas.items()
-             if h in set(display_df["hero"].astype(str))),
-            key=lambda x: -abs(x[1]),
-        )[:4]
-        _delta_rows = [
-            (get_hero_image_url(h), h, f"{d:+.2f}",
-             GLOBAL_GOOD_COLOR if d >= 0 else GLOBAL_DANGER_COLOR)
-            for h, d in _ranked
-        ]
-    # 넥슨 원본은 며칠에 한 번 갱신되므로, 원본이 달랐던 마지막 날짜를 기준으로 비교한다.
-    _delta_title = (f"최근 변동 · {_delta_since[5:].replace('-', '/')} 대비"
-                    if _delta_since else "최근 변동")
-    render_rail_rows(_delta_title, _delta_rows,
-                     empty_text="비교할 이전 스냅샷이 아직 없습니다.")
-
-    if "ban_rate" in display_df.columns:
-        _ban3 = display_df[display_df["ban_rate"].notna()].sort_values(
-            "ban_rate", ascending=False).head(3)
-        render_rail_rows(
-            "밴률 TOP 3",
-            [(get_hero_image_url(str(r["hero"])), str(r["hero"]),
-              f"{float(r['ban_rate']):.1f}%", GLOBAL_DANGER_COLOR)
-             for _, r in _ban3.iterrows()],
-        )
-
-    render_rank_rail(
-        "랭크 분포",
-        _rank_distribution_rows(display_df),
-        footnote=f"{translate_tier_name(selected_tier)} · 총 {len(display_df)}명",
-    )
+    st.markdown(f"<div class='rail-side'>{''.join(_rail_cards)}</div>", unsafe_allow_html=True)
+_rail_strip.markdown(f"<div class='rail-strip'>{''.join(_rail_cards)}</div>",
+                     unsafe_allow_html=True)
 
 # 2차 지시서 PART C: 참조용 블록은 전부 최하단으로.
 st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)

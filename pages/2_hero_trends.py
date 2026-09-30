@@ -149,7 +149,7 @@ if history_df.empty:
 # 티어/포지션은 사이드바 전역 필터. 본문에는 이 페이지 고유 필터(영웅·전장)만
 # 한 줄로 붙여 둔다. 전장 목록이 영웅·티어에 의존해서, 줄만 먼저 잡고 나중에 채운다.
 # (반반 컬럼에 두면 드롭다운 폭 제한 때문에 전장 필터가 화면 가운데로 떨어진다.)
-_controls = st.container(horizontal=True, gap="small")
+_controls = st.container(horizontal=True, gap="small", key="trend-filters")
 FILTER_WIDTH = 220
 role_options = get_ordered_roles(history_df)
 selected_role = selected_role_value()
@@ -344,6 +344,8 @@ def render_metric_chart(metric, chart_df):
     fig.update_layout(
         margin=dict(l=10, r=10, t=12, b=10),
         hovermode="x unified",
+        # 드래그 확대를 끈다. 폰에서 차트 위 스와이프가 확대로 먹혀 페이지가 안 내려갔다.
+        dragmode=False,
         showlegend=False,
         xaxis=dict(title="스냅샷 날짜"),
         yaxis=dict(
