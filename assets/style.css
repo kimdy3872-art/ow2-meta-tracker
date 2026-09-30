@@ -89,13 +89,16 @@ h1, h2, h3, h4, p, span, div, label, li, a, summary, input, select, button, tabl
     font-family: var(--font) !important;
 }
 
-/* 위 일괄 규칙이 아이콘 폰트까지 덮어써서 되돌린다 */
+/* 위 일괄 규칙이 아이콘 폰트까지 덮어써서 되돌린다.
+   마지막 줄은 마크다운 라벨 안의 :material/...: 아이콘(정렬 칩의 화살표)이다. testid 가 없고
+   role="img" 만 달려 나와서, 되돌리지 않으면 "arrow_downward" 글자가 그대로 보인다. */
 .material-symbols-rounded,
 .material-symbols-outlined,
 .material-icons,
 [class*="material-symbols"],
 [class*="material-icons"],
-[data-testid="stIconMaterial"] {
+[data-testid="stIconMaterial"],
+[data-testid="stMarkdownContainer"] span[role="img"][translate="no"] {
     font-family: "Material Symbols Rounded", "Material Symbols Outlined", "Material Icons" !important;
 }
 
@@ -1354,35 +1357,6 @@ h2.hero-showcase-name {
 
 .rank-board { container: board / inline-size; }
 
-/* 좁을 때만 보인다(표 머리줄이 숨어 정렬할 곳이 없어지므로) */
-.sort-chips {
-    display: none;
-    gap: 6px;
-    margin-bottom: 10px;
-    overflow-x: auto;
-    scrollbar-width: none;
-}
-
-.sort-chip a {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 6px 12px;
-    border: 1px solid var(--line-2);
-    border-radius: 999px;
-    color: var(--text-2) !important;
-    font-size: 0.8rem;
-    font-weight: 600;
-    white-space: nowrap;
-    text-decoration: none !important;
-}
-
-.sort-chip.active a {
-    border-color: rgba(249, 158, 26, 0.55);
-    background: var(--accent-soft);
-    color: var(--text) !important;
-}
-
 .table-wrap {
     overflow-x: auto;
     min-width: 0;
@@ -1444,17 +1418,13 @@ h2.hero-showcase-name {
 
 .overwatch-table tbody tr:last-child td { border-bottom: 0 !important; }
 
-.overwatch-table th.sortable a {
+/* 지금 정렬 중인 열 표시. 정렬 조작은 표 위 칩(st.pills)에서 한다. */
+.overwatch-table th .th-sort {
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    color: inherit !important;
-    text-decoration: none !important;
-    transition: color 0.15s ease;
+    color: var(--accent);
 }
-
-.overwatch-table th.sortable:hover a { color: var(--text) !important; }
-.overwatch-table th.active a { color: var(--accent) !important; }
 
 .sort-caret { width: 9px; height: 6px; }
 .caret-wrap.flip { display: inline-flex; transform: rotate(180deg); }
@@ -2223,7 +2193,6 @@ a.hero-link:hover { color: var(--accent) !important; }
    1행: 번호·초상화·이름 | 점수·랭크 / 2행: 이름 아래에 맞춘 승·픽·밴 미니 막대.
    한 명당 159px → 약 85px. 첫 칸(62px)은 번호+초상화 폭만큼 비워 2행을 이름 아래에 맞춘다. */
 @container board (max-width: 700px) {
-    .sort-chips { display: flex; }
     .table-wrap { overflow: visible; }
     .overwatch-table,
     .overwatch-table tbody { display: block; }
@@ -2309,7 +2278,6 @@ a.hero-link:hover { color: var(--accent) !important; }
     .overwatch-table tbody tr:hover td { background: rgba(255, 255, 255, 0.03); }
     .overwatch-table tbody tr:hover td:first-child { box-shadow: inset 2px 0 0 var(--accent); }
     .hmap-card:hover { border-color: var(--line-2); }
-    .sort-chip a:hover { color: var(--text) !important; border-color: rgba(255, 255, 255, 0.24); }
     .mh-pick:hover { background: rgba(255, 255, 255, 0.04); }
 }
 
@@ -2324,8 +2292,7 @@ a.hero-link:hover { color: var(--accent) !important; }
     .rail-row,
     .overwatch-table tr,
     .perk-card,
-    .mh-pick,
-    .sort-chip a { -webkit-tap-highlight-color: transparent; }
+    .mh-pick { -webkit-tap-highlight-color: transparent; }
 
     a.hero-showcase-card { transition: transform 0.12s ease, border-color 0.25s ease; }
     .ow-card:active,

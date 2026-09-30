@@ -58,11 +58,11 @@
 - 기준은 창 폭이 아니라 영역 폭(container query)이다. 사이드바를 펼친 아이패드는 창이 820px이어도 본문은 500px이다.
   - `page`(본문) 780px 이하: 컬럼을 한 줄로 쌓고, 우측 레일은 표 위 스와이프 줄로
   - `page` 520px 이하: 본문 필터 줄·영웅 추이 필터를 한 줄 반반으로
-  - `board`(순위표) 700px 이하: 5열 표 → 한 줄 요약 목록 + 정렬 칩
+  - `board`(순위표) 700px 이하: 5열 표 → 한 줄 요약 목록
   - `hero` 880 / 760 / 560, `rot`·`maps` 620, `kpi` 460
   - 전장별 영웅 격자(`.mh-grid`)는 `auto-fill minmax(320px)`라 query 없이 영역 폭을 따른다(PC 3열, 아이패드 가로 2열, 폰 1열).
 - 창 폭(`@media`)은 툴팁 위치(900px), 폰 전용 처리(640px, » 버튼 숨김)에만 쓴다. 예외로 `.patch-intel-top` 줄바꿈(860px)이 창 폭 기준으로 남아 있다. 새 레이아웃 규칙은 container query로 쓴다.
-- 카드·표 행·정렬 칩의 hover 효과는 `@media (hover: hover)` 안에 있고, 새로 넣는 hover도 거기에 둔다. 그 밖의 `:hover`(사이드바 링크, Streamlit 위젯, 표 머리·영웅·패치 링크, 퍼크 카드·툴팁, TOP 4 순환 정지)는 블록 밖에 있다.
+- 카드·표 행의 hover 효과는 `@media (hover: hover)` 안에 있고, 새로 넣는 hover도 거기에 둔다. 그 밖의 `:hover`(사이드바 링크, Streamlit 위젯, 영웅·패치 링크, 퍼크 카드·툴팁, TOP 4 순환 정지)는 블록 밖에 있다.
 - 터치는 `:active` 눌림 피드백을 쓰고, TOP 4는 터치에서 자동 순환 대신 스와이프다.
 - 사이드바 펼침 여부는 `[data-testid="stSidebar"][aria-expanded]`로 판단한다.
 
@@ -71,7 +71,9 @@
 - 사이드바 폭 고정은 `[aria-expanded="true"]`에만 건다. 전체에 `min-width`를 걸면 접어도 256px 자리를 차지한다(min이 Streamlit의 `max-width: 0`을 이긴다).
 - 마크다운 컨테이너의 `margin-bottom: -1rem`이 HTML 블록 사이 간격을 먹는다. style.css에 되돌리는 규칙이 있다.
 - 투명 헤더가 화면 위 60px 탭을 가로챈다. 버튼만 `pointer-events`를 받게 했다.
-- `st.markdown` 링크(`?hero=`, `?sort=`)는 전체 리로드라 세션이 새로 뜬다. `filter_qs()`로 tier·role을 URL에 붙인다.
+- `st.markdown` 링크(`?hero=`)는 전체 리로드라 세션이 새로 뜬다. `filter_qs()`로 tier·role을 URL에 붙인다.
+- 상태를 바꾸는 조작(정렬 등)은 링크가 아니라 위젯으로 만든다. 순위표 정렬이 `?sort=` 링크였을 때는 누를 때마다 세션이 새로 떠서 스크롤이 맨 위로 가고 "다시 누르면 반대 방향"이 동작하지 않았다. 지금은 표 위 `st.pills`이고, 켜진 칩을 다시 누르면 값이 `None`이 되는 것을 방향 뒤집기로 쓴다.
+- 일괄 폰트 규칙이 아이콘 폰트를 덮는다. 위젯 라벨의 `:material/...:` 아이콘은 testid 없이 `span[role="img"]`로 나와서 style.css에서 따로 되돌린다.
 - 한 `st.markdown`에서 연 div를 다른 `st.markdown`에서 닫을 수 없다(빈 div가 된다).
 - HTML 조각 사이 빈 줄·들여쓰기는 코드 블록으로 파싱된다. `_one_line()`을 쓴다.
 - 마크다운 안 `<img>`에는 Streamlit이 `object-fit: scale-down`을 건다. `cover`로 채우려면 `!important`가 필요하다.

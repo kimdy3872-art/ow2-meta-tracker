@@ -211,7 +211,9 @@ selected_role = selected_role_value()
 search_hero = st.text_input("영웅 검색", key="search_hero", placeholder="영웅 이름으로 검색",
                             label_visibility="collapsed")
 
-# 정렬은 드롭다운을 없애고 표 헤더 클릭으로 받는다(?sort= 쿼리 파라미터).
+# 정렬은 표 위의 칩(위젯)으로 받는다. 예전에는 표 머리글 링크(?sort=)였는데, 링크는 전체
+# 리로드라 스크롤이 맨 위로 돌아가고, 세션이 새로 떠서 정렬 상태가 기본값으로 돌아간 뒤에
+# 클릭이 처리됐다(같은 열을 다시 눌러도 방향이 안 바뀌고, 종합 점수는 낮은 순으로만 갔다).
 SORT_COLUMNS = {
     "total_score": "종합 점수",
     "win_rate": "승률",
@@ -223,20 +225,27 @@ if "sort_col" not in st.session_state:
 if "sort_desc" not in st.session_state:
     st.session_state.sort_desc = True
 
-_sort_q = st.query_params.get("sort")
-if isinstance(_sort_q, list):
-    _sort_q = _sort_q[0] if _sort_q else None
-if _sort_q in SORT_COLUMNS:
-    if st.session_state.sort_col == _sort_q:
+
+def _on_sort_change():
+    """정렬 칩 콜백. 스크립트보다 먼저 돌아서, 표보다 위에 있는 HERO 카드도 새 정렬을 본다."""
+    picked = st.session_state.sort_pills
+    if picked is None:
+        # 켜져 있는 칩을 다시 눌러 선택이 풀렸다. 방향만 뒤집는다.
         st.session_state.sort_desc = not st.session_state.sort_desc
     else:
-        st.session_state.sort_col = _sort_q
+        st.session_state.sort_col = picked
         st.session_state.sort_desc = True
-    st.query_params.clear()
-    st.rerun()
+
 
 sort_col = st.session_state.sort_col
 sort_by = SORT_COLUMNS[sort_col]
+
+
+def _sort_label(key):
+    if key != sort_col:
+        return SORT_COLUMNS[key]
+    arrow = "arrow_downward" if st.session_state.sort_desc else "arrow_upward"
+    return f"{SORT_COLUMNS[key]} :material/{arrow}:"
 
 # 패치노트는 순위표 아래 expander 로 내렸다(지시서: 상단은 시각적 임팩트 우선).
 
@@ -283,14 +292,13 @@ ICON_CARET = ("<svg class='sort-caret' viewBox='0 0 10 6' fill='currentColor' "
               "aria-hidden='true'><path d='M5 6 0 0h10z'/></svg>")
 
 
-def _sort_link(key, label, tag_open, tag_close, cls):
-    """정렬 링크. 전체 리로드라 필터를 URL 로 넘겨야 티어·포지션이 유지된다."""
-    active = st.session_state.get("sort_col") == key
-    caret = ICON_CARET if active else ""
-    flip = " flip" if active and not st.session_state.get("sort_desc", True) else ""
-    cls = f"{cls} active" if active else cls
-    return (f"{tag_open.format(cls=cls)}<a href='?sort={key}{filter_qs()}' target='_self'>"
-            f"{html.escape(label)}<span class='caret-wrap{flip}'>{caret}</span></a>{tag_close}")
+def _sort_head(key, label):
+    """표 머리글 칸. 지금 정렬 열에만 액센트 색과 방향 화살표를 단다(조작은 표 위 칩에서)."""
+    if sort_col != key:
+        return f"<th>{html.escape(label)}</th>"
+    flip = "" if st.session_state.sort_desc else " flip"
+    return (f"<th class='active'><span class='th-sort'>{html.escape(label)}"
+            f"<span class='caret-wrap{flip}'>{ICON_CARET}</span></span></th>")
 
 
 def _rate_bar(kind, value, text):
@@ -305,7 +313,6 @@ def _rate_bar(kind, value, text):
 def render_rank_table_html(df):
     """순위표. 넓으면 5열 표, 좁으면(표 폭 기준, CSS 컨테이너 쿼리) 한 줄 요약 목록.
 
-    목록 모드에서는 머리줄이 숨어 정렬할 곳이 없어지므로 정렬 칩을 같이 낸다.
     영웅 링크는 ::after 로 행(목록 모드) 또는 영웅 칸(표 모드) 전체를 덮는다.
     """
     qs = filter_qs()
@@ -344,12 +351,8 @@ def render_rank_table_html(df):
             "</tr>"
         )
     header = "<th>영웅</th>" + "".join(
-        _sort_link(key, label, "<th class='{cls}'>", "</th>", "sortable")
-        for key, label in [("win_rate", "승률"), ("pick_rate", "픽률"),
-                           ("ban_rate", "밴률"), ("total_score", "종합 점수")])
-    chips = "".join(_sort_link(key, label, "<span class='{cls}'>", "</span>", "sort-chip")
-                    for key, label in SORT_COLUMNS.items())
-    return (f"<div class='rank-board'><div class='sort-chips'>{chips}</div>"
+        _sort_head(key, SORT_COLUMNS[key]) for key in ("win_rate", "pick_rate", "ban_rate", "total_score"))
+    return (f"<div class='rank-board'>"
             f"<div class='table-wrap'><table class='overwatch-table'><thead><tr>{header}</tr></thead>"
             f"<tbody>{''.join(rows)}</tbody></table></div></div>")
 
@@ -455,7 +458,8 @@ if display_df.empty:
 _main_col, _rail_col2 = st.columns(COLS_MAIN_SIDE, gap=GAP)
 
 with _main_col:
-    _top = display_df.iloc[0]
+    # 표를 낮은 순으로 뒤집어도 카드는 그 지표의 실제 1위를 보인다("승률 1위"에 꼴찌가 나오면 안 된다).
+    _top = display_df.sort_values(sort_col, ascending=False).iloc[0]
     _top_hero = str(_top["hero"])
 
     def _pct(v):
@@ -499,6 +503,11 @@ with _main_col:
     _rail_strip = st.empty()
     _order = "높은" if st.session_state.sort_desc else "낮은"
     section("전체 순위", f"{sort_by} {_order} 순 · {len(display_df)}명")
+    # 칩 값은 매 실행 정본(sort_col)으로 다시 채운다. 켜진 칩을 다시 누르면 위젯은 선택이
+    # 풀리는데(None), 그건 방향 뒤집기로 쓰고 칩은 계속 켜 둔다.
+    st.session_state.sort_pills = sort_col
+    st.pills("정렬", list(SORT_COLUMNS), key="sort_pills", selection_mode="single",
+             format_func=_sort_label, on_change=_on_sort_change, label_visibility="collapsed")
     st.markdown(render_rank_table_html(display_df), unsafe_allow_html=True)
 
 # 정규화 풀에 그 영웅이 1위로 들어있으면 항상 1000 이 나온다. 전 티어를 기준으로 펴서

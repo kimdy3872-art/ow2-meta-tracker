@@ -338,11 +338,23 @@ def main_filter_and_sort():
     time.sleep(5)
     print("[main] pick diamond:", picked, "->", tab.js(meta),
           "| sidebar tier widget:", tab.js("document.querySelector('.st-key-tiersel').textContent.slice(0, 12)"))
-    # 정렬 칩(승률)을 누르면 전체 리로드. 티어가 유지되는지
-    href = tab.js("[...document.querySelectorAll('.sort-chip a')].find(a => a.textContent.includes('승률')).getAttribute('href')")
-    print("[main] sort chip href:", href)
-    tab.goto("/" + href, ".table-wrap", settle=6)
-    print("[main] after sort reload:", tab.js("document.querySelector('.hero-showcase-eyebrow').textContent"), "|", tab.js(meta))
+
+    # 정렬 칩: 새로고침 없이 바뀌고, 스크롤이 그대로고, 같은 칩을 다시 누르면 방향이 뒤집힌다
+    state = """(() => ({order: [...document.querySelectorAll('.ow-section-sub')].map(e => e.textContent).find(t => t.includes(' 순 ')),
+        card: document.querySelector('.hero-showcase-eyebrow').textContent, tier: document.querySelector('.hero-showcase-meta').textContent,
+        scrollTop: Math.round(document.querySelector('[data-testid=stMain]').scrollTop), reloaded: window.__mark !== 1}))()"""
+    tab.js("window.__mark = 1")
+    seen = []
+    for label in ("승률", "승률", "종합 점수"):
+        index = tab.js(f"[...document.querySelectorAll('.st-key-sort_pills button')].findIndex(b => b.innerText.includes('{label}'))")
+        tab.tap(".st-key-sort_pills button", index)
+        time.sleep(2.5)
+        seen.append(tab.js(state))
+        print(f"[main] sort chip {label}:", json.dumps(seen[-1], ensure_ascii=False))
+    assert [s["order"].split(" · ")[0] for s in seen] == ["승률 높은 순", "승률 낮은 순", "종합 점수 높은 순"], "정렬 방향이 기대와 다르다"
+    assert not any(s["reloaded"] for s in seen), "정렬할 때 페이지가 새로고침됐다"
+    assert len({s["scrollTop"] for s in seen}) == 1, "정렬할 때 스크롤 위치가 바뀌었다"
+    assert all("다이아몬드" in s["tier"] for s in seen), "정렬하면서 티어가 바뀌었다"
     tab.close()
 
 

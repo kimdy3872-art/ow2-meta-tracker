@@ -51,7 +51,7 @@ def init_filter_state() -> None:
         else:
             st.session_state[key] = st.session_state[store]
 
-    # 마크다운 링크(?hero=, ?sort=)는 전체 리로드라 세션이 새로 뜬다. 그때만 URL 의
+    # 마크다운 링크(?hero=)는 전체 리로드라 세션이 새로 뜬다. 그때만 URL 의
     # 티어·포지션을 받아들인다. 이후 실행에서도 계속 받으면 사용자가 바꾼 값을 덮어쓴다.
     if fresh:
         for param, key in (("tier", "selected_tier"), ("role", "selected_role")):
