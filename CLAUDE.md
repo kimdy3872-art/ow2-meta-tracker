@@ -32,7 +32,7 @@
 - 배포: Streamlit Community Cloud (https://ow2metatracker.streamlit.app). keep-alive 워크플로가 앱을 늘 깨워 둬서 push만으로는 코드가 바뀌지 않는다. push 후 대시보드에서 **Reboot**. 문서·스크립트만 바뀐 push는 Reboot이 필요 없다.
 - GitHub Actions가 매일 09:00 KST에 `main`으로 `data/`를 커밋한다. push 전에 `git pull --rebase`.
 - `git add -A`·`git add .` 금지. 루트에 추적하지 않는 참고 이미지(`2hEW9.jpg`, `Overwatch_logo_1024.png`)가 있다. 커밋할 파일을 지정한다.
-- 테스트: `.venv/bin/python test_sample_size.py`(`update.py`의 표본 크기 보정), `.venv/bin/python test_map_heroes.py`(전장별 영웅 선정). `ok`가 나오면 통과.
+- 테스트: `.venv/bin/python test_sample_size.py`(`update.py`의 표본 크기 보정), `.venv/bin/python test_map_heroes.py`(전장별 영웅 선정), `.venv/bin/python test_overheat.py`(랭크 진단의 과열 감시). `ok`가 나오면 통과.
 
 ## UI 구조
 

@@ -70,6 +70,7 @@
 ├── update.py
 ├── test_sample_size.py
 ├── test_map_heroes.py
+├── test_overheat.py
 ├── requirements.txt
 ├── CLAUDE.md
 ├── .github/workflows/
@@ -107,6 +108,7 @@
 - `update.py`: 경쟁전 통계, 퍼크, 패치노트, 패치 AI 분석을 수집/가공/저장하는 핵심 배치 스크립트입니다.
 - `test_sample_size.py`: 표본 크기 추정·보정 셀프 체크입니다. `python test_sample_size.py`로 실행합니다.
 - `test_map_heroes.py`: 전장별 영웅 선정 셀프 체크입니다. `python test_map_heroes.py`로 실행합니다.
+- `test_overheat.py`: 랭크 진단의 과열 감시(성능을 섞은 기준선 비교) 셀프 체크입니다. `python test_overheat.py`로 실행합니다.
 - `.github/workflows/main.yml`: 매일 데이터를 갱신해 커밋하는 GitHub Actions 워크플로입니다.
 - `.github/workflows/keep-alive.yml`: 6시간마다 `scripts/keep_alive.py`로 배포 앱을 방문해 잠들지 않게 합니다.
 - `scripts/ui_check.py`: 헤드리스 Chrome으로 기기별 레이아웃과 터치 동작을 재는 UI 검증 스크립트입니다.
@@ -217,7 +219,7 @@ python update.py --mode all
 | `TASK_RETRIES` | `3` | 수집 작업 재시도 횟수 |
 | `DRIVER_PAGE_LOAD_TIMEOUT` | `75` | Chrome 페이지 로드 제한 시간(초) |
 | `DRIVER_SCRIPT_TIMEOUT` | `30` | Chrome 스크립트 실행 제한 시간(초) |
-| `META_PRESENCE_WEIGHT` | `0.65` | 종합 점수에서 존재감 축 가중치 (성능 축은 1 - 이 값). 과열 감시 지표가 지속 초과하면 0.60 하향 검토 |
+| `META_PRESENCE_WEIGHT` | `0.65` | 종합 점수에서 존재감 축 가중치 (성능 축은 1 - 이 값). 과열 경고(`overheat_monitor.alert`)가 켜지면 하향 검토 |
 | `PRESENCE_BAN_WEIGHT` | `1.0` | 존재감 축에서 밴률 가중치 β. 낮추면 과열 감시 지표가 오히려 늘어난다(아래 판단 근거) |
 | `WEEKLY_SNAPSHOT_WEEKDAY` | `0` | 주간 스냅샷 생성 요일 |
 | `ENABLE_OLLAMA_ANALYSIS` | 로컬 `1`, GitHub Actions `0` | Ollama 패치 분석 사용 여부 |
@@ -327,7 +329,9 @@ D: total_score <= -1.00
 - 불쾌함 밴(고밴·평균이하 승률)은 실재하지만, 점수를 수정하는 대신 `밴 압박` 라벨과 진단 리포트의 `overheat_monitor`로 노출합니다.
 - 픽률은 팀 기준(역할별 합 100/200/200%), 밴률은 판 기준(합 약 400% = 판당 4밴)입니다. 밴된 영웅은 양 팀 모두 고를 수 없어 두 사건이 겹치지 않으므로, 합은 "밴됐거나 이 팀이 고른 판의 비율"이라는 하나의 확률입니다(LoL 통계의 presence와 같은 정의). "밴되지 않은 판의 픽률" `pick / (1 - ban)`으로 바꾸면 2026-09-30 기준 전체 전장 랭크 32%가 바뀌고 과열 비율이 19.0%에서 20.7%로 늘어납니다.
 - β를 낮추면 과열이 줄 것 같지만 반대입니다. 밴률이 픽률보다 성능과 더 붙어 있어서(성능 z와 상관 0.27 대 0.20), 밴을 덜 세면 많이 픽되지만 지는 영웅이 올라옵니다. 2026-09-30 기준 과열 비율은 β 1.0 19.0%, 0.5 20.4%, 0 23.4%입니다.
-- 과열을 줄이는 레버는 존재감 가중치입니다. 같은 날 0.60이면 15.8%(전체 전장 랭크 변동 5.5%), 0.55면 12.6%(11.1%)입니다. `overheat_monitor`가 지속적으로 기준(15%)을 넘으면 `META_PRESENCE_WEIGHT` 하향을 검토합니다. 2026-09-10 넥슨 전환 이후 매일 18~20%로 기준을 넘고 있으며, 가중치 조정은 "랭크가 무엇을 뜻하나"의 결정이라 아직 보류 중입니다.
+- 과열을 줄이는 레버는 존재감 가중치입니다. 같은 날 0.60이면 15.8%(전체 전장 랭크 변동 5.5%), 0.55면 12.6%(11.1%)입니다. 가중치를 0.05 내릴 때마다 다음 주 존재감 예측 상관이 약 0.03 떨어지고 다음 주 승률 예측 상관이 약 0.03 오르는 맞교환이라, 데이터가 정해 주는 최적값은 없습니다.
+- 과열 비율 19%가 높은지는 고정 숫자가 아니라 "성능이 무의미할 때"와 비교해 판단합니다. 비교군 안에서 성능 점수를 섞어 존재감과의 관계를 끊으면 S/A가 존재감만으로 뽑히고, 이때 과열 비율은 31%입니다(2026-09-30, 1000회). 실제 19%는 이보다 12%p 낮아 성능 검증이 작동하고 있습니다. 예전 고정 기준 15%는 데이터 없이 정한 값이라 2026-07-21 이후 늘 넘었습니다(17~21%). 같은 기간 새 기준으로는 한 번도 경고가 나지 않았습니다(기준선과의 차이: 블리자드 시절 6.6~12.9%p, 넥슨 이후 11.4~12.3%p).
+- 2026-10-02 결정: 존재감 가중치 0.65를 유지합니다. 랭크는 메타 지배력 순위이고, 화면 설명 첫 줄에 강한 영웅 순위가 아니라고 적었습니다.
 
 ---
 
@@ -336,7 +340,7 @@ D: total_score <= -1.00
 `python update.py --mode stats` 실행 시 `data/latest/rank_diagnostics.json`을 저장합니다. 이 파일은 메인 랭크 산식을 자동 변경하지 않고 안정성을 점검하는 보조 리포트입니다.
 
 - `correlation_matrix`: 승률, 지속성, 존재감, 성능, 종합 점수 간 중복성 확인
-- `overheat_monitor`: S/A 랭크 중 성능 z<0(존재감만으로 상위권) 비율. 지속적으로 15%를 넘으면 `META_PRESENCE_WEIGHT` 하향 검토(β 하향은 역효과)
+- `overheat_monitor`: S/A 랭크 중 성능 z<0 비율(`s_a_perf_negative_share`)을, 비교군 안에서 성능 점수를 1000번 섞었을 때의 같은 비율(`shuffled_baseline_share`)과 비교합니다. 둘의 차이(`validation_gap`)가 성능 검증이 걸러내는 몫입니다. 실제 값이 섞기 하위 2.5%(`alert_line`)를 넘으면 랭크가 사실상 존재감만으로 정해진다는 뜻이라 `alert`가 켜지고, 그때 `META_PRESENCE_WEIGHT` 하향을 검토합니다(β 하향은 역효과). `validation_gap`이 계속 줄어들면 경고 전 신호로 봅니다
 - `walk_forward`: 이번 주 점수가 다음 주 승률(`next_week_win_rate_z`)과 다음 주 존재감(`next_week_presence_z`)을 얼마나 설명하는지 후보 산식별 비교. 산식의 목표가 지배력이므로 존재감 목표가 1차 기준
 - `sensitivity`: 존재감 가중치(0.55~0.75)와 밴 가중치 β(0.5~1.0)를 바꿨을 때 S/A/B/C/D 배정이 얼마나 흔들리는지 확인
 
@@ -378,7 +382,7 @@ macOS에서는 `scripts/run_local_ai_patch_update.sh`와 `scripts/com.da.overwat
 
 ## 향후 개선 아이디어
 
-- 테스트 코드와 데이터 검증 파이프라인 확대 (지금은 `test_sample_size.py`, `test_map_heroes.py` 둘)
+- 테스트 코드와 데이터 검증 파이프라인 확대 (지금은 `test_sample_size.py`, `test_map_heroes.py`, `test_overheat.py` 셋)
 - 수집 실패, 빈 데이터, 스키마 변경을 검증하는 smoke test 추가
 - 패치노트의 버프/너프 이력을 영웅별 라벨로 구조화해 랭크 산식 검증에 활용
 

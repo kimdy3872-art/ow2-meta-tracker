@@ -147,7 +147,7 @@ META_TYPE_EXPERT_LOW_PICK_Z = -1.0
 META_TYPE_EXPERT_HIGH_WIN_Z = 1.0
 META_TYPE_NICHE_LOW_PRESENCE_Z = -1.25
 META_TYPE_NICHE_MAX_PERFORMANCE_Z = -0.25
-OVERHEAT_REVIEW_THRESHOLD = 0.15
+OVERHEAT_SHUFFLES = 1000
 
 # 레거시 승률 중심 산식 상수: 진단 리포트의 비교 후보 계산에만 사용
 PERFORMANCE_WIN_WEIGHT = 0.75
@@ -846,26 +846,60 @@ def build_sensitivity_diagnostics(latest_df):
     }
 
 
-def build_overheat_monitor(latest_df):
-    required_cols = {'rank', 'performance_score'}
+def build_overheat_monitor(latest_df, shuffles=OVERHEAT_SHUFFLES, seed=0):
+    """S/A 중 성능 z<0 비율을, 성능이 무의미할 때(비교군 안에서 성능을 섞었을 때) 값과 비교한다.
+
+    성능을 섞으면 존재감과의 관계가 끊겨 S/A 가 존재감만으로 뽑힌다. 실제 값이 그 기준선 범위에
+    들어서면 성능 검증이 우연과 구별되지 않는다는 뜻이다. 고정 기준(예전 15%)은 근거 없이 정한
+    값이라 7월부터 늘 넘었다. 기준선은 그날 데이터로 다시 계산하므로 손으로 고칠 일이 없다.
+    """
+    required_cols = {'rank', 'presence_score', 'performance_score', 'data_tier', 'map', 'role'}
     if latest_df.empty or not required_cols.issubset(latest_df.columns):
         return {"available": False, "reason": "missing_latest_columns"}
 
-    top_ranks = latest_df[latest_df['rank'].astype(str).isin(['S', 'A'])]
-    if top_ranks.empty:
+    df = latest_df[latest_df['rank'].astype(str) != '-']  # 표본 부족 행은 랭크가 없다
+    presence = pd.to_numeric(df['presence_score'], errors='coerce').to_numpy()
+    perf = pd.to_numeric(df['performance_score'], errors='coerce').to_numpy()
+
+    def s_a_mask(perf_values):
+        score = META_PRESENCE_WEIGHT * presence + META_PERFORMANCE_WEIGHT * perf_values
+        return score >= RANK_THRESHOLDS['A']
+
+    def perf_negative_share(perf_values):
+        top = s_a_mask(perf_values)
+        return float((perf_values[top] < 0).mean()) if top.any() else np.nan
+
+    actual_top = s_a_mask(perf)
+    if not actual_top.any():
         return {"available": False, "reason": "no_s_or_a_rows"}
 
-    perf = pd.to_numeric(top_ranks['performance_score'], errors='coerce')
+    # 비교군별로 모은 자리(by_group)에 비교군 안에서 무작위로 늘어놓은 값을 채운다 = 비교군 안에서만 섞기
+    groups = df.groupby(['data_tier', 'map', 'role']).ngroup().to_numpy()
+    by_group = np.lexsort((np.arange(len(df)), groups))
+    rng = np.random.default_rng(seed)
+    shuffled_shares = []
+    for _ in range(shuffles):
+        shuffled = np.empty_like(perf)
+        shuffled[by_group] = perf[np.lexsort((rng.random(len(df)), groups))]
+        shuffled_shares.append(perf_negative_share(shuffled))
+
+    actual = perf_negative_share(perf)
+    baseline = float(np.nanmean(shuffled_shares))
+    alert_line = float(np.nanpercentile(shuffled_shares, 2.5))
     return {
         "available": True,
-        "s_a_rows": int(len(top_ranks)),
-        "s_a_perf_negative_share": float((perf < 0).mean()),
-        "review_threshold": OVERHEAT_REVIEW_THRESHOLD,
+        "s_a_rows": int(actual_top.sum()),
+        "s_a_perf_negative_share": actual,
+        "shuffled_baseline_share": baseline,
+        "alert_line": alert_line,
+        "validation_gap": baseline - actual,
+        "alert": bool(actual > alert_line),
         "note": (
-            "S/A 랭크 중 성능 z<0(존재감만으로 상위) 비율. "
-            "이 값이 지속적으로 review_threshold를 넘으면 "
-            "META_PRESENCE_WEIGHT 하향(예: 0.60)을 검토합니다. "
-            "PRESENCE_BAN_WEIGHT 하향은 이 값을 오히려 늘립니다."
+            "s_a_perf_negative_share: S/A 중 성능 z<0 비율. "
+            "shuffled_baseline_share: 비교군 안에서 성능 점수를 섞어 존재감과의 관계를 끊었을 때 같은 비율"
+            f"({shuffles}회 평균). validation_gap: 성능 검증이 걸러내는 몫(기준선 - 실제). "
+            "alert: 실제 값이 alert_line(섞기 하위 2.5%)을 넘어 랭크가 사실상 존재감만으로 정해지는 상태. "
+            "켜지면 META_PRESENCE_WEIGHT 하향을 검토한다. PRESENCE_BAN_WEIGHT 하향은 이 값을 오히려 늘린다."
         ),
     }
 
