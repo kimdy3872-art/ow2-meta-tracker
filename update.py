@@ -864,7 +864,8 @@ def build_overheat_monitor(latest_df):
         "note": (
             "S/A 랭크 중 성능 z<0(존재감만으로 상위) 비율. "
             "이 값이 지속적으로 review_threshold를 넘으면 "
-            "PRESENCE_BAN_WEIGHT 하향(예: 0.5)을 검토합니다."
+            "META_PRESENCE_WEIGHT 하향(예: 0.60)을 검토합니다. "
+            "PRESENCE_BAN_WEIGHT 하향은 이 값을 오히려 늘립니다."
         ),
     }
 
