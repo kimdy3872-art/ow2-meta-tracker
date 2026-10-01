@@ -188,6 +188,8 @@ NEXON_RATE_URL = "https://overwatch.nexon.com/hero/rate"
 NEXON_RATE_PARAMS = {"role": "all", "rq": "2", "input": "pc", "region": "korea"}
 NUXT_DATA_RE = re.compile(r'<script[^>]*id="__NUXT_DATA__"[^>]*>(.*?)</script>', re.S)
 # 사이트가 게임 수를 주지 않아 조합(티어×전장)별 유효 표본 neff 를 승률 흩어짐으로 역산한다.
+# 흩어짐을 전부 운으로 보므로 진짜 티어·전장 차이가 남는 큰 조합에서는 과소추정되고 일정 값에서 멈춘다.
+# 작은 조합의 표본 부족 판정에는 믿을 만하다(README "수축 방식에 대한 판단 근거").
 # 기준값은 2026-09-10 데이터 한 번으로 정했다. 패치 직후 누적이 초기화되면 neff 가 전반적으로
 # 낮아지므로 일별 스냅샷의 neff 컬럼과 rank_diagnostics.json 의 sample_size 를 보고 재조정한다.
 LOW_SAMPLE_NEFF = 150
@@ -524,6 +526,7 @@ def add_meta_axis_columns(df, group_key=None):
     )
     df['presence_score'] = df.groupby(group_key)['presence_log'].transform(safe_zscore)
 
+    # 판수 보정이 아니라 많이 쓰인 영웅의 승률을 더 믿는 설계 선택. neff 기반으로 바꾸지 않은 이유는 README 참고.
     group_mean_win = df.groupby(group_key)['win_rate'].transform('mean')
     shrink_k = (
         df.groupby(group_key)['pick_rate'].transform('median')
