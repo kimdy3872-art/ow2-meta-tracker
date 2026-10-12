@@ -24,7 +24,7 @@ role_dict = {
     '둠피스트': 'Tank', '라마트라': 'Tank', '마우가': 'Tank', '도미나': 'Tank',
     '정커퀸': 'Tank', '해저드': 'Tank', 'D.MON': 'Tank',
     '겐지': 'Damage', '트레이서': 'Damage', '리퍼': 'Damage', '파라': 'Damage', 
-    '캐서디': 'Damage', '애쉬': 'Damage', '솔저: 76': 'Damage', '솜브라': 'Damage', 
+    '캐서디': 'Damage', '애쉬': 'Damage', '솔저: 76': 'Damage', 
     '위도우메이커': 'Damage', '한조': 'Damage', '메이': 'Damage', '정크랫': 'Damage', 
     '토르비욘': 'Damage', '바스티온': 'Damage', '시메트라': 'Damage', '에코': 'Damage', '소전': 'Damage',
     '시에라': 'Damage',
@@ -33,7 +33,9 @@ role_dict = {
     '메르시': 'Support', '아나': 'Support', '루시우': 'Support', '젠야타': 'Support', 
     '모이라': 'Support', '바티스트': 'Support', '브리기테': 'Support', '키리코': 'Support', 
     '라이프위버': 'Support', '일리아리': 'Support', '주노': 'Support', '미즈키': 'Support', '우양' : 'Support',
-    '제트팩 캣': 'Support'
+    '제트팩 캣': 'Support',
+    '솜브라': 'Support',  # 2026-10-07 패치(5시즌)부터 지원
+    '독트린': 'Support',  # 2026-10 신규 영웅
 }
 
 # 2. 티어 리스트 정의
@@ -1827,7 +1829,7 @@ def build_perk_rows(heroes, details, update_date):
 
     통계 영웅이 빠졌거나 특전이 2+2 가 아니면 ValueError. 영웅 이름 표기가 바뀌면 화면에
     "특전 데이터 없음"이 조용히 뜨므로, 그럴 때는 저장하지 않고 직전 파일을 둔다.
-    role_dict 에 아직 없는 새 영웅도 넥슨 통계에는 먼저 들어오므로 OverFast 이름·역할 그대로 넣는다.
+    role_dict 에 아직 없는 새 영웅도 넥슨 통계에는 먼저 들어오므로 OverFast 이름 그대로 넣는다.
     """
     rows, seen = [], set()
     for hero in heroes:
@@ -1853,7 +1855,6 @@ def build_perk_rows(heroes, details, update_date):
                 rows.append({
                     "hero": name,
                     "hero_key": hero["key"],
-                    "role": role_dict.get(name) or str(hero.get("role") or "").title(),
                     "perk_type": perk_type,
                     "perk_name": str(perk.get("name") or "").strip(),
                     "perk_description": description,

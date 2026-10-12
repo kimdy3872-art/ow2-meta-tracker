@@ -15,6 +15,7 @@ from app_data import (
     get_ordered_tiers,
     list_data_files,
     read_data_parquet,
+    translate_role_name,
     translate_tier_name,
 )
 from ui import (
@@ -131,6 +132,10 @@ def load_history_data():
         .reset_index(drop=True)
     )
     df["period_label"] = df["period_date"].dt.strftime("%Y-%m-%d")
+    # 역할이 바뀐 영웅(솜브라: 2026-10-07 공격 → 지원)을 포지션 필터에 지금 역할로 넣는다. 바로 위에서
+    # 날짜순으로 정렬했으므로 last() 가 가장 최근 역할이다.
+    hero_key = df["hero"].astype(str)
+    df["current_role"] = hero_key.map(df.groupby(hero_key)["role"].last())
     return df
 
 def format_map_option(map_id, df):
@@ -158,7 +163,9 @@ if selected_role not in role_options:
 
 role_df = history_df.copy()
 if selected_role != "All":
-    role_df = role_df[role_df["role"] == selected_role].copy()
+    # 지금 역할로 영웅을 고르고 추이는 역할이 바뀌기 전 기록까지 다 보인다. 행마다 역할로 거르면
+    # 솜브라는 지원에서는 10/7 이후만, 공격에서는 그 전만 남았다.
+    role_df = role_df[role_df["current_role"] == selected_role].copy()
 
 hero_options = sorted(role_df["hero"].dropna().astype(str).unique().tolist())
 if not hero_options:
@@ -235,6 +242,19 @@ if len(unique_dates) > 1:
     ].copy()
 else:
     st.info("현재 저장된 스냅샷이 1개입니다. 날짜 선택 바는 수집된 날짜만 표시됩니다.")
+
+# 역할이 바뀐 날 전후의 랭크·종합 점수는 비교군이 달라 그대로 이어 보면 안 된다.
+# 추이는 주간 스냅샷이라 실제로 바뀐 날(솜브라 10/7)이 없을 수 있어, 앞뒤 기록 날짜로 말한다.
+_role_spans = map_df.drop_duplicates("role", keep="first")  # map_df 는 날짜순
+if len(_role_spans) > 1:
+    _after = _role_spans.iloc[-1]
+    _before = map_df[map_df["period_date"] < _after["period_date"]].iloc[-1]
+    _old_role = translate_role_name(str(_before["role"]))
+    st.caption(
+        f"{selected_hero}는 {_before['period_label']} 기록까지 {_old_role}, "
+        f"{_after['period_label']} 기록부터 {translate_role_name(str(_after['role']))} 영웅입니다. "
+        f"그 전 랭크·종합 점수는 {_old_role} 영웅끼리 비교한 값이라, 그 사이 변화에는 비교군이 바뀐 몫이 섞여 있습니다."
+    )
 
 latest_row = map_df.sort_values("period_date").iloc[-1]
 previous_row = map_df.sort_values("period_date").iloc[-2] if len(map_df) > 1 else None

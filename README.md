@@ -266,7 +266,7 @@ python update.py --mode all
 
 | 컬럼 | 설명 |
 |---|---|
-| `hero`, `hero_key`, `role` | 영웅 이름(통계와 같은 표기), OverFast 키, 포지션 |
+| `hero`, `hero_key` | 영웅 이름(통계와 같은 표기), OverFast 키 |
 | `perk_type`, `perk_name`, `perk_description` | `minor`/`major`, 특전 이름, 공식 설명 |
 | `icon_url`, `update_date` | 블리자드 CDN 아이콘 주소, 수집일 |
 

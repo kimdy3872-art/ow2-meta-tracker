@@ -300,7 +300,7 @@ HERO_SUBROLES = {
     "브리기테": "survivor",
     "소전": "sharpshooter",
     "솔저: 76": "specialist",
-    "솜브라": "recon",
+    "솜브라": "tactician",  # 2026-10-07 패치부터 지원
     "시그마": "stalwart",
     "시메트라": "specialist",
     "시에라": "recon",
