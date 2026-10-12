@@ -200,7 +200,7 @@ python update.py --mode patch
 - `data/patch_notes/patch_notes.json`
 - `data/patch_notes/patch_ai_analysis.json`
 
-패치노트는 Blizzard 공식 패치노트 페이지를 읽어 최신 패치와 최신 영웅 밸런스 패치를 저장합니다. 로컬에 Ollama가 실행 중이면 패치 영향 분석을 생성하고, 사용할 수 없으면 지표 기반 fallback 분석을 저장합니다.
+패치노트는 Blizzard 공식 패치노트 페이지를 읽어 최신 패치와 최신 영웅 밸런스 패치의 요약·영향 영웅·원문 링크를 저장합니다. 화면에는 요약 몇 줄과 공식 원문 링크만 보입니다. 로컬에 Ollama가 실행 중이면 패치 영향 분석을 생성하고, 사용할 수 없으면 지표 기반 fallback 분석을 저장합니다.
 
 ### 전체 갱신
 
@@ -272,7 +272,7 @@ python update.py --mode all
 
 ### 패치노트 JSON
 
-- `patch_notes.json`: 패치 ID, 제목, 날짜, 공식 원문 URL, 원문/파싱 내용, 요약, 영향 영웅, 영웅 밸런스 패치 여부를 저장합니다.
+- `patch_notes.json`: 패치 ID, 제목, 날짜, 공식 원문 URL, 요약, 영향 영웅, 영웅 밸런스 패치 여부를 저장합니다. 전문은 블리자드 저작물이라 저장하지 않습니다(2026-10-12부터). AI 분석은 같은 실행에서 받은 본문을 씁니다.
 - `patch_ai_analysis.json`: 패치별 분석일, 분석 모델, 분석 단계, 직접/간접 영향 영웅, 요약, 지표 스냅샷 정보를 저장합니다.
 
 ---

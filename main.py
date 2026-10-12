@@ -14,7 +14,6 @@ from app_data import (
     load_latest_patch_ai_analysis,
     load_latest_patch_note,
     load_latest_stats,
-    clean_patch_note_content,
     translate_role_name,
     translate_tier_name,
 )
@@ -148,16 +147,13 @@ def render_patch_intelligence_block():
         """.splitlines())
     st.markdown(card_html, unsafe_allow_html=True)
 
-    with st.expander("패치노트 자세히 보기"):
-        if summary_items:
-            st.markdown("**핵심 요약**")
+    # 전문은 싣지 않는다(블리자드 저작물). 요약 몇 줄과 공식 원문 링크만 둔다.
+    if summary_items:
+        with st.expander("패치노트 핵심 요약"):
             for item in summary_items[:8]:
                 st.markdown(f"- {item}")
-        st.markdown("**상세 내용**")
-        detail_content = clean_patch_note_content(
-            patch_note.get("parsed_content") or patch_note.get("raw_content")
-        )
-        st.markdown(detail_content or "상세 내용이 없습니다.")
+            if source_url:
+                st.markdown(f"전체 내용은 [공식 원문]({source_url})에서 볼 수 있습니다.")
 
     if analysis:
         with st.expander("AI 분석 자세히 보기"):

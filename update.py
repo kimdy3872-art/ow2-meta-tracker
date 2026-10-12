@@ -1201,8 +1201,17 @@ def fetch_latest_patch_bundle(today_obj=None):
     return latest_patch, latest_balance_patch
 
 
+# 패치노트 전문은 블리자드 저작물이라 공개 저장소에 두지 않는다. 요약·영향 영웅·원문 링크만 저장한다.
+PATCH_FULLTEXT_KEYS = ("raw_content", "parsed_content")
+
+
+def strip_patch_fulltext(row):
+    return {key: value for key, value in row.items() if key not in PATCH_FULLTEXT_KEYS}
+
+
 def upsert_patch_note(patch_note):
-    rows = load_json_list(PATCH_NOTES_PATH)
+    """전문을 뺀 행을 저장하고, 호출자에게는 전문이 있는 행을 돌려준다(AI 분석 프롬프트가 쓴다)."""
+    rows = [strip_patch_fulltext(row) for row in load_json_list(PATCH_NOTES_PATH)]
     now = datetime.now().isoformat(timespec="seconds")
     patch_note = dict(patch_note)
     patch_note["updated_at"] = now
@@ -1210,12 +1219,12 @@ def upsert_patch_note(patch_note):
     for idx, row in enumerate(rows):
         if row.get("id") == patch_note.get("id"):
             patch_note["created_at"] = row.get("created_at") or patch_note.get("created_at") or now
-            rows[idx] = patch_note
+            rows[idx] = strip_patch_fulltext(patch_note)
             save_json_list(sorted(rows, key=lambda item: item.get("patch_date", "")), PATCH_NOTES_PATH)
             return patch_note, False
 
     patch_note["created_at"] = patch_note.get("created_at") or now
-    rows.append(patch_note)
+    rows.append(strip_patch_fulltext(patch_note))
     save_json_list(sorted(rows, key=lambda item: item.get("patch_date", "")), PATCH_NOTES_PATH)
     return patch_note, True
 
@@ -1818,12 +1827,13 @@ def build_perk_rows(heroes, details, update_date):
 
     통계 영웅이 빠졌거나 특전이 2+2 가 아니면 ValueError. 영웅 이름 표기가 바뀌면 화면에
     "특전 데이터 없음"이 조용히 뜨므로, 그럴 때는 저장하지 않고 직전 파일을 둔다.
+    role_dict 에 아직 없는 새 영웅도 넥슨 통계에는 먼저 들어오므로 OverFast 이름·역할 그대로 넣는다.
     """
     rows, seen = [], set()
     for hero in heroes:
-        name = normalize_hero_name(hero.get("name"))
+        name = normalize_hero_name(hero.get("name")) or str(hero.get("name") or "").strip()
         if not name:
-            continue  # 아직 통계에 없는 영웅
+            continue
         if name in seen:
             raise ValueError(f"영웅 이름이 겹칩니다: {hero.get('name')} -> {name}")
         seen.add(name)
@@ -1843,7 +1853,7 @@ def build_perk_rows(heroes, details, update_date):
                 rows.append({
                     "hero": name,
                     "hero_key": hero["key"],
-                    "role": role_dict[name],
+                    "role": role_dict.get(name) or str(hero.get("role") or "").title(),
                     "perk_type": perk_type,
                     "perk_name": str(perk.get("name") or "").strip(),
                     "perk_description": description,

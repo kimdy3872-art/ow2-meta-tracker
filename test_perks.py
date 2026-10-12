@@ -9,7 +9,7 @@ def perk(name, description="설명"):
 def fake_overfast(extra=None):
     """통계 영웅 전부 + 통계에 없는 영웅 하나. OverFast 표기(D.Va)도 섞는다."""
     names = ["D.Va" if h == "D.VA" else h for h in role_dict] + ["새영웅"]
-    heroes = [{"key": f"k{i}", "name": n} for i, n in enumerate(names)]
+    heroes = [{"key": f"k{i}", "name": n, "role": "support"} for i, n in enumerate(names)]
     details = {
         h["key"]: {"perks": {"minor": [perk(f"{h['name']}-m1"), perk(f"{h['name']}-m2")],
                              "major": [perk(f"{h['name']}-M1"), perk(f"{h['name']}-M2")]}}
@@ -23,7 +23,9 @@ def fake_overfast(extra=None):
 def test_rows_keep_official_order_and_names():
     heroes, details = fake_overfast()
     rows = build_perk_rows(heroes, details, "2026-10-12")
-    assert len(rows) == len(role_dict) * 4  # 통계에 없는 영웅은 건너뛴다
+    assert len(rows) == (len(role_dict) + 1) * 4
+    new = [r for r in rows if r["hero"] == "새영웅"]  # role_dict 에 없는 새 영웅도 OverFast 역할로 넣는다
+    assert len(new) == 4 and new[0]["role"] == "Support", new
     dva = [r for r in rows if r["hero"] == "D.VA"]
     assert [r["perk_name"] for r in dva] == ["D.Va-m1", "D.Va-m2", "D.Va-M1", "D.Va-M2"], dva
     assert dva[0]["role"] == "Tank" and dva[0]["perk_type"] == "minor" and dva[0]["icon_url"]
