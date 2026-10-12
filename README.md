@@ -219,8 +219,8 @@ python update.py --mode all
 | `TASK_RETRIES` | `3` | 수집 작업 재시도 횟수 |
 | `DRIVER_PAGE_LOAD_TIMEOUT` | `75` | Chrome 페이지 로드 제한 시간(초) |
 | `DRIVER_SCRIPT_TIMEOUT` | `30` | Chrome 스크립트 실행 제한 시간(초) |
-| `META_PRESENCE_WEIGHT` | `0.65` | 종합 점수에서 존재감 축 가중치 (성능 축은 1 - 이 값). 과열 경고(`overheat_monitor.alert`)가 켜지면 하향 검토 |
-| `PRESENCE_BAN_WEIGHT` | `1.0` | 존재감 축에서 밴률 가중치 β. 낮추면 과열 감시 지표가 오히려 늘어난다(아래 판단 근거) |
+| `META_PRESENCE_WEIGHT` | `0.65` | 종합 점수에서 존재감 축 가중치 (성능 축은 1 - 이 값). 과열 경고(`overheat_monitor.alert`)가 켜지면 하향 검토. 대시보드(`app_data.py`)도 읽으므로 GitHub Actions와 Streamlit Cloud Secrets에 같은 값을 넣는다 |
+| `PRESENCE_BAN_WEIGHT` | `1.0` | 존재감 축에서 밴률 가중치 β. 낮추면 과열 감시 지표가 오히려 늘어난다(아래 판단 근거). 위와 같이 두 곳에 넣는다 |
 | `WEEKLY_SNAPSHOT_WEEKDAY` | `0` | 주간 스냅샷 생성 요일 |
 | `ENABLE_OLLAMA_ANALYSIS` | 로컬 `1`, GitHub Actions `0` | Ollama 패치 분석 사용 여부 |
 | `OLLAMA_MODEL` | `qwen3:14b` | 패치 분석에 사용할 Ollama 모델 |
