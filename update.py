@@ -5,32 +5,16 @@ import hashlib
 import json
 import os
 import re
-import threading
 import time
 import urllib.request
 from datetime import date, datetime
 from difflib import get_close_matches
 from html.parser import HTMLParser
 from typing import Dict, List
-from urllib.parse import urlencode, urlparse, parse_qs, unquote, urljoin
+from urllib.parse import urlencode
 
 import numpy as np
 import pandas as pd
-try:
-    from selenium import webdriver
-    from selenium.webdriver.chrome.options import Options
-    from selenium.webdriver.common.by import By
-    from selenium.webdriver.support.ui import WebDriverWait
-    from selenium.webdriver.support import expected_conditions as EC
-    from selenium.common.exceptions import SessionNotCreatedException, WebDriverException
-except ImportError:
-    webdriver = None
-    Options = None
-    By = None
-    WebDriverWait = None
-    EC = None
-    SessionNotCreatedException = RuntimeError
-    WebDriverException = RuntimeError
 from time import perf_counter
 
 # 1. 영웅별 포지션 매핑 딕셔너리
@@ -169,7 +153,6 @@ RANK_THRESHOLDS = {
     "D": -1.00,
 }
 
-BASE_URL = "https://owperks.com"
 OFFICIAL_PATCH_NOTES_BASE_URL = "https://overwatch.blizzard.com/ko-kr/news/patch-notes/live"
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen3:14b")
 OLLAMA_GENERATE_URL = os.getenv("OLLAMA_GENERATE_URL", "http://localhost:11434/api/generate")
@@ -180,7 +163,6 @@ ENABLE_OLLAMA_ANALYSIS = os.getenv(
 FORCE_PATCH_AI_ANALYSIS = os.getenv("FORCE_PATCH_AI_ANALYSIS", "0") == "1"
 OLLAMA_TIMEOUT = int(os.getenv("OLLAMA_TIMEOUT", "90"))
 PATCH_PROMPT_VERSION = "patch-impact-v2"
-DEFAULT_LOCALE = "ko"
 # 한국 서버 분리(2026-09) 이후 통계는 넥슨 페이지에서 받는다. 내부 API(overwatch-api.nexon.com)는
 # Cloudflare 챌린지로 막혀 있어, 페이지 SSR HTML 에 박힌 __NUXT_DATA__ 를 파싱한다.
 # 파라미터 값이 틀리면 에러 없이 기본값(빠른 대전·전체)으로 폴백하므로 시작할 때 필터 목록과 대조한다.
@@ -197,12 +179,6 @@ THIN_SAMPLE_NEFF = 300
 # 승률 보정 강도(게임 수 환산) = 2500/τ². τ≈4.1%p 는 표본이 큰 전체 티어에서 잰 실제 전장 효과 표준편차.
 SHRINK_PRIOR_GAMES = 150
 
-CATEGORY_TO_ROLE = {
-    "tanks": "Tank",
-    "damages": "Damage",
-    "supports": "Support",
-}
-
 VALID_HERO_NAMES = set(role_dict.keys())
 HERO_NAME_ALIASES = {
     "두피스트": "둠피스트",
@@ -218,21 +194,22 @@ HERO_NAME_ALIASES = {
     "루시": "루시우",
 }
 
-HERO_LINK_RE = re.compile(r"^https://owperks\.com/ko/(tanks|damages|supports)/([^/?#]+)$")
-
-
-DRIVER_CREATE_RETRIES = 3
 TASK_RETRIES = int(os.getenv("TASK_RETRIES", "3"))
 MIN_HERO_ROWS = 20
 # 요청이 끝내 실패한 조합이 이 비율 안이면 부분 저장하고, 빠진 조합은 직전 latest 값으로 메운다.
 # 사이트에 데이터가 없는 조합(표본 부족으로 0행)은 실패로 세지 않는다.
 MIN_TASK_SUCCESS_RATIO = float(os.getenv("MIN_TASK_SUCCESS_RATIO", "0.95"))
-DRIVER_PAGE_LOAD_TIMEOUT = int(os.getenv("DRIVER_PAGE_LOAD_TIMEOUT", "75"))
-DRIVER_SCRIPT_TIMEOUT = int(os.getenv("DRIVER_SCRIPT_TIMEOUT", "30"))
-
-STOP_REQUESTED = threading.Event()
-ACTIVE_DRIVERS = set()
-ACTIVE_DRIVERS_LOCK = threading.Lock()
+# 특전은 블리자드 공식 영웅 페이지 내용을 OverFast API(JSON)로 받는다. 게임 안 특전 선택률은
+# 공식 출처가 없어 수집하지 않는다(예전 owperks 의 %는 그 사이트 방문자 투표였다).
+OVERFAST_URL = "https://overfast-api.tekrop.fr"
+OVERFAST_HEADERS = {"User-Agent": "ow2meta/1.0 (https://github.com/kimdy3872-art/ow2-meta-tracker)"}
+# 블리자드 페이지는 일부 설명의 키를 마우스 그림으로 그리고, OverFast 는 그 자리를 비운다(공백 두 칸).
+# ponytail: 손으로 채우는 표. 표에 없는 빈칸은 경고만 남긴다. 늘어나면 블리자드 영웅 페이지의
+# mouse-button-left/right 그림을 읽어 채우도록 바꾼다.
+PERK_KEY_FIXES = {
+    ("일리아리", "태양의 섬광"): "[기본 발사]",
+    ("라인하르트", "방패 강타"): "[기본 발사]",
+}
 
 
 def normalize_tier_name(tier_name):
@@ -250,70 +227,6 @@ def format_elapsed(seconds):
     if minutes > 0:
         return f"{minutes}분 {seconds}초"
     return f"{seconds}초"
-
-def build_chrome_options(headless=True):
-    opts = Options()
-    opts.page_load_strategy = "eager"
-    if headless:
-        opts.add_argument("--headless=new")
-    opts.add_argument("--no-sandbox")
-    opts.add_argument("--disable-dev-shm-usage")
-    opts.add_argument("--disable-gpu")
-    opts.add_argument("--disable-extensions")
-    opts.add_argument("--disable-background-networking")
-    opts.add_argument("--disable-sync")
-    opts.add_argument("--no-first-run")
-    opts.add_argument("--no-default-browser-check")
-    opts.add_argument("--blink-settings=imagesEnabled=false")
-    opts.add_argument("--remote-debugging-pipe")
-    opts.add_argument("--window-size=1920,1080")
-    return opts
-
-
-def register_driver(driver):
-    with ACTIVE_DRIVERS_LOCK:
-        ACTIVE_DRIVERS.add(driver)
-
-
-def unregister_driver(driver):
-    with ACTIVE_DRIVERS_LOCK:
-        ACTIVE_DRIVERS.discard(driver)
-
-
-def quit_active_drivers():
-    with ACTIVE_DRIVERS_LOCK:
-        drivers = list(ACTIVE_DRIVERS)
-
-    for driver in drivers:
-        try:
-            driver.quit()
-        except Exception:
-            pass
-
-
-def create_driver(headless=True, max_retries=DRIVER_CREATE_RETRIES):
-    """Create Chrome session with retries for CI renderer startup failures."""
-    if webdriver is None or Options is None:
-        raise RuntimeError("selenium이 설치되어 있지 않아 브라우저 수집을 실행할 수 없습니다.")
-
-    last_error = None
-    for attempt in range(1, max_retries + 1):
-        try:
-            opts = build_chrome_options(headless=headless)
-            driver = webdriver.Chrome(options=opts)
-            driver.set_page_load_timeout(DRIVER_PAGE_LOAD_TIMEOUT)
-            driver.set_script_timeout(DRIVER_SCRIPT_TIMEOUT)
-            return driver
-        except (SessionNotCreatedException, WebDriverException) as exc:
-            last_error = exc
-            wait_sec = attempt * 2
-            print(f"⚠️  드라이버 세션 생성 실패(시도 {attempt}/{max_retries}), {wait_sec}초 후 재시도")
-            if attempt < max_retries:
-                STOP_REQUESTED.wait(wait_sec)
-            if STOP_REQUESTED.is_set():
-                raise KeyboardInterrupt
-
-    raise RuntimeError(f"Chrome 세션 생성 실패: {last_error}")
 
 def normalize_dataset_for_scoring(df):
     valid_maps = set(map_dict.keys())
@@ -1018,23 +931,6 @@ def build_snapshot_compare_frame(df):
         .sort_values(compare_cols)
         .reset_index(drop=True)
     )
-
-
-def build_perk_compare_frame(df):
-    ignore_cols = {"update_date"}
-    compare_cols = [col for col in df.columns if col not in ignore_cols]
-
-    if not compare_cols:
-        return pd.DataFrame()
-
-    compare_df = df[compare_cols].copy()
-    for col in compare_df.columns:
-        if pd.api.types.is_numeric_dtype(compare_df[col]):
-            compare_df[col] = pd.to_numeric(compare_df[col], errors="coerce").round(4)
-        else:
-            compare_df[col] = compare_df[col].fillna("").astype(str)
-
-    return compare_df.sort_values(compare_cols).reset_index(drop=True)
 
 
 def save_parquet(df, path):
@@ -1904,246 +1800,78 @@ def run_patch_update(stats_result=None):
     print(f"{'🧠' if created else '♻️'} AI 패치 영향 분석 저장: {analysis_row['analysis_date']}")
 
 
-def normalize_url(href):
-    if not href:
-        return ""
-    return urljoin(BASE_URL, href)
+def fetch_overfast(path):
+    req = urllib.request.Request(f"{OVERFAST_URL}{path}", headers=OVERFAST_HEADERS)
+    for attempt in range(1, TASK_RETRIES + 1):
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                return json.load(resp)
+        except OSError as exc:
+            if attempt == TASK_RETRIES:
+                raise
+            print(f"⚠️  OverFast {path} 요청 실패(시도 {attempt}/{TASK_RETRIES}), 재시도: {exc}")
+            time.sleep(attempt * 2)
 
 
-def extract_hero_links(driver, locale):
-    landing_url = f"{BASE_URL}/{locale}"
-    driver.get(landing_url)
-    WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.TAG_NAME, "a")))
-    time.sleep(1.5)
+def build_perk_rows(heroes, details, update_date):
+    """OverFast 영웅 목록과 영웅별 상세에서 특전 행을 만든다. 공식 순서(마이너 2·메이저 2)를 지킨다.
 
-    hrefs = driver.execute_script(
-        """
-        const anchors = Array.from(document.querySelectorAll('a[href]'));
-        return anchors.map(a => a.getAttribute('href')).filter(Boolean);
-        """
-    )
-
-    links = set()
-    for href in hrefs:
-        absolute = normalize_url(href)
-        match = HERO_LINK_RE.match(absolute)
-        if match:
-            links.add(absolute)
-
-    ordered = sorted(links)
-    print(f"Found {len(ordered)} hero pages from {landing_url}")
-    return ordered
-
-
-def extract_perk_slug(perk_image_url):
-    if not perk_image_url:
-        return ""
-
-    parsed = urlparse(perk_image_url)
-    query_path = parse_qs(parsed.query).get("url", [""])[0]
-    if query_path:
-        decoded = unquote(query_path)
-        filename = os.path.basename(decoded)
-    else:
-        filename = os.path.basename(parsed.path)
-
-    return os.path.splitext(filename)[0]
-
-
-def extract_raw_perk_image_url(perk_image_url):
-    if not perk_image_url:
-        return ""
-
-    parsed = urlparse(perk_image_url)
-    query_path = parse_qs(parsed.query).get("url", [""])[0]
-    if not query_path:
-        return perk_image_url
-
-    decoded = unquote(query_path)
-    return urljoin(BASE_URL, decoded)
-
-
-def scrape_hero_page(driver, hero_url):
-    driver.get(hero_url)
-    WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.CSS_SELECTOR, ".hero-card")))
-    time.sleep(0.6)
-
-    payload = driver.execute_script(
-        """
-        const card = document.querySelector('.hero-card');
-        if (!card) {
-            return { hero_name: '', rows: [] };
-        }
-
-        const heroName = (card.querySelector('h2')?.textContent || '').trim();
-        const heroImage = card.querySelector('img[alt]')?.currentSrc || card.querySelector('img[alt]')?.src || '';
-
-        const sections = Array.from(card.querySelectorAll('ul')).slice(0, 2);
-        const sectionTypes = ['minor', 'major'];
-        const rows = [];
-
-        for (let i = 0; i < sections.length; i++) {
-            const perkType = sectionTypes[i] || 'unknown';
-            const items = Array.from(sections[i].querySelectorAll('li'));
-
-            for (const li of items) {
-                const text = (li.innerText || '').trim();
-                const percentMatch = text.match(/(\\d+(?:\\.\\d+)?)\\s*%/);
-                const pickRate = percentMatch ? Number(percentMatch[1]) : null;
-
-                const img = li.querySelector('img');
-                const perkImage = img?.currentSrc || img?.src || '';
-                let perkName = (img?.alt || '').trim();
-
-                if (!perkName) {
-                    const candidate = li.querySelector('h2, h3, strong, [class*="font-bold"]');
-                    perkName = (candidate?.textContent || '').trim();
-                }
-
-                if (!perkName) {
-                    const lines = text
-                        .split('\\n')
-                        .map(v => v.trim())
-                        .filter(Boolean)
-                        .filter(v => !/^\\d+(?:\\.\\d+)?%$/.test(v));
-                    perkName = lines.length ? lines[0] : '';
-                }
-
-                const descriptionElement = Array.from(li.children).find(
-                    element => element.tagName === 'SPAN' && element.classList.contains('text-gray-300')
-                );
-                const perkDescription = (descriptionElement?.textContent || '').trim();
-
-                rows.push({
-                    perk_type: perkType,
-                    perk_name: perkName,
-                    perk_description: perkDescription,
-                    pick_rate: pickRate,
-                    perk_image_url: perkImage,
-                });
-            }
-        }
-
-        return {
-            hero_name: heroName,
-            hero_image_url: heroImage,
-            rows,
-        };
-        """
-    )
-
-    category_match = re.match(r"^https://owperks\.com/ko/(tanks|damages|supports)/([^/?#]+)$", hero_url)
-    if not category_match:
-        return []
-
-    category = category_match.group(1)
-    hero_slug = category_match.group(2)
-    role = CATEGORY_TO_ROLE.get(category, "Unknown")
-
-    rows = []
-    for row in payload.get("rows", []):
-        perk_image_url = row.get("perk_image_url") or ""
-        rows.append(
-            {
-                "hero": payload.get("hero_name") or hero_slug,
-                "hero_slug": hero_slug,
-                "role": role,
-                "category": category,
-                "perk_type": row.get("perk_type", ""),
-                "perk_name": (row.get("perk_name") or "").strip(),
-                "perk_description": (row.get("perk_description") or "").strip(),
-                "pick_rate": row.get("pick_rate"),
-                "perk_slug": extract_perk_slug(perk_image_url),
-                "perk_image_url": perk_image_url,
-                "perk_image_raw_url": extract_raw_perk_image_url(perk_image_url),
-                "hero_image_url": payload.get("hero_image_url", ""),
-                "source_url": hero_url,
-                "update_date": str(date.today()),
-            }
-        )
-
+    통계 영웅이 빠졌거나 특전이 2+2 가 아니면 ValueError. 영웅 이름 표기가 바뀌면 화면에
+    "특전 데이터 없음"이 조용히 뜨므로, 그럴 때는 저장하지 않고 직전 파일을 둔다.
+    """
+    rows, seen = [], set()
+    for hero in heroes:
+        name = normalize_hero_name(hero.get("name"))
+        if not name:
+            continue  # 아직 통계에 없는 영웅
+        if name in seen:
+            raise ValueError(f"영웅 이름이 겹칩니다: {hero.get('name')} -> {name}")
+        seen.add(name)
+        perks = details[hero["key"]].get("perks") or {}
+        for perk_type in ("minor", "major"):
+            items = perks.get(perk_type) or []
+            if len(items) != 2:
+                raise ValueError(f"{name} {perk_type} 특전이 {len(items)}개입니다")
+            for perk in items:
+                description = str(perk.get("description") or "").strip()
+                if "  " in description:
+                    key = PERK_KEY_FIXES.get((name, perk.get("name")))
+                    if key:
+                        description = description.replace("  ", f" {key} ", 1)
+                    else:
+                        print(f"⚠️  {name} '{perk.get('name')}' 설명에 키 그림 빈칸이 있습니다: {description}")
+                rows.append({
+                    "hero": name,
+                    "hero_key": hero["key"],
+                    "role": role_dict[name],
+                    "perk_type": perk_type,
+                    "perk_name": str(perk.get("name") or "").strip(),
+                    "perk_description": description,
+                    "icon_url": perk.get("icon") or "",
+                    "update_date": update_date,
+                })
+    missing = sorted(set(role_dict) - seen)
+    if missing:
+        raise ValueError(f"OverFast 에 없는 통계 영웅: {missing}")
     return rows
 
 
-def run_perk_update(locale=DEFAULT_LOCALE, max_heroes=None, headed=False):
+def run_perk_update():
     started_at = time.time()
-
-    driver = create_driver(headless=not headed)
     try:
-        hero_links = extract_hero_links(driver, locale)
-        if max_heroes is not None:
-            hero_links = hero_links[: max(0, max_heroes)]
+        heroes = fetch_overfast("/heroes?locale=ko-kr")
+        details = {}
+        for hero in heroes:
+            details[hero["key"]] = fetch_overfast(f"/heroes/{hero['key']}?locale=ko-kr")
+            time.sleep(0.3)
+        rows = build_perk_rows(heroes, details, str(date.today()))
+    except Exception as exc:
+        print(f"❌ 특전 수집 실패, 직전 파일을 그대로 둡니다: {exc}")
+        return
 
-        if not hero_links:
-            print("No hero links found. Nothing to scrape.")
-            return
-
-        all_rows: List[Dict] = []
-        failed_heroes: List[str] = []
-        total = len(hero_links)
-        for idx, hero_url in enumerate(hero_links, start=1):
-            print(f"[{idx}/{total}] scraping {hero_url}")
-            try:
-                rows = scrape_hero_page(driver, hero_url)
-                if rows:
-                    all_rows.extend(rows)
-                else:
-                    print(f"  warning: no perk rows parsed: {hero_url}")
-                    failed_heroes.append(hero_url)
-            except Exception as exc:
-                print(f"  error: {hero_url} -> {exc}")
-                failed_heroes.append(hero_url)
-
-        if failed_heroes:
-            print(
-                f"❌ 퍼크 수집이 완전하지 않아 저장을 중단합니다. 실패 수: {len(failed_heroes)}/{total}"
-            )
-            print(f"❌ 실패 목록: {failed_heroes[:20]}{' ...' if len(failed_heroes) > 20 else ''}")
-            return
-
-        if not all_rows:
-            print("No perk rows scraped.")
-            return
-
-        df = pd.DataFrame(all_rows)
-        df["pick_rate"] = pd.to_numeric(df["pick_rate"], errors="coerce")
-        df = df.drop_duplicates(
-            subset=["hero_slug", "perk_type", "perk_slug", "update_date"],
-            keep="last",
-        ).reset_index(drop=True)
-
-        df = df.sort_values(
-            by=["role", "hero", "perk_type", "pick_rate"],
-            ascending=[True, True, True, False],
-        ).reset_index(drop=True)
-
-        columns = [
-            "hero",
-            "hero_slug",
-            "role",
-            "category",
-            "perk_type",
-            "perk_name",
-            "perk_description",
-            "pick_rate",
-            "perk_slug",
-            "perk_image_url",
-            "perk_image_raw_url",
-            "hero_image_url",
-            "source_url",
-            "update_date",
-        ]
-        df = df.reindex(columns=columns)
-
-        save_parquet(df, LATEST_PERKS_PATH)
-
-        elapsed = int(time.time() - started_at)
-        print(
-            f"Done. Saved {len(df)} rows to {LATEST_PERKS_PATH} "
-            f"(heroes={df['hero_slug'].nunique()}, elapsed={elapsed}s)"
-        )
-    finally:
-        driver.quit()
+    df = pd.DataFrame(rows)
+    save_parquet(df, LATEST_PERKS_PATH)
+    print(f"✅ 특전 {len(df)}개 저장 (영웅 {df['hero'].nunique()}명, {int(time.time() - started_at)}초)")
 
 
 def run_stats_update():
@@ -2294,20 +2022,13 @@ def run_stats_update():
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Update Overwatch competitive stats and/or hero perks data."
+        description="Update Overwatch competitive stats, hero perks and patch notes."
     )
     parser.add_argument(
         "--mode",
         choices=["stats", "perks", "patch", "all"],
         default="stats",
         help="What to update (default: stats)",
-    )
-    parser.add_argument("--locale", default=DEFAULT_LOCALE, help="Perk scraper locale")
-    parser.add_argument("--max-heroes", type=int, default=None, help="Perk scrape hero limit")
-    parser.add_argument(
-        "--headed",
-        action="store_true",
-        help="Run browser in headed mode for perk scraping",
     )
     return parser.parse_args()
 
@@ -2319,11 +2040,7 @@ def main():
     if args.mode in ("stats", "all"):
         stats_result = run_stats_update()
     if args.mode in ("perks", "all"):
-        run_perk_update(
-            locale=args.locale,
-            max_heroes=args.max_heroes,
-            headed=args.headed,
-        )
+        run_perk_update()
     if args.mode in ("patch", "all"):
         run_patch_update(stats_result=stats_result)
 

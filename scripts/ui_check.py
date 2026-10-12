@@ -10,7 +10,7 @@
     interact  폰 필터·정렬, 전장별 영웅 탭, 차트 위 스와이프, 3D 회전·시점 초기화, 특전 탭, TOP 4 순환, 표 전체화면
 
 수치는 표준 출력, 스크린샷은 logs/ui_check/ (gitignore 됨). 가로 넘침이 있거나 검사가
-예외로 끝나면 종료 코드 1. websocket-client 가 필요하다(selenium 이 끌고 온다).
+예외로 끝나면 종료 코드 1. websocket-client 가 필요하다(앱 의존성이 아니라 따로 설치: pip install websocket-client).
 """
 import argparse
 import base64
@@ -448,12 +448,10 @@ def detail_page():
     tab.js("document.querySelector('.hmap-card').scrollIntoView({block: 'center'})")
     time.sleep(0.6)
     tab.shot("interact_detail_phone.png")
-    # 특전 카드를 탭하면 툴팁이 보이는가
-    tab.tap(".perk-card")
-    time.sleep(0.5)
-    print("[detail] perk tooltip after tap: opacity =",
-          tab.js("getComputedStyle(document.querySelector('.perk-tooltip')).opacity"),
-          "| active element =", tab.js("document.activeElement.className"))
+    # 특전 설명이 탭 없이 보이고 카드 밖으로 넘치지 않는가
+    print("[detail] perks", json.dumps(tab.js("""(() => [...document.querySelectorAll('.perk-card')].map(c => {
+        const d = c.querySelector('.perk-description'); return {visible: !!d && d.getBoundingClientRect().height > 0,
+        overflow: c.scrollWidth > c.clientWidth + 1}; }))()"""), ensure_ascii=False))
     tab.close()
 
 

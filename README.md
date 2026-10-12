@@ -1,6 +1,6 @@
 # Overwatch 2 경쟁전 메타 분석 대시보드
 
-오버워치 2 경쟁전 통계, 영웅 퍼크, 공식 패치노트를 수집해 Streamlit으로 시각화하는 데이터 분석 프로젝트입니다. 티어별/포지션별 승률, 픽률, 밴률을 기반으로 영웅 랭크를 계산하고, 저장된 스냅샷으로 메타 변화 추이를 확인합니다.
+오버워치 2 경쟁전 통계, 영웅 특전, 공식 패치노트를 수집해 Streamlit으로 시각화하는 데이터 분석 프로젝트입니다. 티어별/포지션별 승률, 픽률, 밴률을 기반으로 영웅 랭크를 계산하고, 저장된 스냅샷으로 메타 변화 추이를 확인합니다.
 
 이 README는 사람뿐 아니라 다른 AI 에이전트가 프로젝트를 이어받을 때도 빠르게 맥락을 파악할 수 있도록 작성되어 있습니다.
 
@@ -9,7 +9,8 @@
 ## 프로젝트 한눈에 보기
 
 - **앱 유형**: Streamlit 멀티페이지 대시보드
-- **주요 데이터**: 오버워치 2 경쟁전 영웅 통계(넥슨 [영웅 통계](https://overwatch.nexon.com/hero/rate), 한국 서버·PC·역할 고정), OW Perks 영웅 퍼크, Blizzard 공식 패치노트
+- **주요 데이터**: 오버워치 2 경쟁전 영웅 통계(넥슨 [영웅 통계](https://overwatch.nexon.com/hero/rate), 한국 서버·PC·역할 고정), Blizzard 공식 영웅 특전([OverFast API](https://overfast-api.tekrop.fr) 경유), Blizzard 공식 패치노트
+  - 특전은 이름·설명·아이콘만 씁니다. 게임 안 특전 선택률은 공식 출처가 없어 표시하지 않습니다(2026-10-12까지 쓰던 owperks.com의 %는 그 사이트 방문자 투표였고, 약관상 재배포가 금지되어 뺐습니다).
   - 2026-09-10 스냅샷부터 넥슨 한국 서버 통계입니다. 그 전은 Blizzard 아시아 서버 통계라서 이 날짜를 전후로 추세가 끊깁니다.
 - **핵심 산출물**: `data/latest/latest_tier.parquet`, `data/latest/latest_perks.parquet`, `data/patch_notes/*.json`
 - **주요 실행 파일**: `main.py`는 대시보드, `update.py`는 데이터 수집/가공
@@ -25,7 +26,7 @@
 | 전장별 영웅 | `pages/4_map_heroes.py` | 전장마다 포지션별 보정 승률 상위 2명과 전체 전장 승률 대비 차이. 모드(쟁탈·호위·혼합·밀기·플래시포인트)별로 묶음 |
 | 영웅 추이 | `pages/2_hero_trends.py` | 주간 스냅샷과 최신 데이터를 합쳐 영웅별 승률, 픽률, 밴률 추이 확인 |
 | 메타 분포 | `pages/1_pick_win_distribution.py` | 선택 티어/포지션 기준 픽률, 승률, 밴률 2D·3D 분포 시각화 |
-| 영웅 상세 | `pages/3_hero_detail.py` | 특정 영웅의 티어별 지표, 전장별 성능, 퍼크 선호도, 패치 영향 정보 확인 (메뉴에는 없고 영웅을 눌러 진입) |
+| 영웅 상세 | `pages/3_hero_detail.py` | 특정 영웅의 티어별 지표, 전장별 성능, 특전(마이너·메이저 공식 설명), 패치 영향 정보 확인 (메뉴에는 없고 영웅을 눌러 진입) |
 
 페이지 이름은 메뉴, 페이지 제목, 이 표에서 같은 두 단어를 씁니다.
 
@@ -38,7 +39,7 @@
 | 대시보드 | Streamlit |
 | 데이터 처리 | Pandas, NumPy, PyArrow |
 | 시각화 | Plotly |
-| 브라우저 수집 | Selenium, Chrome/Chromium |
+| 수집 | urllib (넥슨 페이지 HTML, OverFast JSON) |
 | 로컬 AI 분석 | Ollama API, 선택 기능 |
 | 자동화 | GitHub Actions, macOS launchd 스크립트 |
 
@@ -105,7 +106,7 @@
 - `app_data.py`: 대시보드에서 쓰는 데이터 로딩, 라벨 번역, 영웅/맵 이미지 URL 보조 함수가 모여 있습니다.
 - `ui/`: UI 패키지입니다. 팔레트, CSS 주입, 페이지 셸, HTML 카드, 전역 필터, 뱃지, Plotly 테마를 정의합니다. 구조와 디자인·반응형 규칙은 `CLAUDE.md`에 있습니다.
 - `assets/style.css`: 대시보드 스타일시트입니다. `assets/ranks/`는 티어·포지션 아이콘, `static/`은 영웅·전장 아트입니다.
-- `update.py`: 경쟁전 통계, 퍼크, 패치노트, 패치 AI 분석을 수집/가공/저장하는 핵심 배치 스크립트입니다.
+- `update.py`: 경쟁전 통계, 특전, 패치노트, 패치 AI 분석을 수집/가공/저장하는 핵심 배치 스크립트입니다.
 - `test_sample_size.py`: 표본 크기 추정·보정 셀프 체크입니다. `python test_sample_size.py`로 실행합니다.
 - `test_map_heroes.py`: 전장별 영웅 선정 셀프 체크입니다. `python test_map_heroes.py`로 실행합니다.
 - `test_overheat.py`: 랭크 진단의 과열 감시(성능을 섞은 기준선 비교) 셀프 체크입니다. `python test_overheat.py`로 실행합니다.
@@ -176,18 +177,17 @@ python update.py --mode stats
 
 주간 스냅샷은 기본적으로 월요일에 생성됩니다. `WEEKLY_SNAPSHOT_WEEKDAY` 환경변수로 기준 요일을 바꿀 수 있습니다. Python `weekday()` 기준이라 월요일은 `0`, 일요일은 `6`입니다.
 
-### 영웅 퍼크만 갱신
+### 영웅 특전만 갱신
 
 ```bash
 python update.py --mode perks
-python update.py --mode perks --max-heroes 5
-python update.py --mode perks --locale ko
-python update.py --mode perks --headed
 ```
 
 저장 결과:
 
 - `data/latest/latest_perks.parquet`
+
+OverFast에서 영웅 목록과 영웅별 특전을 받습니다(요청 약 55번). 통계 영웅이 하나라도 빠지거나 특전이 마이너 2·메이저 2가 아니면 저장하지 않고 직전 파일을 둡니다. 블리자드 페이지가 마우스 그림으로 그리는 키("[기본 발사]")는 OverFast에서 빈칸이 되므로 `update.py`의 `PERK_KEY_FIXES`로 채웁니다. 표에 없는 빈칸은 실행 로그에 경고만 남습니다.
 
 ### 패치노트와 AI 분석 갱신
 
@@ -208,7 +208,7 @@ python update.py --mode patch
 python update.py --mode all
 ```
 
-경쟁전 통계, 퍼크, 패치노트/AI 분석을 한 번에 갱신합니다.
+경쟁전 통계, 특전, 패치노트/AI 분석을 한 번에 갱신합니다.
 
 ---
 
@@ -217,8 +217,6 @@ python update.py --mode all
 | 환경변수 | 기본값 | 설명 |
 |---|---:|---|
 | `TASK_RETRIES` | `3` | 수집 작업 재시도 횟수 |
-| `DRIVER_PAGE_LOAD_TIMEOUT` | `75` | Chrome 페이지 로드 제한 시간(초) |
-| `DRIVER_SCRIPT_TIMEOUT` | `30` | Chrome 스크립트 실행 제한 시간(초) |
 | `META_PRESENCE_WEIGHT` | `0.65` | 종합 점수에서 존재감 축 가중치 (성능 축은 1 - 이 값). 과열 경고(`overheat_monitor.alert`)가 켜지면 하향 검토. 대시보드(`app_data.py`)도 읽으므로 GitHub Actions와 Streamlit Cloud Secrets에 같은 값을 넣는다 |
 | `PRESENCE_BAN_WEIGHT` | `1.0` | 존재감 축에서 밴률 가중치 β. 낮추면 과열 감시 지표가 오히려 늘어난다(아래 판단 근거). 위와 같이 두 곳에 넣는다 |
 | `WEEKLY_SNAPSHOT_WEEKDAY` | `0` | 주간 스냅샷 생성 요일 |
@@ -262,14 +260,15 @@ python update.py --mode all
 | `sample_warning` | `neff` < 150 이면 `표본 부족`(화면에서 흐리게, 랭크 `-`), < 300 이면 `표본 적음` |
 | `rank` | S/A/B/C/D 랭크 |
 
-### 퍼크 컬럼
+### 특전 컬럼
+
+행 순서가 블리자드 공식 순서(영웅마다 마이너 2 → 메이저 2)이고, 화면도 이 순서를 따릅니다.
 
 | 컬럼 | 설명 |
 |---|---|
-| `hero`, `hero_slug`, `role`, `category` | 영웅 기본 정보 |
-| `perk_type`, `perk_name`, `perk_description`, `pick_rate` | 퍼크 종류, 이름, 설명, 선택률 |
-| `perk_slug`, `perk_image_url`, `perk_image_raw_url` | 퍼크 식별자와 이미지 URL |
-| `hero_image_url`, `source_url`, `update_date` | 영웅 이미지, 출처 URL, 수집일 |
+| `hero`, `hero_key`, `role` | 영웅 이름(통계와 같은 표기), OverFast 키, 포지션 |
+| `perk_type`, `perk_name`, `perk_description` | `minor`/`major`, 특전 이름, 공식 설명 |
+| `icon_url`, `update_date` | 블리자드 CDN 아이콘 주소, 수집일 |
 
 ### 패치노트 JSON
 
@@ -370,7 +369,6 @@ macOS에서는 `scripts/run_local_ai_patch_update.sh`와 `scripts/com.da.overwat
 
 ## 실행 전 확인사항
 
-- Selenium 수집을 위해 Chrome 또는 Chromium이 필요합니다.
 - Parquet 파일을 읽고 쓰기 위해 `pyarrow`가 필요합니다.
 - 패치 AI 분석을 사용하려면 Ollama 서버가 `OLLAMA_GENERATE_URL`에서 응답해야 합니다.
 - 대시보드는 기본으로 GitHub raw에서 데이터를 읽으므로 네트워크가 필요합니다. `OW2_LOCAL_DATA=1`일 때는 `data/latest/latest_tier.parquet`가 있어야 정상 동작합니다.

@@ -131,11 +131,12 @@ def render_rank_rail(title: str, rows, footnote: str = "") -> None:
     st.markdown(rank_rail_html(title, rows, footnote), unsafe_allow_html=True)
 
 
-# 영웅 아트는 Overwatch Wiki(Fandom, CC BY-NC-SA)에서 받아 저장소에 미러링한 것이고
-# 원화 저작권은 블리자드에 있다. 비공식 사이트임을 밝혀 둔다.
+# 영웅 렌더는 Overwatch Wiki 에서 받았지만 위키의 CC BY-NC-SA 는 글에만 붙는다. 이미지 파일은
+# 위키에서도 "Images copyrighted to Blizzard Entertainment" 로 분류된다. 출처와 권리자를 사실대로 적는다.
 LEGAL_HTML = ('Blizzard Entertainment와 무관한 비공식 사이트입니다.<br>'
               'Overwatch®는 Blizzard Entertainment, Inc.의 상표입니다.<br>'
-              '영웅 아트 출처: Overwatch Wiki (CC BY-NC-SA).')
+              '통계: 넥슨 영웅 통계(한국 서버). 게임 이미지와 특전 정보의 권리는 '
+              'Blizzard Entertainment에 있습니다.')
 
 NAV_ITEMS = [
     ("main", "영웅 순위", ":material/leaderboard:", "main.py"),

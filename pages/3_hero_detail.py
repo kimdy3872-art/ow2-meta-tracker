@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import html
 import os
-import re
 from app_data import (
     DATA_CACHE_TTL,
     get_hero_banner_art,
@@ -26,7 +25,6 @@ from ui import (
     GLOBAL_GOOD_COLOR,
     GLOBAL_INFO_COLOR,
     GLOBAL_DANGER_COLOR,
-    GLOBAL_MUTED_TEXT_COLOR,
     GLOBAL_WARN_COLOR,
     render_hero_showcase,
     MINOR_PERK_COLOR,
@@ -43,49 +41,21 @@ PERK_DATA_PATH = os.path.join("data", "latest", "latest_perks.parquet")
 DEFAULT_PERK_IMAGE_URL = "https://dummyimage.com/48x48/1f2937/94a3b8.png&text=Perk"
 
 
-def normalize_hero_key(hero_name):
-    text = str(hero_name).strip().lower()
-    return re.sub(r"[^0-9a-z가-힣]+", "", text)
-
-
 @st.cache_data(ttl=DATA_CACHE_TTL, show_spinner=False)
 def load_hero_perk_data():
     df = read_data_parquet(PERK_DATA_PATH)
-    if df is None or df.empty:
+    if df is None or df.empty or not {"hero", "perk_type", "perk_name"}.issubset(df.columns):
         return pd.DataFrame()
-
-    required_cols = {"hero", "perk_type", "perk_name", "pick_rate"}
-    if not required_cols.issubset(df.columns):
-        return pd.DataFrame()
-
-    if "update_date" in df.columns and not df.empty:
-        df["update_date"] = df["update_date"].astype(str)
-        latest_date = df["update_date"].max()
-        df = df[df["update_date"] == latest_date].copy()
-
-    if "perk_description" not in df.columns:
-        df["perk_description"] = ""
-
-    df["hero_norm"] = df["hero"].astype(str).map(normalize_hero_key)
-    df["perk_type"] = df["perk_type"].astype(str).str.lower()
-    df["pick_rate"] = pd.to_numeric(df["pick_rate"], errors="coerce")
     return df
 
 
 def get_hero_perk_rows(hero_name):
+    """공식 순서(마이너 2·메이저 2) 그대로. 파일이 그 순서로 저장되어 있다."""
     perks_df = load_hero_perk_data()
     if perks_df.empty:
         return {"minor": [], "major": []}
-
-    hero_norm = normalize_hero_key(hero_name)
-    hero_perks = perks_df[perks_df["hero_norm"] == hero_norm].copy()
-    if hero_perks.empty:
-        return {"minor": [], "major": []}
-
-    hero_perks = hero_perks.sort_values("pick_rate", ascending=False)
-    minor_rows = hero_perks[hero_perks["perk_type"] == "minor"].head(2).to_dict("records")
-    major_rows = hero_perks[hero_perks["perk_type"] == "major"].head(2).to_dict("records")
-    return {"minor": minor_rows, "major": major_rows}
+    hero_perks = perks_df[perks_df["hero"].astype(str) == hero_name]
+    return {t: hero_perks[hero_perks["perk_type"] == t].to_dict("records") for t in ("minor", "major")}
 
 
 hero_from_query = st.session_state.get("detail_hero") or st.query_params.get("hero")
@@ -230,47 +200,17 @@ with left_col:
                 f'</div>'
             )
 
-        numeric_rates = pd.to_numeric(
-            [perk.get("pick_rate") for perk in perks],
-            errors="coerce",
-        )
-        best_idx = int(numeric_rates.argmax()) if len(numeric_rates) and pd.notna(numeric_rates).any() else -1
-
         cards = []
-        for idx, perk in enumerate(perks):
-            perk_name = html.escape(str(perk.get("perk_name", "-")))
-            raw_description = perk.get("perk_description", "")
-            if pd.isna(raw_description) or not str(raw_description).strip():
-                raw_description = "상세 설명 데이터가 없습니다."
-            perk_description = html.escape(str(raw_description).strip())
-            perk_rate = perk.get("pick_rate")
-            if pd.notna(perk_rate):
-                perk_rate_text = f"{float(perk_rate):.0f}%"
-            else:
-                perk_rate_text = "-"
-            is_best = idx == best_idx
-
-            perk_image_url = perk.get("perk_image_raw_url") or perk.get("perk_image_url") or DEFAULT_PERK_IMAGE_URL
-            perk_image_url = html.escape(str(perk_image_url))
-
-            # 지시서 STEP 5: 아이콘 확대 + 선호도 프로그레스 바. 퍽 이름은 nowrap.
-            bar_width = float(perk_rate) if pd.notna(perk_rate) else 0.0
+        for perk in perks:
+            icon_url = html.escape(str(perk.get("icon_url") or DEFAULT_PERK_IMAGE_URL), quote=True)
+            perk_name = html.escape(str(perk.get("perk_name") or "-"))
+            description = html.escape(str(perk.get("perk_description") or "").strip())
             cards.append(
-                f'<div class="perk-card" tabindex="0" aria-label="{perk_name} 특전 상세 설명">'
-                f'<img class="perk-icon" src="{perk_image_url}" alt="" />'
+                f'<div class="perk-card">'
+                f'<img class="perk-icon" src="{icon_url}" alt="" />'
                 f'<div class="perk-main">'
-                f'<div class="perk-name nowrap">{perk_name}</div>'
-                f'<div class="perk-bar"><span style="width:{min(max(bar_width, 0), 100):.0f}%;'
-                f'background:{accent_color if is_best else "rgba(255,255,255,0.28)"};"></span></div>'
-                f'</div>'
-                f'<div class="perk-rate nowrap" style="color:{accent_color if is_best else GLOBAL_MUTED_TEXT_COLOR};">{perk_rate_text}</div>'
-                f'<div class="perk-tooltip" role="tooltip">'
-                f'<div class="perk-tooltip-head">'
-                f'<img class="perk-tooltip-icon" src="{perk_image_url}" alt="" />'
-                f'<div class="perk-tooltip-name">{perk_name}</div>'
-                f'<div class="perk-tooltip-rate">{perk_rate_text}</div>'
-                f'</div>'
-                f'<div class="perk-tooltip-description">{perk_description}</div>'
+                f'<div class="perk-name">{perk_name}</div>'
+                f'<div class="perk-description">{description}</div>'
                 f'</div>'
                 f'</div>'
             )

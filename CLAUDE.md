@@ -33,7 +33,7 @@
 - 배포: Streamlit Community Cloud (https://ow2metatracker.streamlit.app). keep-alive 워크플로가 앱을 늘 깨워 둬서 push만으로는 코드가 바뀌지 않는다. push 후 대시보드에서 **Reboot**. 문서·스크립트만 바뀐 push는 Reboot이 필요 없다.
 - GitHub Actions가 매일 09:00 KST에 `main`으로 `data/`를 커밋한다. push 전에 `git pull --rebase`.
 - `git add -A`·`git add .` 금지. 루트에 추적하지 않는 참고 이미지(`2hEW9.jpg`, `Overwatch_logo_1024.png`)가 있다. 커밋할 파일을 지정한다.
-- 테스트: `.venv/bin/python test_sample_size.py`(`update.py`의 표본 크기 보정), `.venv/bin/python test_map_heroes.py`(전장별 영웅 선정), `.venv/bin/python test_overheat.py`(랭크 진단의 과열 감시). `ok`가 나오면 통과.
+- 테스트: `.venv/bin/python test_sample_size.py`(`update.py`의 표본 크기 보정), `.venv/bin/python test_map_heroes.py`(전장별 영웅 선정), `.venv/bin/python test_overheat.py`(랭크 진단의 과열 감시), `.venv/bin/python test_perks.py`(특전 수집 검증·키 빈칸 보정). `ok`가 나오면 통과.
 
 ## UI 구조
 
@@ -62,8 +62,8 @@
   - `board`(순위표) 700px 이하: 5열 표 → 한 줄 요약 목록
   - `hero` 880 / 760 / 560, `rot` 620, `kpi` 460
   - 전장별 영웅 격자(`.mh-grid`)는 `auto-fill minmax(320px)`라 query 없이 영역 폭을 따른다(PC 3열, 아이패드 가로 2열, 폰 1열).
-- 창 폭(`@media`)은 툴팁 위치(900px), 폰 전용 처리(640px, » 버튼 숨김)에만 쓴다. 예외로 `.patch-intel-top` 줄바꿈(860px)이 창 폭 기준으로 남아 있다. 새 레이아웃 규칙은 container query로 쓴다.
-- 카드·표 행의 hover 효과는 `@media (hover: hover)` 안에 있고, 새로 넣는 hover도 거기에 둔다. 그 밖의 `:hover`(사이드바 링크, Streamlit 위젯, 영웅·패치 링크, 퍼크 카드·툴팁, TOP 4 순환 정지)는 블록 밖에 있다.
+- 창 폭(`@media`)은 폰 전용 처리(640px, » 버튼 숨김)에만 쓴다. 예외로 `.patch-intel-top` 줄바꿈(860px)이 창 폭 기준으로 남아 있다. 새 레이아웃 규칙은 container query로 쓴다.
+- 카드·표 행의 hover 효과는 `@media (hover: hover)` 안에 있고, 새로 넣는 hover도 거기에 둔다. 그 밖의 `:hover`(사이드바 링크, Streamlit 위젯, 영웅·패치 링크, TOP 4 순환 정지)는 블록 밖에 있다.
 - 터치는 `:active` 눌림 피드백을 쓰고, TOP 4는 터치에서 자동 순환 대신 스와이프다.
 - 사이드바 펼침 여부는 `[data-testid="stSidebar"][aria-expanded]`로 판단한다.
 
@@ -88,7 +88,7 @@
 ## 검증
 
 UI를 고치면 폰 390×844(터치), 아이패드 820×1180 사이드바 펼침·접힘, 1180×820, PC 1440×900에서 본다.
-`scripts/ui_check.py`가 헤드리스 Chrome으로 요소 위치·가로 넘침·터치 동작을 잰다. 서버를 띄운 뒤 다른 셸에서 돌린다:
+`scripts/ui_check.py`가 헤드리스 Chrome으로 요소 위치·가로 넘침·터치 동작을 잰다. `websocket-client`가 필요한데 앱 의존성이 아니라 `requirements.txt`에 없다(새 venv면 `.venv/bin/pip install websocket-client`). 서버를 띄운 뒤 다른 셸에서 돌린다:
 
 ```bash
 OW2_LOCAL_DATA=1 .venv/bin/python -m streamlit run main.py --server.port 8599 --server.headless true
@@ -119,3 +119,15 @@ OW2_LOCAL_DATA=1 .venv/bin/python -m streamlit run main.py --server.port 8599 --
 - 종합 1위 HERO 카드와 TOP 4 사이에 있던 1위 영웅의 전장 카드 4장을 지웠다. 1위 한 명에 대한 내용이 다른 영웅 TOP 4에 끊겨 어색했고, 같은 내용이 영웅 상세 "전장별 승률"에 있다.
 - 메인 흐름은 HERO(1명) → TOP 4 → 전체 순위(53명)다. `render_map_cards`·`.map-*` CSS·`ui_check.py`의 `maps` 측정도 같이 지웠다.
 - `checkpoint-2026-09-30`으로 되돌리면 이 카드가 돌아온다.
+
+### 2026-10-12 특전 출처를 owperks에서 블리자드 공식(OverFast 경유)으로
+
+- owperks의 특전 %는 게임 픽률이 아니라 그 사이트 방문자 투표였고, owperks 약관이 재배포를 금지한다. 출처 표시도 없이 게임 픽률처럼 보이고 있었다.
+- 특전 이름·설명·아이콘은 OverFast `/heroes/{key}?locale=ko-kr`에서 받는다(블리자드 영웅 페이지 내용). 바꾸기 전 owperks 데이터와 이름·설명이 모두 같았다. %는 공식 출처가 없어 뺐다.
+- 영웅 상세 특전 카드는 %·막대·툴팁을 없애고 설명을 카드에 바로 보인다. 툴팁용 `:has` 쌓임 순서 규칙과 900px 미디어쿼리도 지웠다.
+- `update.py`에서 Selenium을 쓰던 곳이 특전 수집 하나뿐이라 `requirements.txt`의 `selenium`·`webdriver-manager`, 데이터 갱신 워크플로의 webdriver 캐시 단계, `DRIVER_*` 환경변수를 지웠다. keep-alive 워크플로는 selenium을 따로 설치해 쓰므로 영향이 없다.
+- 사이드바 고지의 "Overwatch Wiki (CC BY-NC-SA)"를 고쳤다. 위키의 CC 라이선스는 글에만 붙고 영웅 렌더 파일은 블리자드 저작물로 분류된다.
+- 유지보수 메모:
+  - 수집은 통계 영웅이 하나라도 빠지거나 특전이 2+2가 아니면 저장하지 않는다. 화면에 특전이 안 바뀌면 Actions 로그의 "특전 수집 실패"를 본다. 새 영웅은 `role_dict`에 넣어야 수집된다.
+  - 키 그림 빈칸(`PERK_KEY_FIXES`)은 손으로 채우는 표다. 로그에 "키 그림 빈칸" 경고가 보이면 블리자드 영웅 페이지에서 그림이 왼쪽/오른쪽 버튼인지 보고 한 줄 추가한다.
+

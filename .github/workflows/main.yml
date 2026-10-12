@@ -31,19 +31,14 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Clear webdriver-manager cache
-        run: |
-          rm -rf ~/.wdm .wdm
-      
-      - name: Run update.py (Stats + Perk Crawler)
+      - name: Run update.py (Stats + Perks + Patch notes)
         env:
           TASK_RETRIES: "4"
-          DRIVER_PAGE_LOAD_TIMEOUT: "90"
         run: python update.py --mode all
         #
         # 주요 산출물:
         # - data/latest/latest_tier.parquet (최신)
-        # - data/latest/latest_perks.parquet (최신 퍼크)
+        # - data/latest/latest_perks.parquet (최신 특전, 블리자드 공식 내용을 OverFast 로)
         # - data/history/weekly/year=YYYY/week=WW/tier_snapshot.parquet (주간)
       
       - name: Configure Git
