@@ -89,6 +89,7 @@
     ├── latest/
     │   ├── latest_tier.parquet
     │   ├── latest_perks.parquet
+    │   ├── heroes.json
     │   └── rank_diagnostics.json
     ├── history/
     │   ├── daily/year=YYYY/month=MM/tier_snapshot.parquet
@@ -113,7 +114,7 @@
 - `.github/workflows/main.yml`: 매일 데이터를 갱신해 커밋하는 GitHub Actions 워크플로입니다.
 - `.github/workflows/keep-alive.yml`: 6시간마다 `scripts/keep_alive.py`로 배포 앱을 방문해 잠들지 않게 합니다.
 - `scripts/ui_check.py`: 헤드리스 Chrome으로 기기별 레이아웃과 터치 동작을 재는 UI 검증 스크립트입니다.
-- `scripts/fetch_hero_art.py`, `scripts/extract_hero_colors.py`: 영웅 아트와 대표색을 만드는 빌드 타임 스크립트입니다.
+- `scripts/fetch_hero_art.py`, `scripts/extract_hero_colors.py`: 영웅 아트와 대표색을 만드는 빌드 타임 스크립트입니다. 2026-10 현재 위키 이미지 서버가 다른 사이트에서 온 요청(Referer 없음)을 403으로 막아 `fetch_hero_art.py`로 새 렌더를 받을 수 없습니다. `extract_hero_colors.py`는 커밋된 색 파일(2026-08-17, 예전 컷아웃 기준)과 다른 값을 내므로 전체를 다시 돌리지 않습니다. 새 영웅은 CLAUDE.md 작업 기록 "독트린 등록"의 방법을 따릅니다.
 - `scripts/LOCAL_AI_PATCH_AUTOMATION.md`: 로컬 Ollama 기반 패치 분석 자동화 운영 문서입니다.
 
 ---
@@ -186,6 +187,7 @@ python update.py --mode perks
 저장 결과:
 
 - `data/latest/latest_perks.parquet`
+- `data/latest/heroes.json`: 영웅마다 통계와 같은 한글 이름, OverFast key, 역할, 하위 역할, 초상화 URL. 화면의 초상화·하위 역할은 이 파일을, 배너 아트·영웅색은 이 key로 `hero_art_manifest.json`·`hero_colors.json`을 찾습니다. 그래서 역할 변경이나 새 영웅에 손으로 고칠 표가 없습니다(배너 아트만 따로 만든다).
 
 OverFast에서 영웅 목록과 영웅별 특전을 받습니다(요청 약 55번). 통계 영웅이 하나라도 빠지거나 특전이 마이너 2·메이저 2가 아니면 저장하지 않고 직전 파일을 둡니다. 블리자드 페이지가 마우스 그림으로 그리는 키("[기본 발사]")는 OverFast에서 빈칸이 되므로 `update.py`의 `PERK_KEY_FIXES`로 채웁니다. 표에 없는 빈칸은 실행 로그에 경고만 남습니다.
 

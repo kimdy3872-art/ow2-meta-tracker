@@ -1,5 +1,5 @@
 """특전 수집(OverFast 응답 → 행) 셀프 체크. `python3 test_perks.py` 또는 pytest 로 실행."""
-from update import build_perk_rows, role_dict
+from update import build_hero_rows, build_perk_rows, role_dict
 
 
 def perk(name, description="설명"):
@@ -56,8 +56,17 @@ def test_incomplete_data_is_rejected():
     assert raises(heroes + [{"key": "dup", "name": "아나"}], dict(details, dup=details[ana]))  # 이름이 겹친다
 
 
+def test_hero_rows_use_stats_names():
+    heroes = [{"key": "dva", "name": "D.Va", "role": "tank", "subrole": "initiator", "portrait": "p"},
+              {"key": "doctrine", "name": "독트린", "role": "support", "subrole": "survivor"}]
+    rows = build_hero_rows(heroes)
+    assert rows[0] == {"hero": "D.VA", "key": "dva", "role": "Tank", "subrole": "initiator", "portrait": "p"}, rows
+    assert rows[1]["hero"] == "독트린" and rows[1]["role"] == "Support" and rows[1]["portrait"] == ""
+
+
 if __name__ == "__main__":
     test_rows_keep_official_order_and_names()
     test_key_icon_gap_is_filled()
     test_incomplete_data_is_rejected()
+    test_hero_rows_use_stats_names()
     print("ok")

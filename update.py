@@ -102,6 +102,8 @@ HISTORY_DIR = os.path.join(DATA_DIR, "history")
 
 LATEST_STATS_PATH = os.path.join(LATEST_DIR, "latest_tier.parquet")
 LATEST_PERKS_PATH = os.path.join(LATEST_DIR, "latest_perks.parquet")
+# 화면이 쓰는 영웅 정보(key·역할·하위 역할·초상화). 특전 수집이 받는 OverFast 영웅 목록을 그대로 둔다.
+HEROES_PATH = os.path.join(LATEST_DIR, "heroes.json")
 RANK_DIAGNOSTICS_PATH = os.path.join(LATEST_DIR, "rank_diagnostics.json")
 WEEKLY_HISTORY_ROOT = os.path.join(HISTORY_DIR, "weekly")
 DAILY_HISTORY_ROOT = os.path.join(HISTORY_DIR, "daily")
@@ -1824,6 +1826,25 @@ def fetch_overfast(path):
             time.sleep(attempt * 2)
 
 
+def overfast_hero_name(hero):
+    """OverFast 한글 이름을 통계 표기로. role_dict 에 아직 없는 새 영웅은 OverFast 이름 그대로."""
+    return normalize_hero_name(hero.get("name")) or str(hero.get("name") or "").strip()
+
+
+def build_hero_rows(heroes):
+    return [
+        {
+            "hero": overfast_hero_name(hero),
+            "key": hero["key"],
+            "role": str(hero.get("role") or "").title(),
+            "subrole": hero.get("subrole") or "",
+            "portrait": hero.get("portrait") or "",
+        }
+        for hero in heroes
+        if overfast_hero_name(hero)
+    ]
+
+
 def build_perk_rows(heroes, details, update_date):
     """OverFast 영웅 목록과 영웅별 상세에서 특전 행을 만든다. 공식 순서(마이너 2·메이저 2)를 지킨다.
 
@@ -1833,7 +1854,7 @@ def build_perk_rows(heroes, details, update_date):
     """
     rows, seen = [], set()
     for hero in heroes:
-        name = normalize_hero_name(hero.get("name")) or str(hero.get("name") or "").strip()
+        name = overfast_hero_name(hero)
         if not name:
             continue
         if name in seen:
@@ -1882,6 +1903,8 @@ def run_perk_update():
 
     df = pd.DataFrame(rows)
     save_parquet(df, LATEST_PERKS_PATH)
+    # 영웅 목록은 특전 검증(통계 영웅 전부, 이름 겹침 없음)을 통과했을 때만 같이 바꾼다.
+    save_json_list(build_hero_rows(heroes), HEROES_PATH)
     print(f"✅ 특전 {len(df)}개 저장 (영웅 {df['hero'].nunique()}명, {int(time.time() - started_at)}초)")
 
 

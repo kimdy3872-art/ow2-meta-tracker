@@ -144,5 +144,14 @@ OW2_LOCAL_DATA=1 .venv/bin/python -m streamlit run main.py --server.port 8599 --
 - 손으로 들고 있던 표는 옛 분류였다: `update.py`의 `role_dict`(공격 → 지원, 독트린도 추가), `app_data.py`의 `HERO_SUBROLES`(수색가 → 전술가). 특전 파일의 `role` 열은 읽는 곳이 없어 뺐다.
 - 영웅 추이의 역할 필터가 행마다 역할로 걸러서, 지원에서는 10/7 이후만, 공격에서는 그 전만 보였다. 지금 역할로 영웅을 고르고 추이는 전체 기록을 보이게 고쳤다. 역할이 바뀐 영웅은 차트 위에 "그 전 랭크·종합 점수는 다른 비교군 값"이라는 안내가 뜬다. 공격 필터에서는 솜브라의 공격 시절 기록을 볼 수 없다(전체 포지션에서 본다).
 - 날짜를 넘어 (영웅, 역할)로 묶는 곳은 역할이 바뀐 날 전후가 이어지지 않는다: 진단 리포트의 지속성(`build_recent_persistence_frame`)·walk-forward, 메인 "최근 변동"(`load_score_deltas`, 비교 기준일이 10/7 이전이면 지원 z와 공격 z를 뺀다). 지속성은 진단용이고 최근 변동의 기준일은 지금 10/11이라 화면에는 영향이 없다.
-- 유지보수 메모: 영웅 역할이 바뀌면 `role_dict`와 `HERO_SUBROLES`를 고친다. OverFast `/heroes?locale=ko-kr`의 `role`·`subrole`과 대조하면 어긋난 영웅이 바로 나온다.
+- 같은 날 독트린 등록에서 `HERO_SUBROLES`를 없앴다(아래). 역할·하위 역할은 이제 손으로 고치지 않는다.
+
+### 2026-10-12 독트린 등록 + 영웅 정보를 OverFast 목록에서
+
+- 특전 수집이 받는 OverFast `/heroes?locale=ko-kr`를 `data/latest/heroes.json`(한글 이름·key·역할·하위 역할·초상화)으로 저장한다. 특전 검증을 통과했을 때만 바뀐다.
+- `app_data.py`의 손 표 `HERO_NAME_TO_API_NAME`·`HERO_PORTRAIT_FALLBACKS`·`HERO_SUBROLES`와 앱이 매번 OverFast를 부르던 초상화 조회를 지웠다. 초상화·하위 역할은 `heroes.json`에서, 배너 아트·영웅색은 그 key로 찾는다. 바꾸기 전후로 기존 53명의 초상화 URL·배너·영웅색·하위 역할이 모두 같았다.
+- 독트린 배너는 공식 스플래시만 쓴다(매니페스트 `use_cutout: false`, 영웅색은 스플래시에서 뽑았다). 다른 영웅처럼 위키 전신 렌더를 쓰려면 위키 이미지 서버에 Referer를 위키로 꾸며 보내야 해서(핫링크 차단 우회) 하지 않았다. 블리자드 공식 페이지의 렌더(`*_Beauty_Individual_*.png`)는 배경이 있는 장면이라 컷아웃으로 쓸 수 없다.
+- 새 영웅 등록 순서(유지보수 메모):
+  1. `update.py`의 `role_dict`에 넣는다. 패치노트 영향 영웅·AI 분석의 이름 매칭(`VALID_HERO_NAMES`)이 이 표를 쓴다. 특전·초상화·하위 역할은 넣지 않아도 다음 수집부터 나온다.
+  2. 배너: OverFast `/heroes/{key}`의 `backgrounds`에서 960/1600/2600 스플래시를 골라 매니페스트에 `{name, role, portrait, splash, focal_x, use_cutout: false}`로 넣는다. `focal_x`는 `fetch_hero_art.focal_x(2600 스플래시)`, 영웅색은 `extract_hero_colors.dominant(스플래시)`를 `hero_colors.json`에 그 key로 한 줄 추가한다(파일 전체를 다시 만들지 않는다).
 

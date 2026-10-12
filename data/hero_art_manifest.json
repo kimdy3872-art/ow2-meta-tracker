@@ -1217,5 +1217,17 @@
    "gamma": 0.856
   },
   "use_cutout": true
+ },
+ "doctrine": {
+  "name": "Doctrine",
+  "role": "support",
+  "portrait": "https://d15f34w2p8l1cc.cloudfront.net/overwatch/2492a15c575c12314907d0d77501ec337b4d56796bc7f03e5dfb50d415612bae.png",
+  "splash": {
+   "960": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/bltf2009430b552e546/6abad4e232e6028d85c0e018/960_Doctrine.png",
+   "1600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt60e3b23836c0509c/6abad4e34b66aa427191d5f6/1600_Doctrine.png",
+   "2600": "https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt0ff02d55e4888ba7/6abad4e33ad392cc8b6f9279/2600_Doctrine.png"
+  },
+  "focal_x": 0.719,
+  "use_cutout": false
  }
 }
