@@ -150,8 +150,15 @@ OW2_LOCAL_DATA=1 .venv/bin/python -m streamlit run main.py --server.port 8599 --
 
 - 특전 수집이 받는 OverFast `/heroes?locale=ko-kr`를 `data/latest/heroes.json`(한글 이름·key·역할·하위 역할·초상화)으로 저장한다. 특전 검증을 통과했을 때만 바뀐다.
 - `app_data.py`의 손 표 `HERO_NAME_TO_API_NAME`·`HERO_PORTRAIT_FALLBACKS`·`HERO_SUBROLES`와 앱이 매번 OverFast를 부르던 초상화 조회를 지웠다. 초상화·하위 역할은 `heroes.json`에서, 배너 아트·영웅색은 그 key로 찾는다. 바꾸기 전후로 기존 53명의 초상화 URL·배너·영웅색·하위 역할이 모두 같았다.
-- 독트린 배너는 공식 스플래시만 쓴다(매니페스트 `use_cutout: false`, 영웅색은 스플래시에서 뽑았다). 다른 영웅처럼 위키 전신 렌더를 쓰려면 위키 이미지 서버에 Referer를 위키로 꾸며 보내야 해서(핫링크 차단 우회) 하지 않았다. 블리자드 공식 페이지의 렌더(`*_Beauty_Individual_*.png`)는 배경이 있는 장면이라 컷아웃으로 쓸 수 없다.
+- 독트린 배너는 공식 스플래시만 쓴다(영웅색도 스플래시에서 뽑았다). 같은 날 모든 영웅을 스플래시로 통일했다(아래). 다른 영웅처럼 위키 전신 렌더를 쓰려면 위키 이미지 서버에 Referer를 위키로 꾸며 보내야 해서(핫링크 차단 우회) 하지 않았다. 블리자드 공식 페이지의 렌더(`*_Beauty_Individual_*.png`)는 배경이 있는 장면이라 컷아웃으로 쓸 수 없다.
 - 새 영웅 등록 순서(유지보수 메모):
   1. `update.py`의 `role_dict`에 넣는다. 패치노트 영향 영웅·AI 분석의 이름 매칭(`VALID_HERO_NAMES`)이 이 표를 쓴다. 특전·초상화·하위 역할은 넣지 않아도 다음 수집부터 나온다.
-  2. 배너: OverFast `/heroes/{key}`의 `backgrounds`에서 960/1600/2600 스플래시를 골라 매니페스트에 `{name, role, portrait, splash, focal_x, use_cutout: false}`로 넣는다. `focal_x`는 `fetch_hero_art.focal_x(2600 스플래시)`, 영웅색은 `extract_hero_colors.dominant(스플래시)`를 `hero_colors.json`에 그 key로 한 줄 추가한다(파일 전체를 다시 만들지 않는다).
+  2. 배너·영웅색: `.venv/bin/python scripts/fetch_hero_art.py <OverFast key>`. 매니페스트에 스플래시 주소·`focal_x`를 넣고, `hero_colors.json`에 색이 없으면 한 줄 추가한다.
 
+### 2026-10-12 배너 아트를 공식 스플래시로 통일
+
+- 메인 종합 1위 카드·영웅 상세 상단 카드·영웅 추이 세로 카드가 위키 전신 렌더 컷아웃 대신 독트린처럼 블리자드 공식 스플래시를 카드 배경으로 쓴다(TOP 4 카드는 원래 스플래시). 사용자가 독트린 카드가 더 자연스럽다고 해서 통일했다.
+- `get_hero_banner_art`는 `{splash_url, focal_x}`만 돌려준다. 컷아웃 `<img>` 분기, `.hero-showcase-art`·림라이트 CSS, `ui_check.py`의 글자·아트 겹침 측정을 지웠다.
+- 블리자드 그림을 고친 복사본을 공개 저장소에 두지 않도록 `static/hero_art/` 53장(6MB)을 지웠다. 과거 커밋에는 남아 있다(기록을 다시 쓰지 않는다).
+- `fetch_hero_art.py`는 위키 렌더·밝기 보정을 빼고 매니페스트(스플래시 주소·`focal_x`)와 빠진 영웅색만 만든다. `extract_hero_colors.py`는 합쳐서 지웠다. 매니페스트의 `art_source`·`cutout_*`·`luma`·`use_cutout`도 지웠다. 새 스크립트로 독트린을 다시 돌려 `focal_x`·색이 그대로 나오는 것을 확인했다.
+- 54명 스플래시를 같은 잘림 계산으로 모아 봤고, 인물이 가운데에 가까운 라이프위버·일리아리·한조도 PC·폰에서 숫자와 겹치지 않았다.

@@ -65,7 +65,6 @@
 │   ├── hero_colors.json
 │   └── ranks/
 ├── static/
-│   ├── hero_art/
 │   └── map_art/
 ├── .streamlit/config.toml
 ├── update.py
@@ -81,7 +80,6 @@
 │   ├── ui_check.py
 │   ├── keep_alive.py
 │   ├── fetch_hero_art.py
-│   ├── extract_hero_colors.py
 │   ├── LOCAL_AI_PATCH_AUTOMATION.md
 │   ├── com.da.overwatch.ai-patch.plist
 │   └── run_local_ai_patch_update.sh
@@ -106,7 +104,7 @@
 - `pages/*.py`: Streamlit 멀티페이지 화면입니다.
 - `app_data.py`: 대시보드에서 쓰는 데이터 로딩, 라벨 번역, 영웅/맵 이미지 URL 보조 함수가 모여 있습니다.
 - `ui/`: UI 패키지입니다. 팔레트, CSS 주입, 페이지 셸, HTML 카드, 전역 필터, 뱃지, Plotly 테마를 정의합니다. 구조와 디자인·반응형 규칙은 `CLAUDE.md`에 있습니다.
-- `assets/style.css`: 대시보드 스타일시트입니다. `assets/ranks/`는 티어·포지션 아이콘, `static/`은 영웅·전장 아트입니다.
+- `assets/style.css`: 대시보드 스타일시트입니다. `assets/ranks/`는 티어·포지션 아이콘, `static/map_art/`는 OverFast에 아직 스크린샷이 없는 전장 이미지입니다.
 - `update.py`: 경쟁전 통계, 특전, 패치노트, 패치 AI 분석을 수집/가공/저장하는 핵심 배치 스크립트입니다.
 - `test_sample_size.py`: 표본 크기 추정·보정 셀프 체크입니다. `python test_sample_size.py`로 실행합니다.
 - `test_map_heroes.py`: 전장별 영웅 선정 셀프 체크입니다. `python test_map_heroes.py`로 실행합니다.
@@ -114,7 +112,7 @@
 - `.github/workflows/main.yml`: 매일 데이터를 갱신해 커밋하는 GitHub Actions 워크플로입니다.
 - `.github/workflows/keep-alive.yml`: 6시간마다 `scripts/keep_alive.py`로 배포 앱을 방문해 잠들지 않게 합니다.
 - `scripts/ui_check.py`: 헤드리스 Chrome으로 기기별 레이아웃과 터치 동작을 재는 UI 검증 스크립트입니다.
-- `scripts/fetch_hero_art.py`, `scripts/extract_hero_colors.py`: 영웅 아트와 대표색을 만드는 빌드 타임 스크립트입니다. 2026-10 현재 위키 이미지 서버가 다른 사이트에서 온 요청(Referer 없음)을 403으로 막아 `fetch_hero_art.py`로 새 렌더를 받을 수 없습니다. `extract_hero_colors.py`는 커밋된 색 파일(2026-08-17, 예전 컷아웃 기준)과 다른 값을 내므로 전체를 다시 돌리지 않습니다. 새 영웅은 CLAUDE.md 작업 기록 "독트린 등록"의 방법을 따릅니다.
+- `scripts/fetch_hero_art.py`: 배너 아트 매니페스트와 영웅색을 만드는 빌드 타임 스크립트입니다. OverFast가 알려 주는 블리자드 공식 스플래시 주소와 인물 위치(`focal_x`)를 `data/hero_art_manifest.json`에 적고, 색이 없는 영웅만 `assets/hero_colors.json`에 대표색을 추가합니다. 이미지 파일은 저장소에 두지 않고 화면이 블리자드 CDN에서 바로 불러옵니다. 새 영웅은 `python scripts/fetch_hero_art.py <key>` 한 번이면 됩니다.
 - `scripts/LOCAL_AI_PATCH_AUTOMATION.md`: 로컬 Ollama 기반 패치 분석 자동화 운영 문서입니다.
 
 ---

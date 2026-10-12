@@ -669,7 +669,7 @@ h1.ow-page-title {
 .hero-showcase-card {
     position: relative;
     display: block;
-    /* 전신 렌더가 contain 으로 다 들어가려면 세로 여유가 필요하다 */
+    /* 스플래시 인물이 잘리지 않을 만큼 세로 여유를 둔다 */
     min-height: 360px;
     padding: 28px 32px;
     border-radius: var(--r-hero);
@@ -682,33 +682,6 @@ h1.ow-page-title {
     text-decoration: none !important;
     transition: border-color 0.25s ease;
     animation: rise 0.6s var(--ease) backwards;
-}
-
-/* 전신 렌더는 배경이 아니라 카드 안쪽 <img> 레이어다. drop-shadow 림라이트가 실루엣을
-   따라가려면 알파를 가진 자기 박스가 필요하다. 카드가 overflow:hidden 이라 밖으로 새지 않는다. */
-.hero-showcase-art {
-    position: absolute;
-    right: 3%;
-    top: 0;
-    bottom: 0;
-    width: 46%;
-    height: 100%;
-    z-index: 1;
-    object-fit: contain;
-    object-position: right bottom;
-    pointer-events: none;
-    -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 14%);
-    mask-image: linear-gradient(to right, transparent 0%, #000 14%);
-    transition: transform 0.7s var(--ease);
-    animation: art-in 0.9s 0.1s var(--ease) backwards;
-}
-
-/* 어두운 영웅은 대표색도 어둡다. --hero-glow 는 components._glow 가 밝혀서 넘긴다 */
-.hero-showcase-art,
-.portrait-card-art {
-    filter:
-        drop-shadow(0 0 26px var(--hero-glow, rgba(249, 158, 26, 0.35)))
-        drop-shadow(0 18px 24px rgba(0, 0, 0, 0.5));
 }
 
 .hero-showcase-left {
@@ -1703,14 +1676,9 @@ a.hero-link:hover { color: var(--accent) !important; }
 .portrait-card-art {
     position: absolute;
     inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    object-position: bottom center;
+    background-size: cover;
     animation: fade-in 0.8s 0.15s var(--ease) backwards;
 }
-
-.portrait-card-art.bg { background-size: cover; }
 
 .portrait-card-body {
     position: absolute;
@@ -1919,7 +1887,6 @@ a.hero-link:hover { color: var(--accent) !important; }
 
 @keyframes rise { from { opacity: 0; transform: translateY(8px); } }
 @keyframes fade-in { from { opacity: 0; } }
-@keyframes art-in { from { opacity: 0; transform: translateX(28px); } }
 @keyframes grow { from { transform: scaleX(0); } }
 @keyframes row-in { from { opacity: 0; transform: translateY(4px); } }
 
@@ -1994,7 +1961,6 @@ a.hero-link:hover { color: var(--accent) !important; }
 }
 
 @container hero (max-width: 760px) {
-    .hero-showcase-art { width: 50%; right: 0; }
     .hero-showcase-left { max-width: 62%; }
 }
 
@@ -2083,7 +2049,6 @@ a.hero-link:hover { color: var(--accent) !important; }
 
 @media (hover: hover) {
     a.hero-showcase-card:hover { border-color: var(--line-2); }
-    a.hero-showcase-card:hover .hero-showcase-art { transform: translateX(-6px) scale(1.015); }
     a.hero-showcase-card:hover .hero-showcase-cta {
         background: var(--accent);
         border-color: var(--accent);

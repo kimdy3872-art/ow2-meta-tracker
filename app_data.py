@@ -470,7 +470,7 @@ HERO_COLORS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
 
 @st.cache_data(show_spinner=False)
 def load_hero_colors():
-    """영웅 대표색. scripts/extract_hero_colors.py 가 만든다."""
+    """영웅 대표색. scripts/fetch_hero_art.py 가 만든다."""
     try:
         with open(HERO_COLORS_PATH, encoding="utf-8") as fp:
             return json.load(fp)
@@ -499,22 +499,17 @@ def load_hero_art_manifest():
 def get_hero_banner_art(hero_name):
     """히어로 배너에 쓸 아트 정보. 없으면 None.
 
-    반환: {"cutout_url", "splash_url", "focal_x", "use_cutout"}
-    use_cutout 이 False 인 영웅(배경 제거 실패)은 컷아웃 없이 스플래시 아트만 쓴다.
+    반환: {"splash_url", "focal_x"}. 블리자드 공식 영웅 페이지의 배경 스플래시를
+    블리자드 CDN 에서 그대로 불러온다(우리 쪽에 복사본을 두지 않는다).
     """
     entry = load_hero_art_manifest().get(_hero_meta(hero_name).get("key"))
     if not entry:
         return None
 
     splash = entry.get("splash") or {}
-    use_cutout = bool(entry.get("use_cutout")) and bool(entry.get("cutout_path"))
-    # Streamlit Cloud 는 /app/static/... 절대 경로를 앱 셸이 가로채 이미지 대신 HTML 을
-    # 돌려준다. 데이터와 같은 GitHub raw 경로로 읽으면 로컬/배포 모두 동일하게 동작한다.
     return {
-        "cutout_url": _remote_url(entry["cutout_path"]) if use_cutout else None,
         "splash_url": splash.get("2600") or splash.get("1600") or splash.get("960"),
         "focal_x": entry.get("focal_x", 0.7),
-        "use_cutout": use_cutout,
     }
 
 

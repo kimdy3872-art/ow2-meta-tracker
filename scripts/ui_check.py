@@ -224,14 +224,6 @@ MEASURE = r"""
     if (fs < 12 && el.getBoundingClientRect().width > 0) { tiny++; if (tinyEx.size < 6) tinyEx.add(`${el.className.toString().split(' ')[0] || el.tagName}:${fs}px`); }
   }
   out.tinyText = {count: tiny, examples: [...tinyEx]};
-  const L = document.querySelector('.hero-showcase-left'), A = document.querySelector('.hero-showcase-art');
-  if (L && A) {
-    const a = L.getBoundingClientRect(), b = A.getBoundingClientRect();
-    const ix = Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left));
-    const iy = Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
-    out.heroTextArtOverlap = Math.round(100 * ix * iy / (a.width * a.height)) + '% of text column';
-    out.heroArtWidth = Math.round(b.width);
-  }
   const ta = [...document.querySelectorAll('[data-testid=stPlotlyChart] *')].filter(e => getComputedStyle(e).touchAction === 'none');
   out.touchActionNone = ta.length ? Math.round(Math.max(...ta.map(e => e.getBoundingClientRect().width * e.getBoundingClientRect().height)) / (vw * vh) * 100) + '% of viewport (largest)' : 'none';
   const res = performance.getEntriesByType('resource');

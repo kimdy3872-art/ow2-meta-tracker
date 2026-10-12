@@ -257,7 +257,6 @@ def render_hero_showcase(
     아트는 그 안쪽 레이어라 밖으로 새지 않는다. href 가 있으면 카드 전체가 링크다.
     """
     art = art or {}
-    cutout = art.get("cutout_url")
     splash = art.get("splash_url")
     focal = art.get("focal_x") or 0.66
 
@@ -268,25 +267,10 @@ def render_hero_showcase(
     scrim = ("linear-gradient(90deg, rgba(11,12,16,0.94) 0%, "
              "rgba(11,12,16,0.7) 38%, transparent 70%)")
     bg_style = f"background-image:{scrim},{base};background-size:cover,cover,cover;"
-    art_html = ""
 
-    if cutout:
-        # 아트는 카드 배경 레이어가 아니라 독립 <img> 다. drop-shadow 림라이트가
-        # 실루엣을 따라가려면 알파를 가진 자기 박스가 필요하고, 카드 배경으로 두면
-        # 필터가 카드 전체에 걸려 텍스트까지 번진다.
-        #
-        # D-4("아트를 <img> 로 카드 밖에 띄우지 않는다")의 우려는 카드 밖 삐져나옴
-        # 이었다. 이 <img> 는 카드 *안쪽* absolute 이고 카드가 overflow:hidden 이라
-        # 그 우려는 발생하지 않는다.
-        art_html = (
-            f"<img class='hero-showcase-art' alt='' aria-hidden='true' "
-            f"style=\"--hero-glow:{_glow(accent)}\" "
-            f"onerror=\"this.style.display='none'\" "
-            f"src='{html.escape(str(cutout), quote=True)}'>"
-        )
-    elif splash:
-        # 컷아웃이 없는 영웅만 스플래시로 대체한다. 이때는 인물 위치를 모르므로
-        # focal_x 로 초점을 우측으로 당긴다.
+    if splash:
+        # 공식 스플래시(배경이 있는 장면)를 카드 배경으로 깐다. 인물 위치는
+        # focal_x 로 오른쪽에 맞추고, 왼쪽 글자 칸은 scrim 이 어둡게 덮는다.
         safe = html.escape(str(splash), quote=True)
         pos = f"{min(max(focal * 100, 55), 88):.0f}% 26%"
         bg_style = (f"background-image:{scrim},url('{safe}'),{base};"
@@ -318,7 +302,6 @@ def render_hero_showcase(
         _one_line(f"""
         <section class="hero-showcase">
             <{tag} class="hero-showcase-card"{link_attrs} style="{bg_style}">
-                {art_html}
                 <div class="hero-showcase-left">
                     <span class="hero-showcase-eyebrow">{html.escape(eyebrow)}</span>
                     <div class="hero-showcase-title">
@@ -403,17 +386,10 @@ def render_hero_portrait_card(hero_name: str, art: dict | None, accent: str, cap
     """영웅 추이 페이지 상단 좌측의 영웅 세로 카드."""
     art = art or {}
     inner = ""
-    if art.get("cutout_url"):
-        inner = (
-            f"<img class='portrait-card-art' alt='' aria-hidden='true' "
-            f"style='--hero-glow:{_glow(accent)}' "
-            f"onerror=\"this.style.display='none'\" "
-            f"src='{html.escape(art['cutout_url'], quote=True)}'>"
-        )
-    elif art.get("splash_url"):
+    if art.get("splash_url"):
         pos = min(max(float(art.get("focal_x") or 0.66) * 100, 55), 88)
         inner = (
-            f"<div class='portrait-card-art bg' style=\"background-image:url('"
+            f"<div class='portrait-card-art' style=\"background-image:url('"
             f"{html.escape(art['splash_url'], quote=True)}');background-position:{pos:.0f}% 26%;\"></div>"
         )
     cap = f"<div class='portrait-card-cap nowrap'>{html.escape(caption)}</div>" if caption else ""
