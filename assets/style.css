@@ -997,69 +997,9 @@ h2.hero-showcase-name {
    8. 전장 카드
    =========================================================================== */
 
-.map-wrap { container: maps / inline-size; }
-
-.map-grid {
-    display: grid;
-    margin-top: 10px;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 12px;
-    animation: rise 0.6s 0.16s var(--ease) backwards;
-}
-
-.map-card {
-    position: relative;
-    min-height: 118px;
-    border-radius: 10px;
-    overflow: hidden;
-    border: 1px solid var(--line);
-    background: var(--surface);
-    transition: transform 0.25s var(--ease), border-color 0.25s ease;
-}
-
-.map-card-art {
-    position: absolute;
-    inset: 0;
-    background-size: cover;
-    background-position: center;
-    transition: transform 0.5s var(--ease);
-}
-
-.map-card-art::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(180deg, rgba(11, 12, 16, 0.04) 30%, rgba(11, 12, 16, 0.92) 100%);
-}
-
-.map-card-body {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    padding: 10px 12px 11px;
-}
-
-.map-card-name {
-    color: #fff;
-    font-size: 0.85rem;
-    font-weight: 600;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.map-card-metric {
-    color: var(--good);
-    font-size: 1.15rem;
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    line-height: 1.2;
-    margin-top: 2px;
-}
-
 /* 표본 부족 조합: 값은 보여주되 믿기 어렵다는 걸 흐림으로 드러낸다 */
-.map-card.dim,
-.hmap-card.dim { opacity: 0.45; }
+.hmap-card.dim,
+.mh-card.dim { opacity: 0.45; }
 
 .sample-note,
 .cell-warn {
@@ -1086,8 +1026,6 @@ h2.hero-showcase-name {
     background: var(--surface);
     overflow: hidden;
 }
-
-.mh-card.dim { opacity: 0.45; }
 
 .mh-head { position: relative; height: 64px; }
 
@@ -2170,15 +2108,11 @@ a.hero-link:hover { color: var(--accent) !important; }
     .hero-showcase-cta { margin-top: 16px; }
 }
 
-/* TOP 4 · 전장 카드: 한 장이 150px 아래로 줄면 2열 */
+/* TOP 4: 한 장이 150px 아래로 줄면 2열 */
 @container rot (max-width: 620px) {
     .ow-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
     .ow-card { height: 160px; }
     .rot-tabs { gap: 14px; }
-}
-
-@container maps (max-width: 620px) {
-    .map-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 }
 
 /* 영웅 추이 지표: 폰에서도 3칸 가로 유지(세로 3장은 448px 을 먹었다) */
@@ -2271,8 +2205,6 @@ a.hero-link:hover { color: var(--accent) !important; }
     a.hero-showcase-card:hover .hero-showcase-cta svg { transform: translateX(2px); }
     .ow-card:hover { transform: translateY(-3px); border-color: var(--line-2); }
     .ow-card:hover .ow-card-art { transform: scale(1.05); }
-    .map-card:hover { transform: translateY(-2px); border-color: var(--line-2); }
-    .map-card:hover .map-card-art { transform: scale(1.05); }
     .rail-row:hover { background: rgba(255, 255, 255, 0.04); }
     .overwatch-table tbody tr:hover,
     .overwatch-table tbody tr:hover td { background: rgba(255, 255, 255, 0.03); }
@@ -2287,7 +2219,6 @@ a.hero-link:hover { color: var(--accent) !important; }
 
 @media (hover: none) {
     .ow-card,
-    .map-card,
     a.hero-showcase-card,
     .rail-row,
     .overwatch-table tr,
@@ -2296,7 +2227,6 @@ a.hero-link:hover { color: var(--accent) !important; }
 
     a.hero-showcase-card { transition: transform 0.12s ease, border-color 0.25s ease; }
     .ow-card:active,
-    .map-card:active,
     a.hero-showcase-card:active { transform: scale(0.98); transition-duration: 0.12s; }
     a.hero-showcase-card:active .hero-showcase-cta {
         background: var(--accent);

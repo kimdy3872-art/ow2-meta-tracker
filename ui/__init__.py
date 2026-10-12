@@ -32,7 +32,6 @@ from .components import (  # noqa: F401
     render_hero_showcase,
     render_inline_nav,
     render_kpi_row,
-    render_map_cards,
     render_meta_score_card,
     render_page_footer,
     render_page_hero,

@@ -334,29 +334,6 @@ def render_hero_showcase(
     )
 
 
-def render_map_cards(cards, title: str = "") -> None:
-    """전장 카드. 표본 부족 조합은 흐리게 그린다. title 은 그리드 바로 위 라벨."""
-    items = []
-    for index, card in enumerate(cards):
-        cls = "map-card featured" if index == 0 else "map-card"
-        sample = str(card.get("sample") or "")
-        if sample == "표본 부족":
-            cls += " dim"
-        sample_html = f"<span class='sample-note'>{html.escape(sample)}</span>" if sample else ""
-        img = html.escape(str(card.get("image") or ""), quote=True)
-        items.append(
-            f"<div class='{cls}'>"
-            f"<div class='map-card-art' style=\"background-image:url('{img}');\"></div>"
-            f"<div class='map-card-body'>"
-            f"<div class='map-card-name nowrap'>{html.escape(str(card.get('name', '-')))}</div>"
-            f"<div class='map-card-metric nowrap'>{html.escape(str(card.get('metric', '-')))}{sample_html}</div>"
-            f"</div></div>"
-        )
-    head = f"<div class='eyebrow'>{html.escape(title)}</div>" if title else ""
-    st.markdown(f"<div class='map-wrap'>{head}<div class='map-grid'>{''.join(items)}</div></div>",
-                unsafe_allow_html=True)
-
-
 def meta_score_html(score, rank, hero_name) -> str:
     """META SCORE 카드. 종합 점수를 0~1000 으로 편 표시용 값."""
     return _one_line(f"""

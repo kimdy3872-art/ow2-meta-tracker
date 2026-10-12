@@ -190,7 +190,7 @@ MEASURE = r"""
   const vh = innerHeight, vw = innerWidth;
   const parts = {
     head: '.ow-page-head', search: '.st-key-search_hero', hero: '.hero-showcase-card',
-    carousel: '.rot-wrap', maps: '.map-grid', tableTitle: '.ow-section', table: '.table-wrap',
+    carousel: '.rot-wrap', tableTitle: '.ow-section', table: '.table-wrap',
     metaScore: '.meta-score-card', rankRail: '.ow-rail', firstExpander: '[data-testid=stExpander]',
     trendContext: '.trend-context', portrait: '.portrait-card', kpi: '.kpi-row', tabs: '.stTabs',
     perks: '.perk-card', mapCards: '.hmap-card', pills: '[data-testid=stPills]', mapHeroes: '.mh-grid',

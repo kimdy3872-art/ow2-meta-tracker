@@ -7,7 +7,6 @@ from app_data import (
     get_ordered_tiers,
     get_hero_banner_art,
     get_hero_color,
-    get_map_image_url,
     load_score_deltas,
     normalize_meta_score,
     get_hero_image_url,
@@ -35,7 +34,6 @@ from ui import (
     GLOBAL_TEXT_COLOR,
     render_rotating_card_groups,
     render_hero_showcase,
-    render_map_cards,
     filter_qs,
     meta_score_html,
     rail_rows_html,
@@ -416,32 +414,6 @@ else:
 _win_top4 = df_filtered[df_filtered["win_rate"].notna()].sort_values("win_rate", ascending=False).head(4)
 _pick_top4 = df_filtered[df_filtered["pick_rate"].notna()].sort_values("pick_rate", ascending=False).head(4)
 
-# 2차 지시서 D-2: 전역 라디오를 없애고 이 카드 안에서만 전환되는 탭으로 흡수.
-def _map_cards(hero_name, limit=4):
-    """전장별 승률 상위 카드. 전장 데이터가 없으면 빈 리스트.
-
-    순서는 표본 보정 승률로 정한다. 원래 승률로 줄 세우면 표본 부족 조합의 0%/100% 가 맨 위로 온다.
-    """
-    if "map" not in df_raw.columns:
-        return []
-    order_col = "shrunk_win_rate" if "shrunk_win_rate" in df_raw.columns else "win_rate"
-    rows = df_raw[
-        (df_raw["data_tier"] == selected_tier)
-        & (df_raw["hero"].astype(str) == str(hero_name))
-        & (df_raw["map"].astype(str) != "all-maps")
-        & (df_raw["win_rate"].notna())
-    ].sort_values(order_col, ascending=False).head(limit)
-    return [
-        {
-            "name": str(r.get("map_name") or r.get("map")),
-            "metric": f"{float(r['win_rate']):.1f}%",
-            "image": get_map_image_url(str(r["map"])),
-            "sample": r.get("sample_warning") if isinstance(r.get("sample_warning"), str) else "",
-        }
-        for _, r in rows.iterrows()
-    ]
-
-
 # 밴률 컬럼이 있으면 포함
 display_cols = ["hero", "role", "win_rate", "pick_rate", "ban_rate", "total_score", "score_strength", "pick_rate_warning", "rank"] if "ban_rate" in df_filtered.columns else ["hero", "role", "win_rate", "pick_rate", "total_score", "score_strength", "pick_rate_warning", "rank"]
 display_df = df_filtered.sort_values(
@@ -492,10 +464,6 @@ with _main_col:
             ("밴률", "ban_rate", _ban_top4, GLOBAL_DANGER_COLOR),
         ]
     ])
-
-    _maps = _map_cards(_top_hero)
-    if _maps:
-        render_map_cards(_maps, title=f"{_top_hero} · 승률 높은 전장")
 
     # 좁은 화면에서는 우측 레일이 53명 표 뒤(열 몇 화면 아래)로 밀려나 사실상 안 보였다.
     # 같은 카드를 표 위에 가로 스와이프 줄로 한 번 더 낸다. 레일 계산(최근 변동 로드)이
