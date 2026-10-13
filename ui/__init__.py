@@ -25,6 +25,7 @@ from .components import (  # noqa: F401
     _latest_data_date,
     icon_selectbox,
     meta_score_html,
+    patch_impact_html,
     rail_rows_html,
     rank_rail_html,
     render_rotating_card_groups,

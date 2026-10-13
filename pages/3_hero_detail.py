@@ -8,9 +8,11 @@ from app_data import (
     get_hero_color,
     get_hero_subrole,
     get_map_image_url,
+    load_daily_history,
     load_latest_balance_patch_note,
-    load_latest_patch_ai_analysis,
     load_latest_stats,
+    patch_impact,
+    short_date,
     read_data_parquet,
     translate_role_name,
     translate_subrole_name,
@@ -27,6 +29,7 @@ from ui import (
     GLOBAL_DANGER_COLOR,
     GLOBAL_WARN_COLOR,
     render_hero_showcase,
+    patch_impact_html,
     MINOR_PERK_COLOR,
 )
 
@@ -163,32 +166,24 @@ with left_col:
             unsafe_allow_html=True,
         )
 
-    balance_patch_note = load_latest_balance_patch_note()
-    patch_analysis = load_latest_patch_ai_analysis(balance_patch_note.get("id") if balance_patch_note else None)
-    hero_ai_rows = []
-    if patch_analysis:
-        for group_label, rows in [
-            ("직접 변경", patch_analysis.get("direct_hero_impacts") or []),
-            ("간접 영향", patch_analysis.get("indirect_hero_impacts") or []),
-        ]:
-            for row in rows:
-                if isinstance(row, dict) and str(row.get("hero")) == hero_name:
-                    hero_ai_rows.append((group_label, row))
-
-    if patch_analysis and hero_ai_rows:
-        phase = html.escape(str(patch_analysis.get("analysis_phase") or "관찰 단계"))
-        patch_title = html.escape(str((balance_patch_note or {}).get("title") or "최근 밸런스 패치"))
-        sentence = html.escape(str(hero_ai_rows[0][1].get("display_sentence") or hero_ai_rows[0][1].get("reason") or ""))
-        group_label = html.escape(hero_ai_rows[0][0])
-        st.markdown(
-            f'<div class="hero-ai-note">'
-            f'<div class="hero-ai-kicker">AI Hero Note</div>'
-            f'<div class="hero-ai-title">최근 밸런스 패치 요약 · {group_label}</div>'
-            f'<div class="hero-ai-meta">{patch_title} · {phase}</div>'
-            f'<div class="hero-ai-body">{sentence}</div>'
-            f'</div>',
-            unsafe_allow_html=True,
+    # 최근 밸런스 패치에서 이 영웅이 직접 바뀌었으면 패치 직전 기록과 지금을 비교해 보인다.
+    balance_patch_note = load_latest_balance_patch_note() or {}
+    if hero_name in (balance_patch_note.get("affected_heroes") or []):
+        patch_rows, patch_before, patch_state = patch_impact(
+            load_daily_history(), df_raw, balance_patch_note.get("patch_date"), [hero_name], selected_tier,
         )
+        # 새 집계 전·집계가 이어진 패치는 메인 패치 카드에서만 설명한다.
+        if patch_state == "ok":
+            st.markdown(
+                f'<div class="hero-patch-note">'
+                f'<div class="hero-patch-kicker">Balance Patch</div>'
+                f'<div class="hero-patch-title">최근 밸런스 패치 · 직접 변경</div>'
+                f'<div class="hero-patch-meta">{html.escape(str(balance_patch_note.get("title") or ""))} · '
+                f'{html.escape(translate_tier_name(selected_tier))} · 패치 직전({short_date(patch_before)}) → 지금</div>'
+                f'{patch_impact_html(patch_rows, link=False)}'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
 
     perk_rows = get_hero_perk_rows(hero_name)
 

@@ -9,9 +9,11 @@ from app_data import (
     get_hero_color,
     load_score_deltas,
     normalize_meta_score,
+    patch_impact,
+    short_date,
     get_hero_image_url,
+    load_daily_history,
     load_latest_balance_patch_note,
-    load_latest_patch_ai_analysis,
     load_latest_patch_note,
     load_latest_stats,
     translate_role_name,
@@ -35,6 +37,7 @@ from ui import (
     render_hero_showcase,
     filter_qs,
     meta_score_html,
+    patch_impact_html,
     rail_rows_html,
     rank_rail_html,
 )
@@ -62,15 +65,12 @@ def _clip_text(value, limit=220):
     return text[: limit - 1].rstrip() + "..."
 
 
-def render_patch_intelligence_block():
+def render_patch_intelligence_block(latest_df, tier):
     patch_note = load_latest_patch_note()
     if not patch_note:
         return
 
     balance_patch_note = load_latest_balance_patch_note()
-    analysis = load_latest_patch_ai_analysis(
-        balance_patch_note.get("id") if balance_patch_note else patch_note.get("id")
-    )
     affected_heroes = _as_list(patch_note.get("affected_heroes"))
     summary_items = _as_list(patch_note.get("summary_items"))
     source_url = str(patch_note.get("source_url") or "")
@@ -95,38 +95,30 @@ def render_patch_intelligence_block():
             "rel='noopener noreferrer'>공식 원문</a>"
         )
 
-    if analysis:
-        direct_impacts = _as_list(analysis.get("direct_hero_impacts"))
-        indirect_impacts = _as_list(analysis.get("indirect_hero_impacts"))
-        hero_impacts = direct_impacts or _as_list(analysis.get("hero_impacts"))
-        impact_items = []
-        for row in hero_impacts[:3]:
-            if not isinstance(row, dict):
-                continue
-            sentence = row.get("display_sentence") or row.get("reason") or ""
-            if sentence:
-                impact_items.append(f"<li>{html.escape(str(sentence))}</li>")
-        impact_html = ""
-        if impact_items:
-            impact_html = f"<ul class='patch-ai-list'>{''.join(impact_items)}</ul>"
-        balance_title = html.escape(str((balance_patch_note or {}).get("title") or "최근 밸런스 패치"))
-        balance_date = html.escape(str((balance_patch_note or {}).get("patch_date") or "-"))
-        phase = html.escape(str(analysis.get("analysis_phase") or "관찰 단계"))
-        ai_panel_html = f"""
-<div class="patch-ai-box">
-    <div class="patch-ai-title">최근 밸런스 패치 분석</div>
-    <div class="patch-ai-sub">기준 패치: {balance_title} · {balance_date} · {phase}</div>
-    <div class="patch-ai-summary">{html.escape(_clip_text(analysis.get("summary"), 320))}</div>
-    {impact_html}
-</div>
-"""
-    else:
-        ai_panel_html = """
-<div class="patch-ai-box">
-    <div class="patch-ai-title">최근 밸런스 패치 분석</div>
-    <div class="patch-ai-summary">아직 영웅 밸런스 패치와 연결된 AI 분석이 생성되지 않았습니다.</div>
-</div>
-"""
+    # 최근 밸런스 패치의 직접 변경 영웅을 패치 직전 기록과 지금으로 비교한다(선택한 티어 기준).
+    impact_rows, before_date, impact_state, impact_html = [], None, None, ""
+    if balance_patch_note:
+        impact_rows, before_date, impact_state = patch_impact(
+            load_daily_history(), latest_df, balance_patch_note.get("patch_date"),
+            _as_list(balance_patch_note.get("affected_heroes")), tier,
+        )
+    if impact_state:
+        balance_title = html.escape(str(balance_patch_note.get("title") or "최근 밸런스 패치"))
+        tier_label = html.escape(translate_tier_name(tier))
+        sub = f"{balance_title} · {tier_label}"
+        if impact_state == "ok":
+            now_date = short_date(latest_df["update_date"].max()) if "update_date" in latest_df else ""
+            sub += (f" · 패치 직전({short_date(before_date)}) → 지금({now_date}) · "
+                    f"직접 변경 {len(impact_rows)}명 중 승률·픽률·밴률 변화가 큰 순")
+            body = patch_impact_html(impact_rows[:5])
+        elif impact_state == "pending":
+            body = ("<div class='patch-impact-empty'>넥슨 통계에 아직 패치 이후 집계가 반영되지 않았습니다. "
+                    "보통 패치 며칠 뒤에 새로 집계됩니다.</div>")
+        else:
+            body = ("<div class='patch-impact-empty'>이번 패치 뒤 넥슨 통계가 새로 집계되지 않아(누적 집계가 이어짐) "
+                    "패치 효과만 따로 볼 수 없습니다.</div>")
+        impact_html = (f"<div class='patch-impact'><div class='patch-impact-title'>밸런스 패치 전후</div>"
+                       f"<div class='patch-impact-sub'>{sub}</div>{body}</div>")
 
     card_html = "\n".join(line.lstrip() for line in f"""
         <section class="patch-intel-wrap">
@@ -141,8 +133,7 @@ def render_patch_intelligence_block():
                     {source_link}
                 </div>
             </div>
-            <div class="patch-hero-row">{hero_badges}</div>
-{ai_panel_html}
+            <div class="patch-hero-row">{hero_badges}</div>{impact_html}
         </section>
         """.splitlines())
     st.markdown(card_html, unsafe_allow_html=True)
@@ -155,27 +146,9 @@ def render_patch_intelligence_block():
             if source_url:
                 st.markdown(f"전체 내용은 [공식 원문]({source_url})에서 볼 수 있습니다.")
 
-    if analysis:
-        with st.expander("AI 분석 자세히 보기"):
-            st.markdown(str(analysis.get("meta_analysis") or analysis.get("summary") or "상세 분석이 없습니다."))
-            direct_impacts = _as_list(analysis.get("direct_hero_impacts"))
-            indirect_impacts = _as_list(analysis.get("indirect_hero_impacts"))
-            if direct_impacts:
-                st.markdown("**직접 변경 영웅**")
-                for row in direct_impacts:
-                    if not isinstance(row, dict):
-                        continue
-                    hero_name = row.get("hero", "-")
-                    sentence = row.get("display_sentence") or row.get("reason", "")
-                    st.markdown(f"- **{hero_name}**: {sentence}")
-            if indirect_impacts:
-                st.markdown("**간접 영향 가능 영웅**")
-                for row in indirect_impacts:
-                    if not isinstance(row, dict):
-                        continue
-                    hero_name = row.get("hero", "-")
-                    sentence = row.get("display_sentence") or row.get("reason", "")
-                    st.markdown(f"- **{hero_name}**: {sentence}")
+    if len(impact_rows) > 5:
+        with st.expander(f"나머지 직접 변경 영웅 {len(impact_rows) - 5}명"):
+            st.markdown(patch_impact_html(impact_rows[5:]), unsafe_allow_html=True)
 
 # -------------------------------------------------
 # 2. 데이터 로드
@@ -498,7 +471,7 @@ if _deltas:
         for h, d in _ranked
     ]
 # 넥슨 원본은 며칠에 한 번 갱신되므로, 원본이 달랐던 마지막 날짜를 기준으로 비교한다.
-_delta_title = (f"최근 변동 · {_delta_since[5:].replace('-', '/')} 대비"
+_delta_title = (f"최근 변동 · {short_date(_delta_since)} 대비"
                 if _delta_since else "최근 변동")
 _rail_cards.append(rail_rows_html(_delta_title, _delta_rows,
                                   empty_text="비교할 이전 스냅샷이 아직 없습니다."))
@@ -527,7 +500,7 @@ _rail_strip.markdown(f"<div class='rail-strip'>{''.join(_rail_cards)}</div>",
 # 2차 지시서 PART C: 참조용 블록은 전부 최하단으로.
 st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
 with st.expander("최근 패치노트"):
-    render_patch_intelligence_block()
+    render_patch_intelligence_block(df_raw, selected_tier)
 
 with st.expander("랭크는 어떻게 산정되나요?"):
     st.markdown(
@@ -588,8 +561,8 @@ if isinstance(hero_from_query, list):
 
 if hero_from_query:
     hero_from_query = urllib.parse.unquote(str(hero_from_query))
-    hero_row = display_df[display_df["hero"].astype(str) == hero_from_query]
-    if not hero_row.empty:
+    # 포지션·검색 필터와 상관없이 연다. 패치 카드처럼 표에 없는 영웅으로 가는 링크도 있다.
+    if hero_from_query in set(df_raw["hero"].astype(str)):
         st.session_state.detail_hero = hero_from_query
         st.session_state.detail_tier = selected_tier
         st.session_state.detail_source = "main"

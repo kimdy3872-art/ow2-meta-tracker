@@ -5,6 +5,5 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .streamlit/secrets.toml
-data/local_run_state/
 logs/
 banner_mock_preview.jpg

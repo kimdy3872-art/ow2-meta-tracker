@@ -33,7 +33,7 @@
 - 배포: Streamlit Community Cloud (https://ow2metatracker.streamlit.app). keep-alive 워크플로가 앱을 늘 깨워 둬서 push만으로는 코드가 바뀌지 않는다. push 후 대시보드에서 **Reboot**. 문서·스크립트만 바뀐 push는 Reboot이 필요 없다.
 - GitHub Actions가 매일 09:00 KST에 `main`으로 `data/`를 커밋한다. push 전에 `git pull --rebase`.
 - `git add -A`·`git add .` 금지. 루트에 추적하지 않는 참고 이미지(`2hEW9.jpg`, `Overwatch_logo_1024.png`)가 있다. 커밋할 파일을 지정한다.
-- 테스트: `.venv/bin/python test_sample_size.py`(`update.py`의 표본 크기 보정), `.venv/bin/python test_map_heroes.py`(전장별 영웅 선정), `.venv/bin/python test_overheat.py`(랭크 진단의 과열 감시), `.venv/bin/python test_perks.py`(특전 수집 검증·키 빈칸 보정). `ok`가 나오면 통과.
+- 테스트: `.venv/bin/python test_sample_size.py`(`update.py`의 표본 크기 보정), `.venv/bin/python test_map_heroes.py`(전장별 영웅 선정), `.venv/bin/python test_overheat.py`(랭크 진단의 과열 감시), `.venv/bin/python test_perks.py`(특전 수집 검증·키 빈칸 보정), `.venv/bin/python test_patch_impact.py`(밸런스 패치 전후 비교). `ok`가 나오면 통과.
 
 ## UI 구조
 
@@ -152,7 +152,7 @@ OW2_LOCAL_DATA=1 .venv/bin/python -m streamlit run main.py --server.port 8599 --
 - `app_data.py`의 손 표 `HERO_NAME_TO_API_NAME`·`HERO_PORTRAIT_FALLBACKS`·`HERO_SUBROLES`와 앱이 매번 OverFast를 부르던 초상화 조회를 지웠다. 초상화·하위 역할은 `heroes.json`에서, 배너 아트·영웅색은 그 key로 찾는다. 바꾸기 전후로 기존 53명의 초상화 URL·배너·영웅색·하위 역할이 모두 같았다.
 - 독트린 배너는 공식 스플래시만 쓴다(영웅색도 스플래시에서 뽑았다). 같은 날 모든 영웅을 스플래시로 통일했다(아래). 다른 영웅처럼 위키 전신 렌더를 쓰려면 위키 이미지 서버에 Referer를 위키로 꾸며 보내야 해서(핫링크 차단 우회) 하지 않았다. 블리자드 공식 페이지의 렌더(`*_Beauty_Individual_*.png`)는 배경이 있는 장면이라 컷아웃으로 쓸 수 없다.
 - 새 영웅 등록 순서(유지보수 메모):
-  1. `update.py`의 `role_dict`에 넣는다. 패치노트 영향 영웅·AI 분석의 이름 매칭(`VALID_HERO_NAMES`)이 이 표를 쓴다. 특전·초상화·하위 역할은 넣지 않아도 다음 수집부터 나온다.
+  1. `update.py`의 `role_dict`에 넣는다. OverFast 이름을 통계 표기로 맞추는 `normalize_hero_name`이 이 표에 없는 이름을 비슷한 기존 영웅으로 잘못 붙이지 않게 한다. 패치노트 표기가 통계와 다르면(D.Va/D.VA) `HERO_NAME_ALIASES`에도 넣는다. 특전·초상화·하위 역할은 넣지 않아도 다음 수집부터 나온다.
   2. 배너·영웅색: `.venv/bin/python scripts/fetch_hero_art.py <OverFast key>`. 매니페스트에 스플래시 주소·`focal_x`를 넣고, `hero_colors.json`에 색이 없으면 한 줄 추가한다.
 
 ### 2026-10-12 배너 아트를 공식 스플래시로 통일
@@ -162,3 +162,17 @@ OW2_LOCAL_DATA=1 .venv/bin/python -m streamlit run main.py --server.port 8599 --
 - 블리자드 그림을 고친 복사본을 공개 저장소에 두지 않도록 `static/hero_art/` 53장(6MB)을 지웠다. 과거 커밋에는 남아 있다(기록을 다시 쓰지 않는다).
 - `fetch_hero_art.py`는 위키 렌더·밝기 보정을 빼고 매니페스트(스플래시 주소·`focal_x`)와 빠진 영웅색만 만든다. `extract_hero_colors.py`는 합쳐서 지웠다. 매니페스트의 `art_source`·`cutout_*`·`luma`·`use_cutout`도 지웠다. 새 스크립트로 독트린을 다시 돌려 `focal_x`·색이 그대로 나오는 것을 확인했다.
 - 54명 스플래시를 같은 잘림 계산으로 모아 봤고, 인물이 가운데에 가까운 라이프위버·일리아리·한조도 PC·폰에서 숫자와 겹치지 않았다.
+
+### 2026-10-13 AI 패치 분석 → 밸런스 패치 전후 지표 + 기본 티어 전체
+
+- 로컬 Ollama(qwen3:14b) 패치 분석을 지웠다. 맥의 launchd가 매일 돌려 맥에서 직접 push하는 구조였는데, 7/12에 작업 폴더 변경으로 `git pull --rebase`가 실패한 뒤 멈췄고 LaunchAgent도 등록이 풀려 있었다. 저장된 분석 4개 중 3개는 LLM이 아니라 문장 틀이었고, 입력도 골드 티어의 "어제 대비" 변화라 넥슨이 며칠씩 같은 값을 주는 동안 패치 효과를 못 잡았다. 메인에는 3개월째 "아직 AI 분석이 생성되지 않았습니다"가 떠 있었다.
+- 대신 메인 "최근 패치노트"와 영웅 상세에 "밸런스 패치 전후"를 둔다. 직접 변경 영웅의 패치 직전 일별 스냅샷 → 지금을 선택한 티어 기준으로 비교한다(`app_data.patch_impact`, 따로 저장하지 않는다). 메인은 승률·픽률·밴률 변화 합이 큰 5명 + 나머지 펼치기, 상세는 그 영웅이 직접 변경 대상일 때만.
+  - 넥슨 수치는 평일마다 조금씩(하루 최대 0.4~2.5%p) 움직이고, 핫픽스(9/17 D.Mon)에는 집계가 새로 시작되지 않는다. 그래서 "수치가 직전과 같은가"가 아니라 "패치 뒤 7일 안에 새 집계가 있었나"(`find_aggregate_reset`, 전체 티어 변화 중간값 0.5%p)로 판단한다. 기준은 10/09 한 번의 새 집계로 정했으니, 다음 시즌 초기화 날 중간값을 확인한다.
+  - 정렬에 종합 점수 차이를 쓰지 않는다. 역할이 바뀐 영웅은 다른 비교군의 z-점수끼리 빼게 된다.
+  - 메인의 `?hero=` 처리는 포지션·검색으로 거른 표가 아니라 전체 데이터에서 영웅을 찾는다. 패치 카드는 다른 포지션 영웅으로도 링크한다.
+  - `load_daily_history`는 넥슨 출처 이전 달(6~8월, 한 달 약 23MB) 파일을 받지 않고 전체 전장 행·필요한 열만 남긴다.
+- 지운 것: `update.py`의 Ollama·지표 요약·문장 다듬기·fallback(약 580줄), 통계 갱신 결과 반환, `scripts/run_local_ai_patch_update.sh`·`com.da.overwatch.ai-patch.plist`·`LOCAL_AI_PATCH_AUTOMATION.md`, `data/patch_notes/patch_ai_analysis.json`, `.gitignore`의 `data/local_run_state/`. 패치노트 행은 이제 전문을 아예 만들지 않는다. `strip_patch_fulltext`는 예전 파일이 복원될 때를 대비해 저장 직전에 남겨 둔다.
+- 패치노트 영향 영웅을 통계 표기로 맞췄다(D.Va → D.VA, D.Mon → D.MON). 기존 7개 행의 영웅 목록과 요약 문장도 고쳤다. 화면이 영웅 행과 이름으로 바로 잇는다.
+- 일별 스냅샷 읽기를 `load_daily_history`로 묶어 "최근 변동"(`load_score_deltas`)과 같이 쓴다.
+- 첫 화면 티어 기본값을 골드에서 전체 티어로 바꿨다(`ui/filters.py`의 `FILTER_DEFAULTS`). 골드 기본은 첫 커밋(2026-04-13)부터 근거 없이 있던 값이다. 2026-10-12 데이터로 전체 티어와 골드는 랭크 47/54명이 같고 순위 상관 0.99였다(전체 티어는 대부분 골드·플래티넘 경기).
+- 맥에 남은 것: Ollama와 모델(9GB), `logs/local_ai_patch_update.log`·`launchd_ai_patch.*.log`(gitignore). 앱은 더 이상 쓰지 않는다.

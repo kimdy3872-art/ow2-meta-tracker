@@ -352,6 +352,30 @@ def rail_rows_html(title: str, rows, empty_text: str = "") -> str:
     return f"<div class='rail-card'><div class='eyebrow'>{html.escape(title)}</div>{body}</div>"
 
 
+def patch_impact_html(rows, link: bool = True) -> str:
+    """밸런스 패치 전후 행 목록. rows 는 app_data.patch_impact 결과. 변화는 %p 다."""
+    items = []
+    for row in rows:
+        name = html.escape(str(row["hero"]))
+        if link:
+            href = f"?hero={urllib.parse.quote(str(row['hero']), safe='')}{_filter_qs()}"
+            name = f"<a class='pi-name' target='_self' href='{html.escape(href, quote=True)}'>{name}</a>"
+        else:
+            name = f"<span class='pi-name'>{name}</span>"
+        role = f"<span class='pi-role'>{html.escape(row['role_change'])}</span>" if row.get("role_change") else ""
+        stats = "".join(
+            f"<span>{label} <b>{row[col]:.1f}%</b> <i>{row[col] - row[col + '_before']:+.1f}%p</i></span>"
+            for label, col in (("승률", "win_rate"), ("픽률", "pick_rate"), ("밴률", "ban_rate"))
+        )
+        items.append(
+            f"<div class='pi-row'><div class='pi-head'>{name}{role}"
+            f"<span class='pi-rank'>{rank_badge(row['rank_before'], 20)}"
+            f"<span class='pi-arrow'>→</span>{rank_badge(row['rank'], 20)}</span></div>"
+            f"<div class='pi-stats'>{stats}</div></div>"
+        )
+    return f"<div class='pi-list'>{''.join(items)}</div>"
+
+
 def render_rail_rows(title: str, rows, empty_text: str = "") -> None:
     st.markdown(rail_rows_html(title, rows, empty_text), unsafe_allow_html=True)
 

@@ -1479,7 +1479,7 @@ a.hero-link:hover { color: var(--accent) !important; }
 }
 
 .patch-summary,
-.patch-ai-summary {
+.patch-impact-empty {
     color: var(--text-2);
     font-size: 0.9rem;
     line-height: 1.6;
@@ -1522,35 +1522,80 @@ a.hero-link:hover { color: var(--accent) !important; }
 
 .patch-hero-badge.muted { color: var(--muted); }
 
-.patch-ai-box {
+.patch-impact {
     margin-top: 14px;
     padding-top: 14px;
     border-top: 1px solid var(--line);
 }
 
-.patch-ai-title {
+.patch-impact-title {
     color: var(--text);
     font-size: 0.9rem;
     font-weight: 700;
     margin-bottom: 4px;
 }
 
-.patch-ai-sub {
+.patch-impact-sub {
     color: var(--muted);
     font-size: 0.78rem;
     line-height: 1.45;
     margin-bottom: 6px;
 }
 
-.patch-ai-list {
-    color: var(--text-2);
-    font-size: 0.88rem;
-    line-height: 1.6;
-    margin: 8px 0 0 18px;
-    padding: 0;
+/* 밸런스 패치 전후 행. 메인 패치 카드와 영웅 상세 노트가 같이 쓴다. */
+.pi-list {
+    display: grid;
+    gap: 6px;
+    margin-top: 10px;
 }
 
-.patch-ai-list li { margin: 3px 0; }
+.pi-row {
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    border-radius: var(--r-chip);
+    background: var(--surface);
+}
+
+.pi-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pi-name {
+    color: var(--text) !important;
+    font-size: 0.88rem;
+    font-weight: 700;
+    text-decoration: none !important;
+}
+
+a.pi-name:hover { text-decoration: underline !important; }
+
+.pi-role {
+    color: var(--muted);
+    font-size: 0.74rem;
+}
+
+.pi-rank {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+}
+
+.pi-arrow { color: var(--muted); font-size: 0.8rem; }
+
+.pi-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 14px;
+    margin-top: 4px;
+    color: var(--muted);
+    font-size: 0.78rem;
+}
+
+.pi-stats b { color: var(--text-2); font-weight: 600; }
+.pi-stats i { font-style: normal; }
 
 /* ===========================================================================
    12. 영웅 추이 페이지
@@ -1760,7 +1805,7 @@ a.hero-link:hover { color: var(--accent) !important; }
     font-size: 0.8rem;
 }
 
-.hero-ai-note {
+.hero-patch-note {
     margin-top: 14px;
     padding: 12px 14px;
     border: 1px solid var(--line);
@@ -1769,7 +1814,7 @@ a.hero-link:hover { color: var(--accent) !important; }
     background: var(--surface);
 }
 
-.hero-ai-kicker {
+.hero-patch-kicker {
     color: var(--accent);
     font-size: 0.72rem;
     font-weight: 700;
@@ -1778,24 +1823,17 @@ a.hero-link:hover { color: var(--accent) !important; }
     margin-bottom: 5px;
 }
 
-.hero-ai-title {
+.hero-patch-title {
     color: var(--text);
     font-size: 0.9rem;
     font-weight: 700;
     margin-bottom: 4px;
 }
 
-.hero-ai-meta {
+.hero-patch-meta {
     color: var(--muted);
     font-size: 0.74rem;
     line-height: 1.45;
-    margin-bottom: 7px;
-}
-
-.hero-ai-body {
-    color: var(--text-2);
-    font-size: 0.86rem;
-    line-height: 1.6;
 }
 
 .hmap-card {

@@ -14,7 +14,8 @@ import streamlit as st
 
 # 전역 필터가 쓰는 session_state 키와 기본값.
 FILTER_DEFAULTS = {
-    "selected_tier": "Gold",
+    # 전체 티어가 표본이 가장 크고 특정 티어로 읽히지 않는다(골드 기본은 2026-10-13까지).
+    "selected_tier": "All",
     "selected_role": "All",
     "search_hero": "",
     "sort_col": "total_score",
@@ -65,7 +66,7 @@ def init_filter_state() -> None:
 
 def filter_qs() -> str:
     """마크다운 링크에 붙일 &tier=&role=. 링크 클릭은 전체 리로드라 URL 로 넘기지
-    않으면 전역 필터가 기본값(골드·전체)으로 돌아간다."""
+    않으면 전역 필터가 기본값(전체 티어·전체 포지션)으로 돌아간다."""
     from urllib.parse import quote
 
     init_filter_state()
@@ -101,7 +102,7 @@ def render_global_filters(which=("tier", "role")) -> None:
 
     # 수집이 끊긴 티어가 저장돼 있으면 위젯이 예외를 낸다. 목록 안으로 되돌린다.
     if st.session_state["selected_tier"] not in tiers:
-        st.session_state["selected_tier"] = "Gold" if "Gold" in tiers else tiers[0]
+        st.session_state["selected_tier"] = _default_in(tiers)
     if st.session_state["selected_role"] not in roles:
         st.session_state["selected_role"] = roles[0]
 
@@ -179,4 +180,9 @@ def resolve_tier(available) -> str:
     current = selected_tier()
     if current in available:
         return current
-    return "Gold" if "Gold" in available else available[0]
+    return _default_in(available)
+
+
+def _default_in(tiers) -> str:
+    default = FILTER_DEFAULTS["selected_tier"]
+    return default if default in tiers else tiers[0]

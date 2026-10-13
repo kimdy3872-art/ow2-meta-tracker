@@ -22,11 +22,11 @@
 
 | 페이지 | 파일 | 설명 |
 |---|---|---|
-| 영웅 순위 | `main.py` | 티어, 포지션, 영웅 필터와 S/A/B/C/D 랭크 테이블, 메타 유형 라벨, 최신 패치노트/AI 분석 요약 |
+| 영웅 순위 | `main.py` | 티어, 포지션, 영웅 필터와 S/A/B/C/D 랭크 테이블, 메타 유형 라벨, 최신 패치노트 요약과 밸런스 패치 전후 지표 |
 | 전장별 영웅 | `pages/4_map_heroes.py` | 전장마다 포지션별 보정 승률 상위 2명과 전체 전장 승률 대비 차이. 모드(쟁탈·호위·혼합·밀기·플래시포인트)별로 묶음 |
 | 영웅 추이 | `pages/2_hero_trends.py` | 주간 스냅샷과 최신 데이터를 합쳐 영웅별 승률, 픽률, 밴률 추이 확인 |
 | 메타 분포 | `pages/1_pick_win_distribution.py` | 선택 티어/포지션 기준 픽률, 승률, 밴률 2D·3D 분포 시각화 |
-| 영웅 상세 | `pages/3_hero_detail.py` | 특정 영웅의 티어별 지표, 전장별 성능, 특전(마이너·메이저 공식 설명), 패치 영향 정보 확인 (메뉴에는 없고 영웅을 눌러 진입) |
+| 영웅 상세 | `pages/3_hero_detail.py` | 특정 영웅의 티어별 지표, 전장별 성능, 특전(마이너·메이저 공식 설명), 최근 밸런스 패치 전후 지표 확인 (메뉴에는 없고 영웅을 눌러 진입) |
 
 페이지 이름은 메뉴, 페이지 제목, 이 표에서 같은 두 단어를 씁니다.
 
@@ -40,8 +40,7 @@
 | 데이터 처리 | Pandas, NumPy, PyArrow |
 | 시각화 | Plotly |
 | 수집 | urllib (넥슨 페이지 HTML, OverFast JSON) |
-| 로컬 AI 분석 | Ollama API, 선택 기능 |
-| 자동화 | GitHub Actions, macOS launchd 스크립트 |
+| 자동화 | GitHub Actions |
 
 ---
 
@@ -71,6 +70,8 @@
 ├── test_sample_size.py
 ├── test_map_heroes.py
 ├── test_overheat.py
+├── test_perks.py
+├── test_patch_impact.py
 ├── requirements.txt
 ├── CLAUDE.md
 ├── .github/workflows/
@@ -80,9 +81,6 @@
 │   ├── ui_check.py
 │   ├── keep_alive.py
 │   ├── fetch_hero_art.py
-│   ├── LOCAL_AI_PATCH_AUTOMATION.md
-│   ├── com.da.overwatch.ai-patch.plist
-│   └── run_local_ai_patch_update.sh
 └── data/
     ├── latest/
     │   ├── latest_tier.parquet
@@ -93,8 +91,7 @@
     │   ├── daily/year=YYYY/month=MM/tier_snapshot.parquet
     │   └── weekly/year=YYYY/week=WW/tier_snapshot.parquet
     ├── patch_notes/
-    │   ├── patch_notes.json
-    │   └── patch_ai_analysis.json
+    │   └── patch_notes.json
     └── hero_art_manifest.json
 ```
 
@@ -105,15 +102,16 @@
 - `app_data.py`: 대시보드에서 쓰는 데이터 로딩, 라벨 번역, 영웅/맵 이미지 URL 보조 함수가 모여 있습니다.
 - `ui/`: UI 패키지입니다. 팔레트, CSS 주입, 페이지 셸, HTML 카드, 전역 필터, 뱃지, Plotly 테마를 정의합니다. 구조와 디자인·반응형 규칙은 `CLAUDE.md`에 있습니다.
 - `assets/style.css`: 대시보드 스타일시트입니다. `assets/ranks/`는 티어·포지션 아이콘, `static/map_art/`는 OverFast에 아직 스크린샷이 없는 전장 이미지입니다.
-- `update.py`: 경쟁전 통계, 특전, 패치노트, 패치 AI 분석을 수집/가공/저장하는 핵심 배치 스크립트입니다.
+- `update.py`: 경쟁전 통계, 특전, 패치노트를 수집/가공/저장하는 핵심 배치 스크립트입니다.
 - `test_sample_size.py`: 표본 크기 추정·보정 셀프 체크입니다. `python test_sample_size.py`로 실행합니다.
 - `test_map_heroes.py`: 전장별 영웅 선정 셀프 체크입니다. `python test_map_heroes.py`로 실행합니다.
 - `test_overheat.py`: 랭크 진단의 과열 감시(성능을 섞은 기준선 비교) 셀프 체크입니다. `python test_overheat.py`로 실행합니다.
+- `test_perks.py`: 특전 수집 검증·키 빈칸 보정 셀프 체크입니다. `python test_perks.py`로 실행합니다.
+- `test_patch_impact.py`: 밸런스 패치 전후 비교(직전 스냅샷 선택, 반영 전 판정) 셀프 체크입니다. `python test_patch_impact.py`로 실행합니다.
 - `.github/workflows/main.yml`: 매일 데이터를 갱신해 커밋하는 GitHub Actions 워크플로입니다.
 - `.github/workflows/keep-alive.yml`: 6시간마다 `scripts/keep_alive.py`로 배포 앱을 방문해 잠들지 않게 합니다.
 - `scripts/ui_check.py`: 헤드리스 Chrome으로 기기별 레이아웃과 터치 동작을 재는 UI 검증 스크립트입니다.
 - `scripts/fetch_hero_art.py`: 배너 아트 매니페스트와 영웅색을 만드는 빌드 타임 스크립트입니다. OverFast가 알려 주는 블리자드 공식 스플래시 주소와 인물 위치(`focal_x`)를 `data/hero_art_manifest.json`에 적고, 색이 없는 영웅만 `assets/hero_colors.json`에 대표색을 추가합니다. 이미지 파일은 저장소에 두지 않고 화면이 블리자드 CDN에서 바로 불러옵니다. 새 영웅은 `python scripts/fetch_hero_art.py <key>` 한 번이면 됩니다.
-- `scripts/LOCAL_AI_PATCH_AUTOMATION.md`: 로컬 Ollama 기반 패치 분석 자동화 운영 문서입니다.
 
 ---
 
@@ -189,7 +187,7 @@ python update.py --mode perks
 
 OverFast에서 영웅 목록과 영웅별 특전을 받습니다(요청 약 55번). 통계 영웅이 하나라도 빠지거나 특전이 마이너 2·메이저 2가 아니면 저장하지 않고 직전 파일을 둡니다. 블리자드 페이지가 마우스 그림으로 그리는 키("[기본 발사]")는 OverFast에서 빈칸이 되므로 `update.py`의 `PERK_KEY_FIXES`로 채웁니다. 표에 없는 빈칸은 실행 로그에 경고만 남습니다.
 
-### 패치노트와 AI 분석 갱신
+### 패치노트 갱신
 
 ```bash
 python update.py --mode patch
@@ -198,9 +196,10 @@ python update.py --mode patch
 저장 결과:
 
 - `data/patch_notes/patch_notes.json`
-- `data/patch_notes/patch_ai_analysis.json`
 
-패치노트는 Blizzard 공식 패치노트 페이지를 읽어 최신 패치와 최신 영웅 밸런스 패치의 요약·영향 영웅·원문 링크를 저장합니다. 화면에는 요약 몇 줄과 공식 원문 링크만 보입니다. 로컬에 Ollama가 실행 중이면 패치 영향 분석을 생성하고, 사용할 수 없으면 지표 기반 fallback 분석을 저장합니다.
+패치노트는 Blizzard 공식 패치노트 페이지를 읽어 최신 패치와 최신 영웅 밸런스 패치의 요약·영향 영웅·원문 링크를 저장합니다. 영향 영웅 이름은 통계 표기(D.VA, D.MON)로 맞춥니다. 화면에는 요약 몇 줄과 공식 원문 링크만 보입니다.
+
+"밸런스 패치 전후"는 따로 저장하지 않고 화면이 계산합니다(`app_data.patch_impact`). 최근 밸런스 패치의 직접 변경 영웅마다, 패치일까지의 마지막 일별 스냅샷(패치 직전)과 지금의 승률·픽률·밴률·랭크를 선택한 티어 기준으로 비교하고, 세 지표 변화 합이 큰 순으로 보입니다. 넥슨 통계는 누적 집계라 패치 효과는 집계가 새로 시작된 뒤에만 보입니다. 그래서 패치 뒤 7일 안에 "새 집계"(전체 티어에서 바로 전 스냅샷 대비 모든 영웅 수치 변화의 중간값이 0.5%p 이상인 날, `find_aggregate_reset`)가 있어야 비교를 보이고, 아직 없으면 "반영 전", 7일이 지나도 없으면(핫픽스처럼 집계가 이어진 패치) "패치 효과를 따로 볼 수 없다"고 표시합니다. 기준은 2026-10-09 새 집계(중간값 0.7%p, 평소 0~0.2%p) 하나로 정했습니다. 역할이 바뀐 영웅은 직전 랭크가 다른 비교군 값이라 "공격 → 지원"처럼 함께 적습니다.
 
 ### 전체 갱신
 
@@ -208,7 +207,7 @@ python update.py --mode patch
 python update.py --mode all
 ```
 
-경쟁전 통계, 특전, 패치노트/AI 분석을 한 번에 갱신합니다.
+경쟁전 통계, 특전, 패치노트를 한 번에 갱신합니다.
 
 ---
 
@@ -220,11 +219,6 @@ python update.py --mode all
 | `META_PRESENCE_WEIGHT` | `0.65` | 종합 점수에서 존재감 축 가중치 (성능 축은 1 - 이 값). 과열 경고(`overheat_monitor.alert`)가 켜지면 하향 검토. 대시보드(`app_data.py`)도 읽으므로 GitHub Actions와 Streamlit Cloud Secrets에 같은 값을 넣는다 |
 | `PRESENCE_BAN_WEIGHT` | `1.0` | 존재감 축에서 밴률 가중치 β. 낮추면 과열 감시 지표가 오히려 늘어난다(아래 판단 근거). 위와 같이 두 곳에 넣는다 |
 | `WEEKLY_SNAPSHOT_WEEKDAY` | `0` | 주간 스냅샷 생성 요일 |
-| `ENABLE_OLLAMA_ANALYSIS` | 로컬 `1`, GitHub Actions `0` | Ollama 패치 분석 사용 여부 |
-| `OLLAMA_MODEL` | `qwen3:14b` | 패치 분석에 사용할 Ollama 모델 |
-| `OLLAMA_GENERATE_URL` | `http://localhost:11434/api/generate` | Ollama generate API URL |
-| `OLLAMA_TIMEOUT` | `90` | Ollama 응답 제한 시간(초) |
-| `FORCE_PATCH_AI_ANALYSIS` | `0` | 기존 분석이 있어도 강제 재생성 |
 
 위는 `update.py`(수집)용이고, 아래는 대시보드(`app_data.py`)용입니다.
 
@@ -272,8 +266,7 @@ python update.py --mode all
 
 ### 패치노트 JSON
 
-- `patch_notes.json`: 패치 ID, 제목, 날짜, 공식 원문 URL, 요약, 영향 영웅, 영웅 밸런스 패치 여부를 저장합니다. 전문은 블리자드 저작물이라 저장하지 않습니다(2026-10-12부터). AI 분석은 같은 실행에서 받은 본문을 씁니다.
-- `patch_ai_analysis.json`: 패치별 분석일, 분석 모델, 분석 단계, 직접/간접 영향 영웅, 요약, 지표 스냅샷 정보를 저장합니다.
+- `patch_notes.json`: 패치 ID, 제목, 날짜, 공식 원문 URL, 요약, 영향 영웅, 영웅 밸런스 패치 여부를 저장합니다. 전문은 블리자드 저작물이라 저장하지 않습니다(2026-10-12부터).
 
 ---
 
@@ -361,16 +354,11 @@ D: total_score <= -1.00
 - `.github/workflows/main.yml`: 매일 00:00 UTC, 한국 시간 09:00에 `python update.py --mode all`을 실행하고 변경된 데이터를 `main`에 커밋/푸시합니다. 로컬에서 push하기 전에 `git pull --rebase`가 필요한 이유입니다.
 - `.github/workflows/keep-alive.yml`: 6시간마다 헤드리스 브라우저로 배포 앱을 방문해 Streamlit Community Cloud의 슬립을 막습니다.
 
-### 로컬 Ollama 패치 분석
-
-macOS에서는 `scripts/run_local_ai_patch_update.sh`와 `scripts/com.da.overwatch.ai-patch.plist`로 매일 로컬 Ollama 패치 분석을 실행할 수 있습니다. 자세한 설치, 상태 확인, 재시작 방법은 `scripts/LOCAL_AI_PATCH_AUTOMATION.md`를 참고하세요.
-
 ---
 
 ## 실행 전 확인사항
 
 - Parquet 파일을 읽고 쓰기 위해 `pyarrow`가 필요합니다.
-- 패치 AI 분석을 사용하려면 Ollama 서버가 `OLLAMA_GENERATE_URL`에서 응답해야 합니다.
 - 대시보드는 기본으로 GitHub raw에서 데이터를 읽으므로 네트워크가 필요합니다. `OW2_LOCAL_DATA=1`일 때는 `data/latest/latest_tier.parquet`가 있어야 정상 동작합니다.
 - `data/patch_notes/patch_notes.json` 등 데이터 파일은 수집 결과이므로, 수동 변경분이 있는 상태에서 자동화나 갱신 스크립트를 실행하면 변경 사항이 섞일 수 있습니다.
 
@@ -382,14 +370,13 @@ macOS에서는 `scripts/run_local_ai_patch_update.sh`와 `scripts/com.da.overwat
 2. 대시보드 동작을 이해하려면 `main.py`, `app_data.py`, `ui/`, `pages/*.py` 순서로 읽으세요. UI를 고칠 때는 `CLAUDE.md`의 디자인·반응형 규칙과 Streamlit 함정을 먼저 봅니다.
 3. 데이터 생성 로직을 바꿀 때는 `update.py`의 상수, 저장 경로, CLI 옵션, `STATS_COLUMNS`를 함께 확인하세요.
 4. 데이터 파일을 직접 수정하기보다 가능하면 `python update.py --mode ...`로 재생성하세요.
-5. 패치 AI 분석은 로컬 Ollama 상태와 환경변수에 따라 결과가 달라질 수 있습니다.
-6. 이미 수정된 데이터 파일이 있으면 사용자가 만든 변경일 수 있으므로 덮어쓰기 전에 의도를 확인하세요.
+5. 이미 수정된 데이터 파일이 있으면 사용자가 만든 변경일 수 있으므로 덮어쓰기 전에 의도를 확인하세요.
 
 ---
 
 ## 향후 개선 아이디어
 
-- 테스트 코드와 데이터 검증 파이프라인 확대 (지금은 `test_sample_size.py`, `test_map_heroes.py`, `test_overheat.py` 셋)
+- 테스트 코드와 데이터 검증 파이프라인 확대 (지금은 `test_*.py` 다섯 개)
 - 수집 실패, 빈 데이터, 스키마 변경을 검증하는 smoke test 추가
 - 패치노트의 버프/너프 이력을 영웅별 라벨로 구조화해 랭크 산식 검증에 활용
 

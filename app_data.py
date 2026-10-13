@@ -2,6 +2,7 @@ import glob
 import io
 import json
 import os
+import re
 import urllib.request
 
 import numpy as np
@@ -144,7 +145,6 @@ NUMERIC_STATS_COLUMNS = [
 ]
 PATCH_NOTES_PATH = os.path.join("data", "patch_notes", "patch_notes.json")
 HEROES_PATH = os.path.join("data", "latest", "heroes.json")
-PATCH_AI_ANALYSIS_PATH = os.path.join("data", "patch_notes", "patch_ai_analysis.json")
 META_TYPE_PRESENCE_HIGH_Z = 1.25
 META_TYPE_PERFORMANCE_POSITIVE_Z = 0.75
 META_TYPE_PICK_HIGH_Z = 1.25
@@ -199,6 +199,11 @@ def tier_option_label(tier):
 
 def role_option_label(role):
     return translate_role_name(role)
+
+
+def short_date(value):
+    """'2026-10-06' -> '10/06'."""
+    return str(value)[5:].replace("-", "/")
 
 
 def translate_tier_name(tier_name):
@@ -402,49 +407,138 @@ def get_hero_image_url(hero_name):
 
 
 @st.cache_data(ttl=DATA_CACHE_TTL, show_spinner=False)
+def load_daily_history():
+    """일별 스냅샷의 전체 전장 행. 최근 변동과 밸런스 패치 전후 비교가 같이 쓴다.
+
+    STATS_SOURCE_SINCE 이전은 Blizzard 아시아 서버 값이라 뺀다(출처 변화가 변동처럼 보인다).
+    """
+    needed = ["hero", "role", "update_date", "total_score", "rank", "data_tier", "map",
+              "win_rate", "pick_rate", "ban_rate"]
+    frames = []
+    for path in list_data_files(os.path.join("data", "history", "daily")):
+        # 파일은 월별(year=YYYY/month=MM)이다. 넥슨 출처 이전 달은 받지 않는다(한 달에 약 23MB).
+        month = re.search(r"year=(\d{4})/month=(\d{2})", path.replace(os.sep, "/"))
+        if month and f"{month.group(1)}-{month.group(2)}" < STATS_SOURCE_SINCE[:7]:
+            continue
+        try:
+            frame = read_data_parquet(path)
+        except Exception:
+            continue
+        if set(needed).issubset(frame.columns):
+            frames.append(frame.loc[frame["map"].astype(str) == "all-maps", needed])
+    if not frames:
+        return pd.DataFrame()
+
+    df = pd.concat(frames, ignore_index=True)
+    df["update_date"] = df["update_date"].astype(str)
+    return df[df["update_date"] >= STATS_SOURCE_SINCE].drop_duplicates(
+        ["data_tier", "update_date", "hero"], keep="last")
+
+
+RATE_COLS = ["win_rate", "pick_rate", "ban_rate"]
+
+
+@st.cache_data(ttl=DATA_CACHE_TTL, show_spinner=False)
 def load_score_deltas(data_tier):
     """최근 원본 갱신 전후의 종합 점수 변화. ({영웅명: delta}, 비교 기준 날짜)
 
     넥슨 통계는 매일이 아니라 며칠에 한 번(패치 등) 갱신돼서, 바로 전날과 비교하면 거의
     항상 0 이다. 그래서 원본 수치(승률·픽률·밴률)가 달랐던 가장 최근 스냅샷과 비교한다.
-    STATS_SOURCE_SINCE 이전은 Blizzard 아시아 서버 값이라 비교에서 뺀다(출처 변화가 변동처럼 보인다).
     비교할 스냅샷이 없으면 ({}, None).
     """
-    frames = []
-    for path in list_data_files(os.path.join("data", "history", "daily")):
-        try:
-            frames.append(read_data_parquet(path))
-        except Exception:
-            continue
-    if not frames:
+    df = load_daily_history()
+    if df.empty:
         return {}, None
 
-    df = pd.concat(frames, ignore_index=True)
-    rate_cols = ["win_rate", "pick_rate", "ban_rate"]
-    needed = {"hero", "update_date", "total_score", "data_tier", "map", *rate_cols}
-    if not needed.issubset(df.columns):
-        return {}, None
-
-    df["update_date"] = df["update_date"].astype(str)
-    df = df[
-        (df["data_tier"] == data_tier)
-        & (df["map"].astype(str) == "all-maps")
-        & (df["update_date"] >= STATS_SOURCE_SINCE)
-    ].drop_duplicates(["update_date", "hero"], keep="last")
+    df = df[df["data_tier"] == data_tier]
     by_date = {date: frame.set_index("hero").sort_index() for date, frame in df.groupby("update_date")}
     dates = sorted(by_date)
     if len(dates) < 2:
         return {}, None
 
     latest = by_date[dates[-1]]
-    latest_rates = latest[rate_cols].round(3)
+    latest_rates = latest[RATE_COLS].round(3)
     for date in reversed(dates[:-1]):
         previous = by_date[date]
-        if previous[rate_cols].round(3).reindex(latest_rates.index).equals(latest_rates):
+        if previous[RATE_COLS].round(3).reindex(latest_rates.index).equals(latest_rates):
             continue  # 원본이 그대로인 날(넥슨 미갱신)은 건너뛴다
         delta = (latest["total_score"] - previous["total_score"]).dropna()
         return {str(hero): float(value) for hero, value in delta.items()}, date
     return {}, None
+
+
+# 넥슨은 누적 집계라 패치 효과는 집계가 새로 시작된 뒤에만 보인다. 새로 시작한 날은 모든 영웅의
+# 수치가 한꺼번에 바뀐다(2026-10-09: 전체 티어 변화 중간값 0.7%p, 평소 0~0.2%p).
+# ponytail: 새 집계는 10/09 한 번만 봤다. 다음 시즌 초기화 때 그날 중간값을 보고 고친다.
+RESET_MEDIAN_JUMP = 0.5
+# 패치 뒤 이 기간 안에 새 집계가 없으면 "아직", 넘으면 집계가 이어진 패치(핫픽스)로 본다.
+RESET_WAIT_DAYS = 7
+
+
+def find_aggregate_reset(history, patch_date):
+    """패치일 뒤 넥슨이 집계를 새로 시작한 첫 스냅샷 날짜. 없으면 None.
+
+    전체 티어에서 바로 전 스냅샷 대비 승률·픽률·밴률 변화의 중간값으로 판단한다.
+    평일마다 있는 작은 갱신(최대 2%p 안팎이지만 대부분 영웅은 그대로)과 구분된다.
+    """
+    frames = history[history["data_tier"] == "All"]
+    # 패치 뒤 RESET_WAIT_DAYS 안의 초기화만 이 패치 몫으로 본다(뒤 패치의 초기화를 붙이지 않게).
+    until = (pd.Timestamp(str(patch_date)) + pd.Timedelta(days=RESET_WAIT_DAYS)).strftime("%Y-%m-%d")
+    previous = None
+    for date in sorted(frames["update_date"].unique()):
+        current = frames[frames["update_date"] == date].set_index("hero")[RATE_COLS]
+        if previous is not None and str(patch_date) < date <= until:
+            change = (current - previous.reindex(current.index)).abs().stack()
+            if not change.empty and change.median() >= RESET_MEDIAN_JUMP:
+                return date
+        previous = current
+    return None
+
+
+def patch_impact(history, latest_df, patch_date, heroes, data_tier):
+    """밸런스 패치 직접 변경 영웅의 패치 직전 기록 → 지금. (행 목록, 직전 기록 날짜, 상태)
+
+    상태는 "ok" | "pending"(넥슨 새 집계 전) | "no_reset"(집계가 이어진 패치라 효과를 따로
+    볼 수 없다). 직전 기록이 없거나(넥슨 출처 이전 패치) 비교할 영웅이 없으면 ([], None, None).
+    행은 승률·픽률·밴률 변화 합이 큰 순이다. 종합 점수 차이는 역할이 바뀐 영웅에서 다른
+    비교군 값끼리 빼게 되어 정렬에 쓰지 않는다.
+    """
+    if history.empty or latest_df.empty:
+        return [], None, None
+    tier_history = history[history["data_tier"] == data_tier]
+    before_dates = sorted(d for d in tier_history["update_date"].unique() if d <= str(patch_date))
+    if not before_dates:
+        return [], None, None
+    before_date = before_dates[-1]
+
+    before = tier_history[tier_history["update_date"] == before_date].set_index("hero")
+    after = latest_df[
+        (latest_df["data_tier"] == data_tier) & (latest_df["map"].astype(str) == "all-maps")
+    ].drop_duplicates("hero", keep="last").set_index("hero")
+    # 패치에 처음 나온 영웅은 직전 기록이 없어 뺀다.
+    names = [hero for hero in heroes if hero in before.index and hero in after.index]
+    if not names:
+        return [], None, None
+
+    if find_aggregate_reset(history, patch_date) is None:
+        latest_date = max(history["update_date"])
+        waited = (pd.Timestamp(latest_date) - pd.Timestamp(str(patch_date))).days
+        return [], before_date, "pending" if waited <= RESET_WAIT_DAYS else "no_reset"
+
+    rows = []
+    for hero in names:
+        b, a = before.loc[hero], after.loc[hero]
+        # 역할이 바뀐 영웅(솜브라 공격 → 지원)은 직전 랭크가 다른 비교군 값이다.
+        role_change = (f"{translate_role_name(b['role'])} → {translate_role_name(a['role'])}"
+                       if b["role"] != a["role"] else "")
+        row = {"hero": hero, "role_change": role_change,
+               "rank_before": str(b["rank"]), "rank": str(a["rank"])}
+        for col in RATE_COLS:
+            row[col + "_before"], row[col] = float(b[col]), float(a[col])
+        row["rate_change"] = sum(abs(row[col] - row[col + "_before"]) for col in RATE_COLS)
+        rows.append(row)
+    rows.sort(key=lambda row: row["rate_change"], reverse=True)
+    return rows, before_date, "ok"
 
 
 def normalize_meta_score(series, reference=None):
@@ -547,25 +641,6 @@ def load_latest_balance_patch_note():
         balance_notes,
         key=lambda row: (
             str(row.get("patch_date", "")),
-            str(row.get("created_at", "")),
-        ),
-    )
-
-
-@st.cache_data(ttl=DATA_CACHE_TTL, show_spinner=False)
-def load_latest_patch_ai_analysis(patch_note_id=None):
-    analyses = _load_json_list(PATCH_AI_ANALYSIS_PATH)
-    if patch_note_id:
-        analyses = [
-            row for row in analyses
-            if str(row.get("patch_note_id", "")) == str(patch_note_id)
-        ]
-    if not analyses:
-        return None
-    return max(
-        analyses,
-        key=lambda row: (
-            str(row.get("analysis_date", "")),
             str(row.get("created_at", "")),
         ),
     )

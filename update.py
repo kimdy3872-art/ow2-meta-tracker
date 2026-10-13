@@ -109,7 +109,6 @@ WEEKLY_HISTORY_ROOT = os.path.join(HISTORY_DIR, "weekly")
 DAILY_HISTORY_ROOT = os.path.join(HISTORY_DIR, "daily")
 PATCH_NOTES_DIR = os.path.join(DATA_DIR, "patch_notes")
 PATCH_NOTES_PATH = os.path.join(PATCH_NOTES_DIR, "patch_notes.json")
-PATCH_AI_ANALYSIS_PATH = os.path.join(PATCH_NOTES_DIR, "patch_ai_analysis.json")
 PATCH_CONTENT_STOP_MARKERS = (
     "\nconst analyticsFormat",
     "\npatchNotesDates =",
@@ -158,15 +157,6 @@ RANK_THRESHOLDS = {
 }
 
 OFFICIAL_PATCH_NOTES_BASE_URL = "https://overwatch.blizzard.com/ko-kr/news/patch-notes/live"
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen3:14b")
-OLLAMA_GENERATE_URL = os.getenv("OLLAMA_GENERATE_URL", "http://localhost:11434/api/generate")
-ENABLE_OLLAMA_ANALYSIS = os.getenv(
-    "ENABLE_OLLAMA_ANALYSIS",
-    "0" if os.getenv("GITHUB_ACTIONS") == "true" else "1",
-) != "0"
-FORCE_PATCH_AI_ANALYSIS = os.getenv("FORCE_PATCH_AI_ANALYSIS", "0") == "1"
-OLLAMA_TIMEOUT = int(os.getenv("OLLAMA_TIMEOUT", "90"))
-PATCH_PROMPT_VERSION = "patch-impact-v2"
 # 한국 서버 분리(2026-09) 이후 통계는 넥슨 페이지에서 받는다. 내부 API(overwatch-api.nexon.com)는
 # Cloudflare 챌린지로 막혀 있어, 페이지 SSR HTML 에 박힌 __NUXT_DATA__ 를 파싱한다.
 # 파라미터 값이 틀리면 에러 없이 기본값(빠른 대전·전체)으로 폴백하므로 시작할 때 필터 목록과 대조한다.
@@ -1100,7 +1090,11 @@ def parse_patch_blocks(page_html, page_url):
             if line not in {raw_date, title, "위로 이동"}
         ]
         parsed_content = clean_patch_note_content("\n".join(content_lines).strip())
-        affected_heroes = sorted(set(re.findall(r'class="PatchNotesHeroUpdate-icon"[^>]*alt="([^"]+)"', block)))
+        # 패치노트 표기(D.Va)를 통계 표기(D.VA)로 맞춘다. 화면이 영웅 행과 바로 잇는다.
+        affected_heroes = sorted({
+            HERO_NAME_ALIASES.get(name, name)
+            for name in re.findall(r'class="PatchNotesHeroUpdate-icon"[^>]*alt="([^"]+)"', block)
+        })
         has_hero_updates = bool(affected_heroes) or "PatchNotes-section-hero_update" in block
         summary_items = build_patch_summary_items(parsed_content, affected_heroes)
         summary = " · ".join(summary_items[:3]) if summary_items else "상세 패치노트를 확인하세요."
@@ -1114,8 +1108,6 @@ def parse_patch_blocks(page_html, page_url):
                 "title": title,
                 "patch_date": parsed_date,
                 "source_url": f"{page_url.split('#')[0]}#{patch_id}",
-                "raw_content": raw_content,
-                "parsed_content": parsed_content,
                 "summary": summary,
                 "summary_items": summary_items,
                 "affected_heroes": affected_heroes,
@@ -1184,14 +1176,6 @@ def build_patch_summary_items(parsed_content, affected_heroes):
     return items
 
 
-def fetch_latest_patch_note(today_obj=None):
-    all_patches = fetch_patch_candidates(today_obj=today_obj, months_back=1)
-    if not all_patches:
-        return None
-
-    return max(all_patches, key=lambda row: (row["patch_date"], row["id"]))
-
-
 def fetch_latest_patch_bundle(today_obj=None):
     all_patches = fetch_patch_candidates(today_obj=today_obj, months_back=6)
     if not all_patches:
@@ -1205,7 +1189,8 @@ def fetch_latest_patch_bundle(today_obj=None):
     return latest_patch, latest_balance_patch
 
 
-# 패치노트 전문은 블리자드 저작물이라 공개 저장소에 두지 않는다. 요약·영향 영웅·원문 링크만 저장한다.
+# 패치노트 전문은 블리자드 저작물이라 공개 저장소에 두지 않는다. 지금 수집은 전문을 만들지 않지만,
+# 2026-10-12 이전 파일이 복원돼도 다음 저장 때 지워지도록 남겨 둔다.
 PATCH_FULLTEXT_KEYS = ("raw_content", "parsed_content")
 
 
@@ -1214,89 +1199,23 @@ def strip_patch_fulltext(row):
 
 
 def upsert_patch_note(patch_note):
-    """전문을 뺀 행을 저장하고, 호출자에게는 전문이 있는 행을 돌려준다(AI 분석 프롬프트가 쓴다)."""
+    """요약·영향 영웅·원문 링크만 저장한다."""
     rows = [strip_patch_fulltext(row) for row in load_json_list(PATCH_NOTES_PATH)]
     now = datetime.now().isoformat(timespec="seconds")
-    patch_note = dict(patch_note)
+    patch_note = strip_patch_fulltext(patch_note)
     patch_note["updated_at"] = now
 
     for idx, row in enumerate(rows):
         if row.get("id") == patch_note.get("id"):
             patch_note["created_at"] = row.get("created_at") or patch_note.get("created_at") or now
-            rows[idx] = strip_patch_fulltext(patch_note)
+            rows[idx] = patch_note
             save_json_list(sorted(rows, key=lambda item: item.get("patch_date", "")), PATCH_NOTES_PATH)
             return patch_note, False
 
     patch_note["created_at"] = patch_note.get("created_at") or now
-    rows.append(strip_patch_fulltext(patch_note))
+    rows.append(patch_note)
     save_json_list(sorted(rows, key=lambda item: item.get("patch_date", "")), PATCH_NOTES_PATH)
     return patch_note, True
-
-
-def build_metrics_digest(current_df, previous_df=None, tier="Gold"):
-    if current_df is None or current_df.empty:
-        return "지표 데이터가 없습니다."
-
-    current = current_df[
-        (current_df["map"].astype(str) == "all-maps")
-        & (current_df["data_tier"].astype(str) == tier)
-    ].copy()
-    if current.empty:
-        current = current_df[current_df["map"].astype(str) == "all-maps"].copy()
-
-    for col in ["win_rate", "pick_rate", "ban_rate", "total_score"]:
-        if col in current.columns:
-            current[col] = pd.to_numeric(current[col], errors="coerce")
-
-    compare = current[["hero", "role", "data_tier", "win_rate", "pick_rate", "ban_rate", "rank"]].copy()
-    if previous_df is not None and not previous_df.empty:
-        previous = previous_df[
-            (previous_df["map"].astype(str) == "all-maps")
-            & (previous_df["data_tier"].astype(str).isin(compare["data_tier"].astype(str).unique()))
-        ].copy()
-        for col in ["win_rate", "pick_rate", "ban_rate"]:
-            if col in previous.columns:
-                previous[col] = pd.to_numeric(previous[col], errors="coerce")
-        previous = previous[["hero", "data_tier", "win_rate", "pick_rate", "ban_rate", "rank"]].rename(
-            columns={
-                "win_rate": "prev_win_rate",
-                "pick_rate": "prev_pick_rate",
-                "ban_rate": "prev_ban_rate",
-                "rank": "prev_rank",
-            }
-        )
-        compare = compare.merge(previous, on=["hero", "data_tier"], how="left")
-        compare["win_delta"] = compare["win_rate"] - compare["prev_win_rate"]
-        compare["pick_delta"] = compare["pick_rate"] - compare["prev_pick_rate"]
-        compare["ban_delta"] = compare["ban_rate"] - compare["prev_ban_rate"]
-        compare["impact_score"] = (
-            compare["win_delta"].abs().fillna(0)
-            + compare["pick_delta"].abs().fillna(0)
-            + compare["ban_delta"].abs().fillna(0) * 0.5
-        )
-        compare = compare.sort_values("impact_score", ascending=False)
-    else:
-        compare = compare.sort_values(["rank", "pick_rate"], ascending=[False, False])
-
-    rows = []
-    for _, row in compare.head(16).iterrows():
-        rows.append(
-            {
-                "hero": row.get("hero"),
-                "role": row.get("role"),
-                "tier": row.get("data_tier"),
-                "rank": row.get("rank"),
-                "prev_rank": row.get("prev_rank", ""),
-                "win_rate": round(float(row.get("win_rate", 0) or 0), 2),
-                "pick_rate": round(float(row.get("pick_rate", 0) or 0), 2),
-                "ban_rate": round(float(row.get("ban_rate", 0) or 0), 2),
-                "win_delta": round(float(row.get("win_delta", 0) or 0), 2),
-                "pick_delta": round(float(row.get("pick_delta", 0) or 0), 2),
-                "ban_delta": round(float(row.get("ban_delta", 0) or 0), 2),
-            }
-        )
-
-    return json.dumps(rows, ensure_ascii=False, indent=2)
 
 
 def normalize_hero_name(hero_name):
@@ -1320,497 +1239,22 @@ def normalize_hero_name(hero_name):
     return match[0] if match else ""
 
 
-def polish_korean_sentence(text):
-    cleaned = re.sub(r"\s+", " ", str(text or "")).strip()
-    if not cleaned:
-        return ""
-
-    replacements = [
-        ("반영한다.", "반영한 것으로 보입니다."),
-        ("나타낸다.", "나타내고 있습니다."),
-        ("보여준다.", "보여주고 있습니다."),
-        ("보인다.", "보입니다."),
-        ("예상된다.", "예상됩니다."),
-        ("가능성이 있다.", "가능성이 있습니다."),
-        ("수 있다.", "수 있습니다."),
-        ("영향을 미치고 있다.", "영향을 주고 있습니다."),
-        ("기록하고 있다.", "기록하고 있습니다."),
-        ("유지하고 있다.", "유지하고 있습니다."),
-        ("강화시킨 것으로 보인다.", "강화한 것으로 보입니다."),
-        ("약한 지위를 나타내며", "다소 약한 흐름을 보이며"),
-        ("그의", "해당 영웅의"),
-        ("그들의", "해당 영웅들의"),
-    ]
-    for old, new in replacements:
-        cleaned = cleaned.replace(old, new)
-
-    if cleaned.endswith(("합니다", "습니다", "입니다")):
-        pass
-    elif cleaned.endswith("다"):
-        cleaned = cleaned[:-1] + "습니다"
-    if not cleaned.endswith((".", "요", "니다", "습니다")):
-        cleaned += "."
-    return cleaned
-
-
-def build_display_sentence(hero_name, tone_label, reason):
-    reason_text = polish_korean_sentence(reason)
-    if not reason_text:
-        return f"{topic_phrase(hero_name)} 최신 지표 변화가 관찰되어 추가 추이를 확인해볼 만합니다."
-
-    if reason_text.startswith(hero_name):
-        return reason_text
-
-    label = str(tone_label or "").strip()
-    if label:
-        return f"{topic_phrase(hero_name)} {label}. {reason_text}"
-    return f"{topic_phrase(hero_name)} {reason_text}"
-
-
-def topic_particle(word):
-    text = str(word or "")
-    if not text:
-        return "은"
-    last = text[-1]
-    code = ord(last)
-    if 0xAC00 <= code <= 0xD7A3:
-        return "은" if (code - 0xAC00) % 28 else "는"
-    return "는"
-
-
-def topic_phrase(word):
-    return f"{word}{topic_particle(word)}"
-
-
-def normalize_tone_label(label):
-    text = polish_korean_sentence(label).rstrip(".")
-    label_map = {
-        "상승": "지표가 좋아진 편입니다",
-        "하락": "지표가 다소 약해진 편입니다",
-        "중립": "큰 변화는 아직 뚜렷하지 않습니다",
-        "관찰": "추이를 더 지켜볼 필요가 있습니다",
-    }
-    return label_map.get(text, text or "추이를 더 지켜볼 필요가 있습니다")
-
-
-def get_analysis_phase(patch_date, analysis_date=None):
-    analysis_date = analysis_date or date.today().isoformat()
-    try:
-        patch_day = date.fromisoformat(str(patch_date))
-        analysis_day = date.fromisoformat(str(analysis_date))
-    except ValueError:
-        return "관찰 단계", None
-
-    days = max((analysis_day - patch_day).days, 0)
-    if days <= 1:
-        return "초기 관찰", days
-    if days <= 4:
-        return "단기 변화", days
-    if days <= 7:
-        return "안정화 추세", days
-    return "장기 반영 확인", days
-
-
-def sanitize_impact_rows(rows, affected_heroes=None, limit=5):
-    affected_heroes = {
-        normalized for normalized in (normalize_hero_name(hero) for hero in (affected_heroes or []))
-        if normalized
-    }
-    cleaned_rows = []
-    seen_heroes = set()
-    for row in rows or []:
-        if not isinstance(row, dict):
-            continue
-
-        hero_name = normalize_hero_name(row.get("hero"))
-        if not hero_name or hero_name in seen_heroes:
-            continue
-
-        raw_hero_name = str(row.get("hero") or "").strip()
-        tone_label = normalize_tone_label(row.get("tone_label") or row.get("direction") or "주목할 만합니다")
-        reason = polish_korean_sentence(row.get("reason", ""))
-        if raw_hero_name and raw_hero_name != hero_name:
-            reason = reason.replace(raw_hero_name, hero_name)
-        display_sentence = polish_korean_sentence(
-            row.get("display_sentence") or build_display_sentence(hero_name, tone_label, reason)
-        )
-        if raw_hero_name and raw_hero_name != hero_name:
-            display_sentence = display_sentence.replace(raw_hero_name, hero_name)
-        cleaned_rows.append(
-            {
-                "hero": hero_name,
-                "tone_label": tone_label,
-                "reason": reason,
-                "display_sentence": display_sentence,
-                "impact_type": "direct" if hero_name in affected_heroes else "indirect",
-            }
-        )
-        seen_heroes.add(hero_name)
-        if len(cleaned_rows) >= limit:
-            break
-    return cleaned_rows
-
-
-def sanitize_patch_ai_payload(ai_payload, patch_note=None, analysis_date=None):
-    summary = polish_korean_sentence(ai_payload.get("summary", ""))
-    meta_analysis = polish_korean_sentence(ai_payload.get("meta_analysis", ""))
-    confidence_note = polish_korean_sentence(ai_payload.get("confidence_note", ""))
-    affected_heroes = {
-        normalized
-        for normalized in (
-            normalize_hero_name(hero)
-            for hero in ((patch_note or {}).get("affected_heroes") or [])
-        )
-        if normalized
-    }
-    analysis_phase = str(ai_payload.get("analysis_phase") or "").strip()
-    phase_days = None
-    if not analysis_phase:
-        analysis_phase, phase_days = get_analysis_phase((patch_note or {}).get("patch_date"), analysis_date)
-    else:
-        _fallback_phase, phase_days = get_analysis_phase((patch_note or {}).get("patch_date"), analysis_date)
-
-    direct_hero_impacts = sanitize_impact_rows(
-        ai_payload.get("direct_hero_impacts") or [],
-        affected_heroes=affected_heroes,
-        limit=5,
-    )
-    indirect_hero_impacts = sanitize_impact_rows(
-        ai_payload.get("indirect_hero_impacts") or [],
-        affected_heroes=affected_heroes,
-        limit=5,
-    )
-    if not direct_hero_impacts and not indirect_hero_impacts:
-        legacy_rows = sanitize_impact_rows(
-            ai_payload.get("hero_impacts") or [],
-            affected_heroes=affected_heroes,
-            limit=8,
-        )
-        direct_hero_impacts = [row for row in legacy_rows if row["impact_type"] == "direct"][:5]
-        indirect_hero_impacts = [row for row in legacy_rows if row["impact_type"] != "direct"][:5]
-    hero_impacts = (direct_hero_impacts + indirect_hero_impacts)[:8]
-
-    if not summary:
-        summary = "최신 지표와 패치 내용을 함께 보면 일부 영웅의 선택률과 견제 흐름을 조금 더 지켜볼 필요가 있습니다."
-    if not meta_analysis:
-        meta_analysis = summary
-    if not confidence_note:
-        confidence_note = "이 분석은 현재 수집된 지표를 기준으로 작성되었으며, 표본이 쌓이면 해석이 달라질 수 있습니다."
-
-    return {
-        "summary": summary,
-        "meta_analysis": meta_analysis,
-        "hero_impacts": hero_impacts,
-        "direct_hero_impacts": direct_hero_impacts,
-        "indirect_hero_impacts": indirect_hero_impacts,
-        "analysis_phase": analysis_phase,
-        "phase_days": phase_days,
-        "confidence_note": confidence_note,
-    }
-
-
-def build_metrics_fallback_analysis(patch_note, metrics_digest, analysis_date=None):
-    try:
-        metrics_rows = json.loads(metrics_digest)
-    except json.JSONDecodeError:
-        metrics_rows = []
-
-    scored_rows = []
-    for row in metrics_rows:
-        if not isinstance(row, dict):
-            continue
-        hero_name = normalize_hero_name(row.get("hero"))
-        if not hero_name:
-            continue
-        win_rate = float(row.get("win_rate") or 0)
-        pick_rate = float(row.get("pick_rate") or 0)
-        ban_rate = float(row.get("ban_rate") or 0)
-        score = (ban_rate * 0.45) + (pick_rate * 0.35) + (max(win_rate - 50, 0) * 0.2)
-        scored_rows.append((score, hero_name, win_rate, pick_rate, ban_rate))
-
-    scored_rows.sort(reverse=True)
-    affected_heroes = {
-        normalized
-        for normalized in (normalize_hero_name(hero) for hero in (patch_note.get("affected_heroes") or []))
-        if normalized
-    }
-    direct_source_rows = [row for row in scored_rows if row[1] in affected_heroes]
-    indirect_source_rows = [row for row in scored_rows if row[1] not in affected_heroes]
-    direct_rows = direct_source_rows[:5]
-    indirect_rows = indirect_source_rows[:5]
-    top_rows = (direct_rows + indirect_rows)[:5]
-    hero_names = [row[1] for row in (direct_rows or top_rows)[:3]]
-    hero_preview = ", ".join(hero_names) if hero_names else "일부 영웅"
-    title = str(patch_note.get("title") or "최근 패치")
-    analysis_phase, phase_days = get_analysis_phase(patch_note.get("patch_date"), analysis_date)
-
-    summary = (
-        f"{analysis_phase} 기준으로 보면, 최근 영웅 밸런스 패치 이후 {hero_preview}의 지표 흐름을 우선 확인해볼 필요가 있습니다. "
-        "직접 변경 영웅과 주변 메타의 반응을 분리해서 보는 편이 안전합니다."
-    )
-
-    def build_rows(source_rows, impact_type):
-        impact_rows = []
-        for _score, hero_name, win_rate, pick_rate, ban_rate in source_rows:
-            if ban_rate >= 25:
-                tone_label = "견제 비중이 높은 편입니다"
-                sentence = (
-                    f"{topic_phrase(hero_name)} 현재 밴률이 {ban_rate:.1f}%로 높게 나타나 "
-                    "상대 팀이 우선적으로 의식하는 영웅으로 보입니다."
-                )
-            elif pick_rate >= 20:
-                tone_label = "선택률이 눈에 띄는 편입니다"
-                sentence = (
-                    f"{topic_phrase(hero_name)} 현재 픽률이 {pick_rate:.1f}%로 높아 "
-                    "실전에서 자주 선택되는 흐름이 확인됩니다."
-                )
-            elif win_rate >= 52:
-                tone_label = "성과가 안정적인 편입니다"
-                sentence = (
-                    f"{topic_phrase(hero_name)} 현재 승률이 {win_rate:.1f}%로 안정적이라 "
-                    "추가 추이를 확인해볼 만합니다."
-                )
-            else:
-                tone_label = "추이를 더 지켜볼 필요가 있습니다"
-                sentence = (
-                    f"{topic_phrase(hero_name)} 현재 지표 변화가 관찰되어 "
-                    "다음 수집 데이터와 함께 비교해볼 필요가 있습니다."
-                )
-            impact_rows.append(
-                {
-                    "hero": hero_name,
-                    "tone_label": tone_label,
-                    "reason": sentence,
-                    "display_sentence": sentence,
-                    "impact_type": impact_type,
-                }
-            )
-        return impact_rows
-
-    direct_hero_impacts = build_rows(direct_rows, "direct")
-    indirect_hero_impacts = build_rows(indirect_rows, "indirect")
-    hero_impacts = (direct_hero_impacts + indirect_hero_impacts)[:8]
-
-    if not direct_hero_impacts and affected_heroes:
-        for hero_name in sorted(affected_heroes)[:5]:
-            sentence = (
-                f"{topic_phrase(hero_name)} 이번 밸런스 패치의 직접 변경 대상입니다. "
-                "다만 현재 선택한 기준 지표에서는 뚜렷한 변화가 아직 제한적으로 관찰됩니다."
-            )
-            direct_hero_impacts.append(
-                {
-                    "hero": hero_name,
-                    "tone_label": "직접 변경 대상입니다",
-                    "reason": sentence,
-                    "display_sentence": sentence,
-                    "impact_type": "direct",
-                }
-            )
-        hero_impacts = (direct_hero_impacts + indirect_hero_impacts)[:8]
-
-    meta_analysis = (
-        f"{title}는 영웅 밸런스 변경이 포함된 패치입니다. "
-        f"현재 분석은 {analysis_phase} 단계로, 직접 변경된 영웅의 지표와 그 주변 영웅의 선택률·밴률 반응을 나누어 보는 것이 좋습니다. "
-        f"현재는 {hero_preview}를 중심으로 후속 데이터를 확인해볼 필요가 있습니다."
-    )
-    return {
-        "summary": summary,
-        "meta_analysis": meta_analysis,
-        "hero_impacts": hero_impacts,
-        "direct_hero_impacts": direct_hero_impacts,
-        "indirect_hero_impacts": indirect_hero_impacts,
-        "analysis_phase": analysis_phase,
-        "phase_days": phase_days,
-        "confidence_note": "이 분석은 최신 영웅 밸런스 패치와 현재 수집된 지표를 함께 본 결과이므로, 표본이 더 쌓이면 해석이 달라질 수 있습니다.",
-    }
-
-
-def request_ollama_patch_analysis(patch_note, metrics_digest):
-    prompt = f"""
-너는 오버워치 2 메타 분석 대시보드의 한국어 에디터입니다.
-아래 공식 패치노트와 최신 영웅 지표 변화를 연결해서, 사용자에게 설명하는 자연스러운 존댓말로 작성해 주세요.
-
-작성 규칙:
-- 반드시 JSON만 출력해 주세요.
-- 모든 문장은 존댓말로 작성해 주세요.
-- "~한다", "~이다", "~보인다" 같은 반말/딱딱한 보고서체 종결을 피하고, "~습니다", "~보입니다", "~확인됩니다"를 사용해 주세요.
-- "상승", "하락" 같은 단어만 단독으로 쓰지 말고, "선택률이 좋아진 편입니다", "지표가 다소 약해졌습니다", "추이를 더 지켜볼 필요가 있습니다"처럼 자연스럽게 작성해 주세요.
-- 영웅명은 아래 [사용 가능한 영웅명] 목록에 있는 표기만 사용해 주세요. 목록에 없는 이름은 절대 만들지 마세요.
-	- 이 입력 패치노트는 영웅 밸런스 변경이 포함된 패치입니다.
-	- [영향 영웅]에 있는 영웅은 direct_hero_impacts에 우선 작성해 주세요.
-	- [영향 영웅]에는 없지만 지표 변화가 눈에 띄는 영웅은 indirect_hero_impacts에 작성해 주세요.
-	- 직접 변경 영웅과 간접 영향 가능 영웅을 섞지 말고 분리해 주세요.
-	- 지표만으로 단정하지 말고 "현재 지표 기준", "관찰됩니다", "가능성이 있습니다"처럼 신중하게 작성해 주세요.
-
-	스키마:
-	{{
-	  "summary": "메인 페이지에 보여줄 존댓말 1~2문장 요약",
-	  "analysis_phase": "초기 관찰|단기 변화|안정화 추세|장기 반영 확인 중 하나",
-	  "meta_analysis": "상세 분석 존댓말 3~6문장",
-	  "direct_hero_impacts": [
-	    {{
-	      "hero": "사용 가능한 영웅명 중 하나",
-	      "tone_label": "자연어 상태 표현",
-	      "reason": "지표와 패치 내용을 연결한 존댓말 이유",
-	      "display_sentence": "메인 화면에 그대로 보여줄 한 문장 존댓말 설명"
-	    }}
-	  ],
-	  "indirect_hero_impacts": [
-	    {{
-	      "hero": "사용 가능한 영웅명 중 하나",
-	      "tone_label": "자연어 상태 표현",
-	      "reason": "직접 변경은 아니지만 주변 메타나 지표에서 관찰되는 이유",
-	      "display_sentence": "메인 화면에 그대로 보여줄 한 문장 존댓말 설명"
-	    }}
-	  ],
-	  "confidence_note": "표본/시차/주의사항"
-	}}
-
-[사용 가능한 영웅명]
-{", ".join(sorted(VALID_HERO_NAMES))}
-
-[패치노트]
-	제목: {patch_note.get("title")}
-	날짜: {patch_note.get("patch_date")}
-	분석 단계: {get_analysis_phase(patch_note.get("patch_date"))[0]} ({get_analysis_phase(patch_note.get("patch_date"))[1]}일차)
-	영향 영웅: {", ".join(patch_note.get("affected_heroes") or [])}
-내용:
-{str(patch_note.get("parsed_content") or "")[:8000]}
-
-[최신 지표 변화]
-{metrics_digest}
-""".strip()
-
-    payload = {
-        "model": OLLAMA_MODEL,
-        "prompt": prompt,
-        "stream": False,
-        "format": "json",
-        "options": {"temperature": 0.2},
-    }
-    data = json.dumps(payload).encode("utf-8")
-    req = urllib.request.Request(
-        OLLAMA_GENERATE_URL,
-        data=data,
-        headers={"Content-Type": "application/json"},
-        method="POST",
-    )
-    with urllib.request.urlopen(req, timeout=OLLAMA_TIMEOUT) as resp:
-        body = json.loads(resp.read().decode("utf-8"))
-
-    response_text = body.get("response", "").strip()
-    return json.loads(response_text)
-
-
-def upsert_patch_ai_analysis(analysis_row):
-    rows = load_json_list(PATCH_AI_ANALYSIS_PATH)
-    replaced = False
-    for idx, row in enumerate(rows):
-        if (
-            row.get("patch_note_id") == analysis_row.get("patch_note_id")
-            and row.get("analysis_date") == analysis_row.get("analysis_date")
-            and row.get("metrics_snapshot_id") == analysis_row.get("metrics_snapshot_id")
-        ):
-            rows[idx] = analysis_row
-            replaced = True
-            break
-    if not replaced:
-        rows.append(analysis_row)
-    rows = sorted(rows, key=lambda item: (item.get("analysis_date", ""), item.get("patch_note_id", "")))
-    save_json_list(rows, PATCH_AI_ANALYSIS_PATH)
-    return not replaced
-
-
-def run_patch_update(stats_result=None):
-    today_obj = date.today()
-    latest_patch_note, balance_patch_note = fetch_latest_patch_bundle(today_obj=today_obj)
+def run_patch_update():
+    latest_patch_note, balance_patch_note = fetch_latest_patch_bundle(today_obj=date.today())
     if not latest_patch_note:
         print("⚠️  최신 패치노트를 찾지 못했습니다.")
         return
 
     latest_patch_note, is_new = upsert_patch_note(latest_patch_note)
     print(f"{'🆕' if is_new else '✅'} 최신 패치노트 저장: {latest_patch_note['title']} ({latest_patch_note['patch_date']})")
-    if balance_patch_note:
-        balance_patch_note, balance_is_new = upsert_patch_note(balance_patch_note)
-        print(
-            f"{'🆕' if balance_is_new else '✅'} 최신 밸런스 패치 저장: "
-            f"{balance_patch_note['title']} ({balance_patch_note['patch_date']})"
-        )
-    else:
-        print("⏭️  최근 6개월 안에서 영웅 밸런스 패치를 찾지 못해 AI 분석을 건너뜁니다.")
+    if not balance_patch_note:
+        print("⏭️  최근 6개월 안에서 영웅 밸런스 패치를 찾지 못했습니다.")
         return
-
-    current_df = None
-    previous_df = None
-    metrics_snapshot_id = ""
-    data_changed = False
-
-    if stats_result:
-        current_df = stats_result.get("latest_df")
-        previous_df = stats_result.get("previous_latest_df")
-        metrics_snapshot_id = stats_result.get("daily_snapshot_path") or ""
-        data_changed = bool(stats_result.get("data_changed"))
-    elif os.path.exists(LATEST_STATS_PATH):
-        current_df = pd.read_parquet(LATEST_STATS_PATH)
-        snapshot_dates = current_df.get("snapshot_date", pd.Series(dtype=str)).astype(str)
-        update_dates = current_df.get("update_date", pd.Series(dtype=str)).astype(str)
-        data_changed = today_obj.isoformat() in set(snapshot_dates) or today_obj.isoformat() in set(update_dates)
-        metrics_snapshot_id = LATEST_STATS_PATH
-
-    if current_df is None or current_df.empty:
-        print("⚠️  AI 분석 생성을 건너뜁니다. 지표 데이터가 없습니다.")
-        return
-    if not data_changed and not FORCE_PATCH_AI_ANALYSIS:
-        print("⏭️  지표 변동이 없어 AI 패치 영향 분석 생성을 건너뜁니다.")
-        return
-    if not ENABLE_OLLAMA_ANALYSIS:
-        print("⏭️  ENABLE_OLLAMA_ANALYSIS=0 설정으로 AI 패치 영향 분석 생성을 건너뜁니다.")
-        return
-
-    metrics_digest = build_metrics_digest(
-        current_df,
-        previous_df=previous_df,
-        tier="Gold",
+    balance_patch_note, balance_is_new = upsert_patch_note(balance_patch_note)
+    print(
+        f"{'🆕' if balance_is_new else '✅'} 최신 밸런스 패치 저장: "
+        f"{balance_patch_note['title']} ({balance_patch_note['patch_date']})"
     )
-    try:
-        ai_payload = request_ollama_patch_analysis(balance_patch_note, metrics_digest)
-    except Exception as exc:
-        print(f"⚠️  Ollama AI 분석 생성 실패: {exc}")
-        return
-    ai_payload = sanitize_patch_ai_payload(
-        ai_payload,
-        patch_note=balance_patch_note,
-        analysis_date=today_obj.isoformat(),
-    )
-    if not ai_payload.get("hero_impacts"):
-        ai_payload = build_metrics_fallback_analysis(
-            balance_patch_note,
-            metrics_digest,
-            analysis_date=today_obj.isoformat(),
-        )
-
-    now = datetime.now().isoformat(timespec="seconds")
-    analysis_row = {
-        "id": hashlib.sha1(
-            f"{balance_patch_note['id']}|{today_obj.isoformat()}|{metrics_snapshot_id}|{OLLAMA_MODEL}|{PATCH_PROMPT_VERSION}".encode("utf-8")
-        ).hexdigest()[:16],
-        "patch_note_id": balance_patch_note["id"],
-        "analysis_date": today_obj.isoformat(),
-        "metrics_snapshot_id": metrics_snapshot_id,
-        "model_name": OLLAMA_MODEL,
-        "prompt_version": PATCH_PROMPT_VERSION,
-        "summary": ai_payload.get("summary", ""),
-        "hero_impacts": ai_payload.get("hero_impacts", []),
-        "direct_hero_impacts": ai_payload.get("direct_hero_impacts", []),
-        "indirect_hero_impacts": ai_payload.get("indirect_hero_impacts", []),
-        "analysis_phase": ai_payload.get("analysis_phase", ""),
-        "phase_days": ai_payload.get("phase_days"),
-        "meta_analysis": ai_payload.get("meta_analysis", ""),
-        "confidence_note": ai_payload.get("confidence_note", ""),
-        "created_at": now,
-    }
-    created = upsert_patch_ai_analysis(analysis_row)
-    print(f"{'🧠' if created else '♻️'} AI 패치 영향 분석 저장: {analysis_row['analysis_date']}")
 
 
 def fetch_overfast(path):
@@ -2030,7 +1474,7 @@ def run_stats_update():
     save_parquet(latest_save_df, LATEST_STATS_PATH)
     daily_saved_as = save_daily_snapshot(snapshot_df, today_obj)
     weekly_saved_as = save_weekly_snapshot_if_due(snapshot_df, today_obj)
-    rank_diagnostics = save_rank_diagnostics(latest_df)
+    save_rank_diagnostics(latest_df)
 
     elapsed = format_elapsed(perf_counter() - started_at)
     if data_changed:
@@ -2044,14 +1488,6 @@ def run_stats_update():
     print(f"📁 일별 스냅샷: {daily_saved_as}")
     print(f"📁 주간 스냅샷: {weekly_saved_as}")
     print(f"📁 랭크 진단 리포트: {RANK_DIAGNOSTICS_PATH}")
-    return {
-        "latest_df": latest_df,
-        "previous_latest_df": previous_latest_df,
-        "data_changed": data_changed,
-        "daily_snapshot_path": daily_saved_as,
-        "weekly_snapshot_path": weekly_saved_as,
-        "rank_diagnostics": rank_diagnostics,
-    }
 
 
 def parse_args():
@@ -2070,13 +1506,12 @@ def parse_args():
 def main():
     args = parse_args()
 
-    stats_result = None
     if args.mode in ("stats", "all"):
-        stats_result = run_stats_update()
+        run_stats_update()
     if args.mode in ("perks", "all"):
         run_perk_update()
     if args.mode in ("patch", "all"):
-        run_patch_update(stats_result=stats_result)
+        run_patch_update()
 
 
 if __name__ == "__main__":
