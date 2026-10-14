@@ -515,5 +515,32 @@
     "patch_category": "hero_balance",
     "created_at": "2026-10-07T03:05:20",
     "updated_at": "2026-10-13T04:16:06"
+  },
+  {
+    "id": "patch-2026-10-13",
+    "patch_version": "2026-10-13",
+    "title": "Overwatch Retail Patch Notes – October 13, 2026",
+    "patch_date": "2026-10-13",
+    "source_url": "https://overwatch.blizzard.com/ko-kr/news/patch-notes/live/2026/10/#patch-2026-10-13",
+    "summary": "영향 영웅: D.MON, Doctrine, Kiriko, Roadhog, Sombra · Hotfix Update · This is a hotfix update. Replay codes from the October 6 patch are still available.",
+    "summary_items": [
+      "영향 영웅: D.MON, Doctrine, Kiriko, Roadhog, Sombra",
+      "Hotfix Update",
+      "This is a hotfix update. Replay codes from the October 6 patch are still available.",
+      "Hero Updates",
+      "Doctrine",
+      "Eternal Scepter"
+    ],
+    "affected_heroes": [
+      "D.MON",
+      "Doctrine",
+      "Kiriko",
+      "Roadhog",
+      "Sombra"
+    ],
+    "has_hero_updates": true,
+    "patch_category": "hero_balance",
+    "created_at": "2026-10-14T02:31:10",
+    "updated_at": "2026-10-14T02:31:10"
   }
 ]
