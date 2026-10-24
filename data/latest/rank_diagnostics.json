@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-23T02:15:46",
+  "generated_at": "2026-10-24T02:15:12",
   "method_note": "Diagnostics are used to audit the hand-designed presence-led meta formula; they do not automatically optimize production weights.",
   "long_term_plan": "patch_buff_nerf_history_based_regression",
   "formula": {
@@ -8,7 +8,7 @@
     "presence_ban_weight": 1.0
   },
   "data_summary": {
-    "latest_rows": 14574,
+    "latest_rows": 14575,
     "weekly_rows": 254469,
     "weekly_snapshots": 19
   },
@@ -38,7 +38,7 @@
       "performance_score": 0.30962089805857335,
       "pick_rate_z": 0.6881236038568919,
       "ban_rate_z": 0.832513508410905,
-      "total_score": 0.721220861993263
+      "total_score": 0.7212208619932629
     },
     "performance_score": {
       "win_rate_z": 0.8732586235378699,
@@ -70,7 +70,7 @@
     "total_score": {
       "win_rate_z": 0.7226199174645105,
       "persistence_score": 0.6533824937404075,
-      "presence_score": 0.721220861993263,
+      "presence_score": 0.7212208619932629,
       "performance_score": 0.7395499378666699,
       "pick_rate_z": 0.515204466730412,
       "ban_rate_z": 0.6080297473649591,
@@ -88,11 +88,11 @@
   },
   "overheat_monitor": {
     "available": true,
-    "s_a_rows": 4084,
-    "s_a_perf_negative_share": 0.15744368266405484,
-    "shuffled_baseline_share": 0.3427620138756214,
-    "alert_line": 0.33098020703167186,
-    "validation_gap": 0.18531833121156654,
+    "s_a_rows": 4095,
+    "s_a_perf_negative_share": 0.1536019536019536,
+    "shuffled_baseline_share": 0.3426923890398905,
+    "alert_line": 0.3317423830797301,
+    "validation_gap": 0.1890904354379369,
     "alert": false,
     "note": "s_a_perf_negative_share: S/A 중 성능 z<0 비율. shuffled_baseline_share: 비교군 안에서 성능 점수를 섞어 존재감과의 관계를 끊었을 때 같은 비율(1000회 평균). validation_gap: 성능 검증이 걸러내는 몫(기준선 - 실제). alert: 실제 값이 alert_line(섞기 하위 2.5%)을 넘어 랭크가 사실상 존재감만으로 정해지는 상태. 켜지면 META_PRESENCE_WEIGHT 하향을 검토한다. PRESENCE_BAN_WEIGHT 하향은 이 값을 오히려 늘린다."
   },
@@ -104,7 +104,7 @@
       "next_week_win_rate_z": {
         "correlation_to_target": {
           "presence_led_meta_score": 0.5068906817376827,
-          "presence_only": 0.2611425085460871,
+          "presence_only": 0.26114250854608706,
           "shrunk_win_only": 0.7109632378911797,
           "win_rate_only": 0.7300850717549789,
           "persistence_only": 0.6287357317343804,
@@ -112,7 +112,7 @@
         },
         "top_quartile_precision": {
           "presence_led_meta_score": 0.5120129633675624,
-          "presence_only": 0.3668560192265676,
+          "presence_only": 0.3668681572111767,
           "shrunk_win_only": 0.7203359794139782,
           "win_rate_only": 0.7149746316121672,
           "persistence_only": 0.6228594664141966,
@@ -121,20 +121,20 @@
       },
       "next_week_presence_z": {
         "correlation_to_target": {
-          "presence_led_meta_score": 0.8821582617844107,
-          "presence_only": 0.9646463316371955,
+          "presence_led_meta_score": 0.8821582617844108,
+          "presence_only": 0.9646463316371952,
           "shrunk_win_only": 0.29083552144878483,
-          "win_rate_only": 0.26418922578702914,
+          "win_rate_only": 0.264189225787029,
           "persistence_only": 0.25856410173883926,
           "legacy_win_centric_score": 0.3125835706492205
         },
         "top_quartile_precision": {
-          "presence_led_meta_score": 0.8485352652783845,
-          "presence_only": 0.95587835541964,
-          "shrunk_win_only": 0.4429481578564147,
-          "win_rate_only": 0.37268457841852337,
-          "persistence_only": 0.370536624435707,
-          "legacy_win_centric_score": 0.4163899810688802
+          "presence_led_meta_score": 0.8485328382117373,
+          "presence_only": 0.9558929178195233,
+          "shrunk_win_only": 0.442960293189651,
+          "win_rate_only": 0.3726967137517596,
+          "persistence_only": 0.3705730304354158,
+          "legacy_win_centric_score": 0.4164021164021164
         }
       }
     }
@@ -146,41 +146,41 @@
         "presence_weight": 0.55,
         "performance_weight": 0.45,
         "presence_ban_weight": 0.5,
-        "rank_change_rate": 0.13208453410182516,
-        "avg_abs_rank_delta": 0.13208453410182516,
-        "s_membership_change_rate": 0.027308906271442293
+        "rank_change_rate": 0.1322813036020583,
+        "avg_abs_rank_delta": 0.1322813036020583,
+        "s_membership_change_rate": 0.02785591766723842
       },
       {
         "presence_weight": 0.55,
         "performance_weight": 0.45,
         "presence_ban_weight": 0.75,
-        "rank_change_rate": 0.11506792918896665,
-        "avg_abs_rank_delta": 0.11506792918896665,
-        "s_membership_change_rate": 0.0177027583367641
+        "rank_change_rate": 0.11540308747855918,
+        "avg_abs_rank_delta": 0.11540308747855918,
+        "s_membership_change_rate": 0.018524871355060035
       },
       {
         "presence_weight": 0.55,
         "performance_weight": 0.45,
         "presence_ban_weight": 1.0,
-        "rank_change_rate": 0.10896116371620694,
-        "avg_abs_rank_delta": 0.10896116371620694,
-        "s_membership_change_rate": 0.014615067929188966
+        "rank_change_rate": 0.10867924528301887,
+        "avg_abs_rank_delta": 0.10867924528301887,
+        "s_membership_change_rate": 0.015025728987993139
       },
       {
         "presence_weight": 0.65,
         "performance_weight": 0.35,
         "presence_ban_weight": 0.5,
-        "rank_change_rate": 0.09585563331961026,
-        "avg_abs_rank_delta": 0.09585563331961026,
-        "s_membership_change_rate": 0.02518183065733498
+        "rank_change_rate": 0.09825042881646655,
+        "avg_abs_rank_delta": 0.09825042881646655,
+        "s_membership_change_rate": 0.026826758147512866
       },
       {
         "presence_weight": 0.65,
         "performance_weight": 0.35,
         "presence_ban_weight": 0.75,
-        "rank_change_rate": 0.038561822423493895,
-        "avg_abs_rank_delta": 0.038561822423493895,
-        "s_membership_change_rate": 0.010498147385755455
+        "rank_change_rate": 0.039862778730703256,
+        "avg_abs_rank_delta": 0.039862778730703256,
+        "s_membership_change_rate": 0.011595197255574613
       },
       {
         "presence_weight": 0.65,
@@ -194,33 +194,33 @@
         "presence_weight": 0.75,
         "performance_weight": 0.25,
         "presence_ban_weight": 0.5,
-        "rank_change_rate": 0.1677645121449156,
-        "avg_abs_rank_delta": 0.1677645121449156,
-        "s_membership_change_rate": 0.033347056401811445
+        "rank_change_rate": 0.16617495711835334,
+        "avg_abs_rank_delta": 0.16617495711835334,
+        "s_membership_change_rate": 0.03334476843910806
       },
       {
         "presence_weight": 0.75,
         "performance_weight": 0.25,
         "presence_ban_weight": 0.75,
-        "rank_change_rate": 0.12831069027034445,
-        "avg_abs_rank_delta": 0.12831069027034445,
-        "s_membership_change_rate": 0.020172910662824207
+        "rank_change_rate": 0.12857632933104632,
+        "avg_abs_rank_delta": 0.12857632933104632,
+        "s_membership_change_rate": 0.02030874785591767
       },
       {
         "presence_weight": 0.75,
         "performance_weight": 0.25,
         "presence_ban_weight": 1.0,
-        "rank_change_rate": 0.11616577466721559,
-        "avg_abs_rank_delta": 0.11616577466721559,
-        "s_membership_change_rate": 0.018800603815013035
+        "rank_change_rate": 0.11780445969125214,
+        "avg_abs_rank_delta": 0.11780445969125214,
+        "s_membership_change_rate": 0.018662092624356776
       }
     ],
     "summary": {
       "variant_count": 9,
-      "avg_rank_change_rate": 0.10030800664806429,
-      "max_rank_change_rate": 0.1677645121449156,
-      "avg_s_membership_change_rate": 0.018625253495570496,
-      "max_s_membership_change_rate": 0.033347056401811445
+      "avg_rank_change_rate": 0.10078139889460644,
+      "max_rank_change_rate": 0.16617495711835334,
+      "avg_s_membership_change_rate": 0.019127120259195732,
+      "max_s_membership_change_rate": 0.03334476843910806
     }
   },
   "sample_size": {
@@ -230,35 +230,35 @@
       "thin": 300
     },
     "tier_all_maps_neff": {
-      "Bronze": 12332.294564320437,
-      "Diamond": 22835.19788531082,
-      "Emerald": 60788.07263611088,
-      "Gold": 144626.1055826555,
-      "Grandmaster": 5212.109306046374,
-      "Master": 11497.05654337408,
-      "Platinum": 315075.2821032493,
-      "Silver": 56909.83093391904
+      "Bronze": 12563.036663291015,
+      "Diamond": 22771.299613173735,
+      "Emerald": 61230.432784382756,
+      "Gold": 150368.1813629307,
+      "Grandmaster": 5593.044768367011,
+      "Master": 11123.197010774764,
+      "Platinum": 290361.20972276427,
+      "Silver": 56712.99388655664
     },
     "combos": 261,
     "low_combos": 0,
     "thin_combos": 8,
     "quantiles": {
-      "p10": 845.3940661542853,
-      "p25": 2056.1392977251962,
-      "p50": 4721.986462051692,
-      "p75": 8046.5707842941365,
-      "p90": 11606.961371801746
+      "p10": 811.4190726014515,
+      "p25": 2266.153493685887,
+      "p50": 4915.753920574212,
+      "p75": 8293.696996583927,
+      "p90": 11496.601386328008
     },
     "median_by_tier": {
-      "All": 11830.755165937657,
-      "Bronze": 2310.1356040426767,
-      "Diamond": 3182.330830672872,
-      "Emerald": 5759.18041024269,
-      "Gold": 7906.715795028255,
-      "Grandmaster": 676.8722204470283,
-      "Master": 1530.5581540762191,
-      "Platinum": 7188.487835362958,
-      "Silver": 6266.885651367262
+      "All": 12286.50118390576,
+      "Bronze": 2324.0941929256346,
+      "Diamond": 3241.4731906784145,
+      "Emerald": 5721.7824651261,
+      "Gold": 7777.245836673328,
+      "Grandmaster": 623.5924229015915,
+      "Master": 1641.864149568012,
+      "Platinum": 7549.559944605707,
+      "Silver": 6794.864510136157
     }
   }
 }
