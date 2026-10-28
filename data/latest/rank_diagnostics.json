@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-27T02:41:29",
+  "generated_at": "2026-10-28T02:50:23",
   "method_note": "Diagnostics are used to audit the hand-designed presence-led meta formula; they do not automatically optimize production weights.",
   "long_term_plan": "patch_buff_nerf_history_based_regression",
   "formula": {
@@ -88,11 +88,11 @@
   },
   "overheat_monitor": {
     "available": true,
-    "s_a_rows": 4107,
-    "s_a_perf_negative_share": 0.14828341855368882,
-    "shuffled_baseline_share": 0.33546904029663405,
-    "alert_line": 0.32318952678131785,
-    "validation_gap": 0.18718562174294523,
+    "s_a_rows": 4108,
+    "s_a_perf_negative_share": 0.15311587147030184,
+    "shuffled_baseline_share": 0.33870489539178794,
+    "alert_line": 0.32582400113789484,
+    "validation_gap": 0.1855890239214861,
     "alert": false,
     "note": "s_a_perf_negative_share: S/A 중 성능 z<0 비율. shuffled_baseline_share: 비교군 안에서 성능 점수를 섞어 존재감과의 관계를 끊었을 때 같은 비율(1000회 평균). validation_gap: 성능 검증이 걸러내는 몫(기준선 - 실제). alert: 실제 값이 alert_line(섞기 하위 2.5%)을 넘어 랭크가 사실상 존재감만으로 정해지는 상태. 켜지면 META_PRESENCE_WEIGHT 하향을 검토한다. PRESENCE_BAN_WEIGHT 하향은 이 값을 오히려 늘린다."
   },
@@ -112,7 +112,7 @@
         },
         "top_quartile_precision": {
           "presence_led_meta_score": 0.5177028173211379,
-          "presence_only": 0.3732767118263301,
+          "presence_only": 0.3732652499828072,
           "shrunk_win_only": 0.7255014556541274,
           "win_rate_only": 0.7212365036792517,
           "persistence_only": 0.6257100612062443,
@@ -121,20 +121,20 @@
       },
       "next_week_presence_z": {
         "correlation_to_target": {
-          "presence_led_meta_score": 0.8851681668021606,
+          "presence_led_meta_score": 0.8851681668021607,
           "presence_only": 0.9664441589660016,
           "shrunk_win_only": 0.30026951167058513,
-          "win_rate_only": 0.2708222866421305,
-          "persistence_only": 0.26410274120014776,
+          "win_rate_only": 0.27082228664213054,
+          "persistence_only": 0.2641027412001478,
           "legacy_win_centric_score": 0.3194669874313363
         },
         "top_quartile_precision": {
-          "presence_led_meta_score": 0.8522277227722773,
-          "presence_only": 0.9576927484415109,
-          "shrunk_win_only": 0.45079987165383206,
-          "win_rate_only": 0.37898446094609467,
-          "persistence_only": 0.3756394389438944,
-          "legacy_win_centric_score": 0.42283301246791344
+          "presence_led_meta_score": 0.8522300146681335,
+          "presence_only": 0.9576789970663733,
+          "shrunk_win_only": 0.4507884121745508,
+          "win_rate_only": 0.37897300146681334,
+          "persistence_only": 0.3756050605060506,
+          "legacy_win_centric_score": 0.42282155298863217
         }
       }
     }
@@ -146,41 +146,41 @@
         "presence_weight": 0.55,
         "performance_weight": 0.45,
         "presence_ban_weight": 0.5,
-        "rank_change_rate": 0.12950086058519794,
-        "avg_abs_rank_delta": 0.12950086058519794,
-        "s_membership_change_rate": 0.02685025817555938
+        "rank_change_rate": 0.1314974182444062,
+        "avg_abs_rank_delta": 0.1314974182444062,
+        "s_membership_change_rate": 0.02623063683304647
       },
       {
         "presence_weight": 0.55,
         "performance_weight": 0.45,
         "presence_ban_weight": 0.75,
-        "rank_change_rate": 0.11435456110154905,
-        "avg_abs_rank_delta": 0.11435456110154905,
-        "s_membership_change_rate": 0.018864027538726333
+        "rank_change_rate": 0.11345955249569707,
+        "avg_abs_rank_delta": 0.11345955249569707,
+        "s_membership_change_rate": 0.017900172117039585
       },
       {
         "presence_weight": 0.55,
         "performance_weight": 0.45,
         "presence_ban_weight": 1.0,
-        "rank_change_rate": 0.10774526678141136,
-        "avg_abs_rank_delta": 0.10774526678141136,
-        "s_membership_change_rate": 0.015421686746987951
+        "rank_change_rate": 0.10767641996557659,
+        "avg_abs_rank_delta": 0.10767641996557659,
+        "s_membership_change_rate": 0.01370051635111876
       },
       {
         "presence_weight": 0.65,
         "performance_weight": 0.35,
         "presence_ban_weight": 0.5,
-        "rank_change_rate": 0.09473321858864027,
-        "avg_abs_rank_delta": 0.09473321858864027,
-        "s_membership_change_rate": 0.025955249569707402
+        "rank_change_rate": 0.09418244406196213,
+        "avg_abs_rank_delta": 0.09418244406196213,
+        "s_membership_change_rate": 0.024991394148020655
       },
       {
         "presence_weight": 0.65,
         "performance_weight": 0.35,
         "presence_ban_weight": 0.75,
-        "rank_change_rate": 0.04055077452667814,
-        "avg_abs_rank_delta": 0.04055077452667814,
-        "s_membership_change_rate": 0.011497418244406196
+        "rank_change_rate": 0.03820998278829604,
+        "avg_abs_rank_delta": 0.03820998278829604,
+        "s_membership_change_rate": 0.009982788296041309
       },
       {
         "presence_weight": 0.65,
@@ -194,33 +194,33 @@
         "presence_weight": 0.75,
         "performance_weight": 0.25,
         "presence_ban_weight": 0.5,
-        "rank_change_rate": 0.16502581755593804,
-        "avg_abs_rank_delta": 0.16502581755593804,
-        "s_membership_change_rate": 0.03428571428571429
+        "rank_change_rate": 0.16585197934595525,
+        "avg_abs_rank_delta": 0.16585197934595525,
+        "s_membership_change_rate": 0.03345955249569708
       },
       {
         "presence_weight": 0.75,
         "performance_weight": 0.25,
         "presence_ban_weight": 0.75,
-        "rank_change_rate": 0.12406196213425129,
-        "avg_abs_rank_delta": 0.12406196213425129,
-        "s_membership_change_rate": 0.019208261617900173
+        "rank_change_rate": 0.12454388984509467,
+        "avg_abs_rank_delta": 0.12454388984509467,
+        "s_membership_change_rate": 0.018864027538726333
       },
       {
         "presence_weight": 0.75,
         "performance_weight": 0.25,
         "presence_ban_weight": 1.0,
-        "rank_change_rate": 0.11545611015490534,
-        "avg_abs_rank_delta": 0.11545611015490534,
-        "s_membership_change_rate": 0.018244406196213425
+        "rank_change_rate": 0.11401032702237522,
+        "avg_abs_rank_delta": 0.11401032702237522,
+        "s_membership_change_rate": 0.01783132530120482
       }
     ],
     "summary": {
       "variant_count": 9,
-      "avg_rank_change_rate": 0.09904761904761905,
-      "max_rank_change_rate": 0.16502581755593804,
-      "avg_s_membership_change_rate": 0.01892522470835724,
-      "max_s_membership_change_rate": 0.03428571428571429
+      "avg_rank_change_rate": 0.09882577930770703,
+      "max_rank_change_rate": 0.16585197934595525,
+      "avg_s_membership_change_rate": 0.01810671256454389,
+      "max_s_membership_change_rate": 0.03345955249569708
     }
   },
   "sample_size": {
@@ -230,35 +230,35 @@
       "thin": 300
     },
     "tier_all_maps_neff": {
-      "Bronze": 13781.79615833329,
-      "Diamond": 22392.440268949962,
-      "Emerald": 71872.38488314282,
-      "Gold": 145546.2366286174,
-      "Grandmaster": 6260.387633733825,
-      "Master": 10948.525187904672,
-      "Platinum": 330479.5148454515,
-      "Silver": 60102.779917417436
+      "Bronze": 14490.708288672113,
+      "Diamond": 23047.5701350531,
+      "Emerald": 69499.58618334726,
+      "Gold": 153257.82618312948,
+      "Grandmaster": 5909.281053052872,
+      "Master": 11308.93605629513,
+      "Platinum": 314183.48153051594,
+      "Silver": 63337.82162527137
     },
     "combos": 261,
     "low_combos": 1,
     "thin_combos": 3,
     "quantiles": {
-      "p10": 946.8606503436013,
-      "p25": 2708.884643907925,
-      "p50": 5322.459424137506,
-      "p75": 8598.249273806721,
-      "p90": 12180.324788206544
+      "p10": 926.8859337594286,
+      "p25": 2744.028333965317,
+      "p50": 5365.207966499515,
+      "p75": 8802.346066958968,
+      "p90": 12469.127001047254
     },
     "median_by_tier": {
-      "All": 12225.048085938497,
-      "Bronze": 3135.6873402221245,
-      "Diamond": 3628.508057558253,
-      "Emerald": 6167.779950889791,
-      "Gold": 8132.692447699571,
-      "Grandmaster": 750.6516894345599,
-      "Master": 2047.0475438097494,
-      "Platinum": 7792.581623959437,
-      "Silver": 7163.003813419479
+      "All": 12446.054809078234,
+      "Bronze": 3257.142859903717,
+      "Diamond": 3803.480086036918,
+      "Emerald": 6340.645149606324,
+      "Gold": 8175.344803691915,
+      "Grandmaster": 827.7182434660233,
+      "Master": 2410.6247941076376,
+      "Platinum": 8120.090609682224,
+      "Silver": 7282.065307645844
     }
   }
 }
