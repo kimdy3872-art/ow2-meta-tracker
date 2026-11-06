@@ -605,5 +605,28 @@
     "patch_category": "hero_balance",
     "created_at": "2026-11-04T03:41:13",
     "updated_at": "2026-11-05T04:02:03"
+  },
+  {
+    "id": "patch-2026-11-05",
+    "patch_version": "2026-11-05",
+    "title": "Overwatch Retail Patch Notes – November 5, 2026",
+    "patch_date": "2026-11-05",
+    "source_url": "https://overwatch.blizzard.com/ko-kr/news/patch-notes/live/2026/11/#patch-2026-11-05",
+    "summary": "영향 영웅: Wrecking Ball · Hotfix Update · This is a hotfix update. Replay codes from the November 3 patch are still available.",
+    "summary_items": [
+      "영향 영웅: Wrecking Ball",
+      "Hotfix Update",
+      "This is a hotfix update. Replay codes from the November 3 patch are still available.",
+      "Hero Updates",
+      "Wrecking Ball",
+      "Grappling Claw"
+    ],
+    "affected_heroes": [
+      "Wrecking Ball"
+    ],
+    "has_hero_updates": true,
+    "patch_category": "hero_balance",
+    "created_at": "2026-11-06T03:59:48",
+    "updated_at": "2026-11-06T03:59:48"
   }
 ]
