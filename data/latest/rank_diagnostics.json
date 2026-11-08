@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-07T03:31:29",
+  "generated_at": "2026-11-08T03:00:15",
   "method_note": "Diagnostics are used to audit the hand-designed presence-led meta formula; they do not automatically optimize production weights.",
   "long_term_plan": "patch_buff_nerf_history_based_regression",
   "formula": {
@@ -112,7 +112,7 @@
         },
         "top_quartile_precision": {
           "presence_led_meta_score": 0.5237128960111176,
-          "presence_only": 0.37998827437951915,
+          "presence_only": 0.37997741732351853,
           "shrunk_win_only": 0.7325364254228824,
           "win_rate_only": 0.7299209606323149,
           "persistence_only": 0.6342181833973899,
@@ -123,18 +123,18 @@
         "correlation_to_target": {
           "presence_led_meta_score": 0.8880419597118119,
           "presence_only": 0.9681681846754764,
-          "shrunk_win_only": 0.3097787542929162,
-          "win_rate_only": 0.2788050569647569,
-          "persistence_only": 0.2712411356366874,
+          "shrunk_win_only": 0.3097787542929161,
+          "win_rate_only": 0.27880505696475694,
+          "persistence_only": 0.2712411356366873,
           "legacy_win_centric_score": 0.3272577333227982
         },
         "top_quartile_precision": {
-          "presence_led_meta_score": 0.8559441622161436,
-          "presence_only": 0.9597325344101428,
-          "shrunk_win_only": 0.4576776952802744,
-          "win_rate_only": 0.38580065998002694,
-          "persistence_only": 0.3821132386783032,
-          "legacy_win_centric_score": 0.42959055186487777
+          "presence_led_meta_score": 0.8559463332030741,
+          "presence_only": 0.959719508488559,
+          "shrunk_win_only": 0.4576668403456211,
+          "win_rate_only": 0.3857898050453736,
+          "persistence_only": 0.38208067387434325,
+          "legacy_win_centric_score": 0.4295796969302245
         }
       }
     }
