@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-25T05:54:16",
+  "generated_at": "2026-11-26T05:44:54",
   "method_note": "Diagnostics are used to audit the hand-designed presence-led meta formula; they do not automatically optimize production weights.",
   "long_term_plan": "patch_buff_nerf_history_based_regression",
   "formula": {
@@ -104,7 +104,7 @@
       "next_week_win_rate_z": {
         "correlation_to_target": {
           "presence_led_meta_score": 0.5129958527943906,
-          "presence_only": 0.2748620767666396,
+          "presence_only": 0.27486207676663954,
           "shrunk_win_only": 0.7100286911309805,
           "win_rate_only": 0.7305356267796368,
           "persistence_only": 0.6224921652798524,
@@ -112,7 +112,7 @@
         },
         "top_quartile_precision": {
           "presence_led_meta_score": 0.5110644571343262,
-          "presence_only": 0.37272048669428587,
+          "presence_only": 0.37271115589892884,
           "shrunk_win_only": 0.7166013510991677,
           "win_rate_only": 0.7137759862650692,
           "persistence_only": 0.6179505841077894,
@@ -123,18 +123,18 @@
         "correlation_to_target": {
           "presence_led_meta_score": 0.8897414696195967,
           "presence_only": 0.9682386657721201,
-          "shrunk_win_only": 0.31939572404651967,
+          "shrunk_win_only": 0.3193957240465196,
           "win_rate_only": 0.2843433326629237,
-          "persistence_only": 0.2882236314842548,
-          "legacy_win_centric_score": 0.3367632342803137
+          "persistence_only": 0.2882236314842549,
+          "legacy_win_centric_score": 0.33676323428031363
         },
         "top_quartile_precision": {
-          "presence_led_meta_score": 0.8576005224367944,
-          "presence_only": 0.9594700998227447,
-          "shrunk_win_only": 0.45506297229219145,
-          "win_rate_only": 0.38398358055788784,
-          "persistence_only": 0.39072394812948974,
-          "legacy_win_centric_score": 0.43054202817427
+          "presence_led_meta_score": 0.857602388282489,
+          "presence_only": 0.9594589047485773,
+          "shrunk_win_only": 0.45505364306371865,
+          "win_rate_only": 0.383974251329415,
+          "persistence_only": 0.39069596044407123,
+          "legacy_win_centric_score": 0.4305326989457972
         }
       }
     }
